@@ -1,6 +1,6 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, Suspense, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Package, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -16,7 +16,7 @@ type TrackingResult = {
   updatedAt: string;
 };
 
-export default function TrackOrderPage() {
+function TrackOrderContent() {
   const searchParams = useSearchParams();
   const [orderNumber, setOrderNumber] = useState(searchParams.get('orderNumber') ?? '');
   const [email, setEmail] = useState('');
@@ -59,5 +59,13 @@ export default function TrackOrderPage() {
         </div>
       </section>
     </main>
+  );
+}
+
+export default function TrackOrderPage() {
+  return (
+    <Suspense fallback={<main className="min-h-screen bg-surface-1" aria-busy="true" />}>
+      <TrackOrderContent />
+    </Suspense>
   );
 }

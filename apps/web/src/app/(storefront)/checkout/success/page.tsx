@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2, ChevronRight, Loader2, Package, Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { fetchApi } from '@/lib/api';
 
-export default function OrderSuccessPage() {
+function OrderSuccessContent() {
   const searchParams = useSearchParams();
   const reference = searchParams.get('reference') ?? searchParams.get('trxref');
   const [orderId, setOrderId] = useState(searchParams.get('orderId'));
@@ -144,5 +144,13 @@ export default function OrderSuccessPage() {
       </div>
 
     </div>
+  );
+}
+
+export default function OrderSuccessPage() {
+  return (
+    <Suspense fallback={<div className="flex h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-brand-600" /></div>}>
+      <OrderSuccessContent />
+    </Suspense>
   );
 }

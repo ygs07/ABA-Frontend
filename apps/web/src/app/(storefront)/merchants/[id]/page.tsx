@@ -20,7 +20,7 @@ import { ReviewList } from '@/features/reviews';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/store';
 
-export default function MerchantProfilePage({ params }: { params: Promise<{ id: string }> }) {
+function MerchantProfileContent({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = React.use(params);
   const merchantId = unwrappedParams.id;
   
@@ -227,5 +227,13 @@ export default function MerchantProfilePage({ params }: { params: Promise<{ id: 
         onClose={() => setQuickViewProduct(null)}
       />
     </div>
+  );
+}
+
+export default function MerchantProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  return (
+    <React.Suspense fallback={<div className="flex min-h-[60vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-brand-600" /></div>}>
+      <MerchantProfileContent params={params} />
+    </React.Suspense>
   );
 }
