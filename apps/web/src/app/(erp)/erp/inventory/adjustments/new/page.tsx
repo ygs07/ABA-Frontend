@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
+
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -81,6 +82,7 @@ export default function NewAdjustmentPage() {
   };
 
   return (
+    <Suspense fallback={<div>Loading...</div>}>
     <div className="space-y-6 max-w-3xl pb-20">
       <PageHeader title="Stock Adjustment" description="Increase or decrease the quantity of one stock record." backHref="/erp/inventory/stock" />
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
@@ -115,6 +117,7 @@ export default function NewAdjustmentPage() {
         </div>
         <div className="flex items-center gap-4 border-t border-border pt-6"><Button type="button" variant="outline" onClick={() => router.push('/erp/inventory/stock')} disabled={isSubmitting}>Cancel</Button><Button type="submit" disabled={isSubmitting || isLoadingStocks}>Apply adjustment</Button></div>
       </form>
-    </div>
+      </div>
+      </Suspense>
   );
 }
