@@ -1,13 +1,14 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { KpiCard } from '@/components/patterns/KpiCard';
 import { ShoppingCart, DollarSign, Package, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { getDashboardData } from '../api/dashboard.api';
+import { DashboardRange, getDashboardData } from '../api/dashboard.api';
 
 const formatNaira = (amount: number) =>
   new Intl.NumberFormat('en-NG', {
@@ -17,9 +18,10 @@ const formatNaira = (amount: number) =>
   }).format(amount);
 
 export function DashboardView() {
+  const [range, setRange] = useState<DashboardRange>('last_7_days');
   const { data, isLoading, isError } = useQuery({
-    queryKey: ['dashboard'],
-    queryFn: getDashboardData,
+    queryKey: ['dashboard', range],
+    queryFn: () => getDashboardData(range),
   });
 
   const value = (number?: number) =>
@@ -31,12 +33,16 @@ export function DashboardView() {
         title="Dashboard"
         description={`Welcome back, here is what's happening today.`}
         action={
-          <select className="h-9 px-3 py-1 rounded-md border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500">
-            <option>Today</option>
-            <option>Last 7 days</option>
-            <option>Last 30 days</option>
-            <option>This Quarter</option>
-            <option>This Year</option>
+          <select
+            value={range}
+            onChange={(event) => setRange(event.target.value as DashboardRange)}
+            className="h-9 px-3 py-1 rounded-md border border-border bg-white text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
+          >
+            <option value="today">Today</option>
+            <option value="last_7_days">Last 7 days</option>
+            <option value="last_30_days">Last 30 days</option>
+            <option value="quarter">This Quarter</option>
+            <option value="year">This Year</option>
           </select>
         }
       />
@@ -73,7 +79,7 @@ export function DashboardView() {
         <KpiCard
           title="Orders"
           value={value(data?.sales.orderCount)}
-          supportingText={data ? `${data.scope === 'vendor' ? 'Vendor' : 'Organization'} scope` : undefined}
+          supportingText={data ? `${data.scope === 'merchant' ? 'Merchant' : 'Organization'} scope` : undefined}
           href="/erp/orders"
           icon={ShoppingCart}
         />
@@ -84,32 +90,24 @@ export function DashboardView() {
         <div className="bg-white rounded-lg border border-border shadow-sm p-5 h-80 flex flex-col">
           <h3 className="font-semibold text-text mb-4">Revenue Over Time</h3>
           <div className="flex-1 flex items-end gap-2 text-brand-200">
-            {/* Mock Chart Bars */}
-            {[40, 70, 45, 90, 65, 85, 100].map((h, i) => (
-              <div key={i} className="flex-1 bg-brand-500 rounded-t-sm hover:bg-brand-600 transition-colors" style={{ height: `${h}%` }}></div>
-            ))}
+            {data?.revenueSeries.length ? data.revenueSeries.map((entry) => {
+              const maximumRevenue = Math.max(...data.revenueSeries.map((point) => point.revenue), 1);
+              return (
+                <div key={entry.date} className="flex-1 min-w-3 bg-brand-500 rounded-t-sm hover:bg-brand-600 transition-colors" title={`${entry.date}: ${formatNaira(entry.revenue)}`} style={{ height: `${Math.max((entry.revenue / maximumRevenue) * 100, 3)}%` }} />
+              );
+            }) : <p className="m-auto text-sm text-text-muted">No revenue in this period.</p>}
           </div>
-          <div className="flex justify-between text-xs text-text-muted mt-2">
-            <span>Mon</span>
-            <span>Tue</span>
-            <span>Wed</span>
-            <span>Thu</span>
-            <span>Fri</span>
-            <span>Sat</span>
-            <span>Sun</span>
-          </div>
+          <div className="flex justify-between text-xs text-text-muted mt-2"><span>{data?.revenueSeries[0]?.date ?? ''}</span><span>{data?.revenueSeries.at(-1)?.date ?? ''}</span></div>
         </div>
 
         <div className="bg-white rounded-lg border border-border shadow-sm p-5 h-80 flex flex-col">
           <h3 className="font-semibold text-text mb-4">Sales by Category</h3>
-          <div className="flex-1 flex items-center justify-center">
-            {/* Mock Donut Chart */}
-            <div className="relative w-48 h-48 rounded-full border-[16px] border-brand-500 border-r-surface-400 border-b-warning-main">
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-xl font-bold text-text">3.2k</span>
-                <span className="text-xs text-text-muted">Items Sold</span>
-              </div>
-            </div>
+          <div className="flex-1 space-y-3 overflow-y-auto">
+            {data?.salesByCategory.length ? data.salesByCategory.map((category) => {
+              const totalRevenue = data.salesByCategory.reduce((total, entry) => total + entry.revenue, 0) || 1;
+              const percentage = (category.revenue / totalRevenue) * 100;
+              return <div key={category.name}><div className="flex justify-between text-sm mb-1"><span>{category.name}</span><span className="font-medium">{formatNaira(category.revenue)}</span></div><div className="h-2 rounded bg-surface-2"><div className="h-2 rounded bg-brand-500" style={{ width: `${percentage}%` }} /></div></div>;
+            }) : <p className="pt-16 text-center text-sm text-text-muted">No category sales in this period.</p>}
           </div>
         </div>
       </div>
@@ -118,7 +116,7 @@ export function DashboardView() {
       <div className="bg-white border border-border rounded-lg shadow-sm overflow-hidden">
         <div className="p-4 border-b border-border flex justify-between items-center">
           <h3 className="font-semibold text-text">Recent Orders</h3>
-          <Button variant="outline" size="sm">View All</Button>
+          <Link href="/erp/orders"><Button variant="outline" size="sm">View All</Button></Link>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left">
@@ -132,33 +130,15 @@ export function DashboardView() {
               </tr>
             </thead>
             <tbody className="divide-y divide-border text-text">
-              <tr className="hover:bg-surface-1">
-                <td className="px-4 py-3 font-medium">ORD-2023-401</td>
-                <td className="px-4 py-3">Acme Corp</td>
-                <td className="px-4 py-3 text-text-muted">2 hours ago</td>
-                <td className="px-4 py-3 text-right">₦450,000</td>
-                <td className="px-4 py-3 text-center">
-                  <span className="inline-block px-2 py-1 bg-brand-50 text-brand-700 text-xs rounded-full font-medium">Completed</span>
-                </td>
-              </tr>
-              <tr className="hover:bg-surface-1">
-                <td className="px-4 py-3 font-medium">ORD-2023-402</td>
-                <td className="px-4 py-3">Globex Ltd</td>
-                <td className="px-4 py-3 text-text-muted">4 hours ago</td>
-                <td className="px-4 py-3 text-right">₦125,500</td>
-                <td className="px-4 py-3 text-center">
-                  <span className="inline-block px-2 py-1 bg-warning-bg text-warning-dark text-xs rounded-full font-medium">Pending</span>
-                </td>
-              </tr>
-              <tr className="hover:bg-surface-1">
-                <td className="px-4 py-3 font-medium">ORD-2023-403</td>
-                <td className="px-4 py-3">Soylent Corp</td>
-                <td className="px-4 py-3 text-text-muted">Yesterday</td>
-                <td className="px-4 py-3 text-right">₦890,000</td>
-                <td className="px-4 py-3 text-center">
-                  <span className="inline-block px-2 py-1 bg-brand-50 text-brand-700 text-xs rounded-full font-medium">Completed</span>
-                </td>
-              </tr>
+              {isLoading ? <tr><td colSpan={5} className="px-4 py-8 text-center text-text-muted">Loading orders…</td></tr> : data?.recentOrders.length ? data.recentOrders.map((order) => (
+                <tr key={order.id} className="hover:bg-surface-1">
+                  <td className="px-4 py-3 font-medium"><Link href={`/erp/orders/${order.id}`} className="hover:text-brand-600">{order.orderNumber}</Link></td>
+                  <td className="px-4 py-3">{order.customerName}</td>
+                  <td className="px-4 py-3 text-text-muted">{new Date(order.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-right">{formatNaira(order.totalAmount)}</td>
+                  <td className="px-4 py-3 text-center"><span className="inline-block px-2 py-1 bg-brand-50 text-brand-700 text-xs rounded-full font-medium capitalize">{order.status.replaceAll('_', ' ')}</span></td>
+                </tr>
+              )) : <tr><td colSpan={5} className="px-4 py-8 text-center text-text-muted">No orders in this period.</td></tr>}
             </tbody>
           </table>
         </div>

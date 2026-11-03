@@ -1,15 +1,21 @@
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
+import Link from 'next/link';
 import { ArrowDownLeft, ArrowUpRight, Plus, Building2, Search, Filter, Loader2, ShoppingBag, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
-import { getWalletTransactions } from '@/features/portal/api';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCustomerWalletBalance, getWalletTransactions, initializeWalletFunding, verifyWalletFunding } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
 import { useReferralActivationStore } from '@/features/portal/referralActivationStore';
+import { toast } from 'sonner';
 
 export default function PortalWalletPage() {
+  const queryClient = useQueryClient();
+  const [isFundModalOpen, setIsFundModalOpen] = useState(false);
+  const [fundingAmount, setFundingAmount] = useState('');
+  const [isStartingFunding, setIsStartingFunding] = useState(false);
   const { data: baseTransactions, isLoading, error } = useQuery({
     queryKey: ['portal_wallet_transactions'],
     queryFn: async () => {
@@ -18,13 +24,14 @@ export default function PortalWalletPage() {
     },
   });
 
-  const { isFeePaid, shoppingCreditsKobo } = useReferralActivationStore();
+  const { data: availableBalance, isLoading: isLoadingBalance, error: balanceError } = useQuery({
+    queryKey: ['portal_wallet_balance'],
+    queryFn: getCustomerWalletBalance,
+  });
 
-  const availableBalance = 150000000;
-  const totalInflow = 245000000;
-  const totalOutflow = 95000000;
+  const { shoppingCreditsKobo } = useReferralActivationStore();
 
-  if (isLoading) {
+  if (isLoading || isLoadingBalance) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
@@ -32,7 +39,7 @@ export default function PortalWalletPage() {
     );
   }
 
-  if (error || !baseTransactions) {
+  if (error || balanceError || !baseTransactions || availableBalance === undefined) {
     return (
       <Alert variant="destructive">
         Failed to load wallet data. Please try again.
@@ -40,20 +47,53 @@ export default function PortalWalletPage() {
     );
   }
 
-  // Prepend referral activation shopping credit transaction if paid
-  const transactions = isFeePaid
-    ? [
-        {
-          id: 'TRX-REF-ACT-5000',
-          type: 'funding' as const,
-          title: 'Referral Activation Shopping Credit',
-          date: new Date().toISOString(),
-          amount: 500000,
-          status: 'Completed' as const,
+  const transactions = baseTransactions;
+  const totalInflow = transactions
+    .filter((transaction) => transaction.amount > 0)
+    .reduce((total, transaction) => total + transaction.amount, 0);
+  const totalOutflow = transactions
+    .filter((transaction) => transaction.amount < 0)
+    .reduce((total, transaction) => total + Math.abs(transaction.amount), 0);
+
+  const startWalletFunding = async () => {
+    const amount = Number(fundingAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error('Enter a valid amount to fund your wallet.');
+      return;
+    }
+    setIsStartingFunding(true);
+    try {
+      const checkout = await initializeWalletFunding(amount.toFixed(2));
+      const { default: PaystackPop } = await import('@paystack/inline-js');
+      const paystack = new PaystackPop();
+      paystack.newTransaction({
+        key: checkout.publicKey,
+        email: checkout.email,
+        amount: checkout.amount,
+        reference: checkout.reference,
+        onSuccess: async ({ reference }) => {
+          try {
+            await verifyWalletFunding(reference);
+            await Promise.all([
+              queryClient.invalidateQueries({ queryKey: ['portal_wallet_balance'] }),
+              queryClient.invalidateQueries({ queryKey: ['portal_wallet_transactions'] }),
+              queryClient.invalidateQueries({ queryKey: ['portal_wallet'] }),
+            ]);
+            toast.success('Your wallet has been funded successfully.');
+            setIsFundModalOpen(false);
+            setFundingAmount('');
+          } catch {
+            toast.error('Payment was completed but wallet verification failed. Please refresh and try again.');
+          }
         },
-        ...baseTransactions,
-      ]
-    : baseTransactions;
+        onCancel: () => toast.message('Wallet funding was cancelled.'),
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to start Paystack checkout.');
+    } finally {
+      setIsStartingFunding(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -63,11 +103,23 @@ export default function PortalWalletPage() {
           <Button variant="outline" className="flex items-center gap-2">
             <Building2 className="w-4 h-4" /> Withdraw
           </Button>
-          <Button className="flex items-center gap-2">
+          <Button className="flex items-center gap-2" onClick={() => setIsFundModalOpen(true)}>
             <Plus className="w-4 h-4" /> Fund Wallet
           </Button>
         </div>
       </div>
+
+      {isFundModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Fund wallet">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-bold text-text">Fund Wallet</h2>
+            <p className="mt-1 text-sm text-text-muted">Enter the amount you would like to add to your wallet.</p>
+            <label className="mt-5 block text-sm font-medium text-text">Amount (₦)</label>
+            <input autoFocus inputMode="decimal" value={fundingAmount} onChange={(event) => setFundingAmount(event.target.value)} placeholder="e.g. 5000" className="mt-2 h-11 w-full rounded-lg border border-border px-3 text-sm outline-none focus:border-brand-500" />
+            <div className="mt-6 flex justify-end gap-3"><Button variant="outline" disabled={isStartingFunding} onClick={() => setIsFundModalOpen(false)}>Cancel</Button><Button disabled={isStartingFunding} onClick={() => void startWalletFunding()}>{isStartingFunding ? 'Opening checkout…' : 'Continue to Paystack'}</Button></div>
+          </div>
+        </div>
+      )}
 
       {/* Balance Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -124,9 +176,9 @@ export default function PortalWalletPage() {
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="sm" className="text-brand-600 hover:bg-brand-50 w-full mt-3 text-xs">
-            Manage Bank Accounts
-          </Button>
+          <Link href="/portal/bank-accounts">
+            <Button variant="ghost" size="sm" className="text-brand-600 hover:bg-brand-50 w-full mt-3 text-xs">Manage Bank Accounts</Button>
+          </Link>
         </div>
       </div>
 

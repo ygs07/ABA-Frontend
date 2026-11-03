@@ -12,50 +12,79 @@ import { OnboardingStepLocation } from './components/OnboardingStepLocation';
 import { OnboardingStepProducts } from './components/OnboardingStepProducts';
 import { OnboardingStepCertifications } from './components/OnboardingStepCertifications';
 import { OnboardingSuccess } from './components/OnboardingSuccess';
+import { API_MODE, ApiError, fetchApi } from '@/lib/api';
 
 export default function MerchantOnboardingPage() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+  const [submissionError, setSubmissionError] = useState<string | null>(null);
 
-  const [cacUploaded, setCacUploaded] = useState(true);
-  const [idUploaded, setIdUploaded] = useState(true);
+  const [cacUploaded, setCacUploaded] = useState(false);
+  const [idUploaded, setIdUploaded] = useState(false);
   const [certUploaded, setCertUploaded] = useState(false);
-  const [photosCount, setPhotosCount] = useState(3);
+  const [photosCount, setPhotosCount] = useState(0);
+  const [cacDocument, setCacDocument] = useState<File | null>(null);
+  const [identityDocument, setIdentityDocument] = useState<File | null>(null);
+  const [certificationDocument, setCertificationDocument] = useState<File | null>(null);
+  const [samplePhotos, setSamplePhotos] = useState<File[]>([]);
 
   const form = useForm<MerchantOnboardingData>({
     resolver: zodResolver(merchantOnboardingSchema),
     mode: 'onTouched',
     defaultValues: {
-      businessName: 'Aba Leathercraft Hub',
-      businessType: 'Footwear & Leather',
+      businessName: '',
+      businessType: '',
       isProvisional: false,
-      rcNumber: 'RC-998822',
-      ownerName: 'Emeka Nwosu',
-      phone: '+2348031234567',
-      email: 'emeka@abaleather.com',
-      idType: 'National Identity Number (NIN)',
-      ninNumber: '12345678901',
-      address: '14 Faulks Road, Block C Suite 4',
-      marketCluster: 'Ariaria International Market',
-      city: 'Aba',
-      state: 'Abia',
-      bankName: 'First Bank of Nigeria',
-      accountNumber: '0123456789',
-      productDescription: 'Handcrafted genuine leather footwear, sandals, and belts',
-      capacity: '450 pairs / month',
-      samplePhotosCount: 3,
-      certificationType: 'None / Artisanal Guild',
-      confirmSupplyCapacity: true,
-      agreeToFulfillmentSla: true,
+      rcNumber: '',
+      ownerName: '',
+      phone: '',
+      email: '',
+      idType: '',
+      ninNumber: '',
+      address: '',
+      marketCluster: '',
+      city: '',
+      state: '',
+      bankName: '',
+      accountNumber: '',
+      productDescription: '',
+      capacity: '',
+      samplePhotosCount: 0,
+      certificationType: '',
+      confirmSupplyCapacity: false,
+      agreeToFulfillmentSla: false,
     },
   });
 
-  const onSubmit = async () => {
+  const onSubmit = async (values: MerchantOnboardingData) => {
     setIsSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 1200));
-    setIsSubmitting(false);
-    setIsSuccess(true);
+    setSubmissionError(null);
+    try {
+      if (API_MODE !== 'mock') {
+        const payload = new FormData();
+        Object.entries(values).forEach(([key, value]) => {
+          if (value !== undefined && value !== null) payload.append(key, String(value));
+        });
+        if (cacDocument) payload.append('cacDocument', cacDocument);
+        if (identityDocument) payload.append('identityDocument', identityDocument);
+        if (certificationDocument) payload.append('certificationDocument', certificationDocument);
+        samplePhotos.forEach((photo) => payload.append('samplePhotos', photo));
+        await fetchApi('/api/v1/merchant-onboarding/applications', {
+          method: 'POST',
+          body: payload,
+        });
+      }
+      setIsSuccess(true);
+    } catch (error) {
+      setSubmissionError(
+        error instanceof ApiError
+          ? error.message
+          : 'Unable to submit your application. Please try again.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleNext = async () => {
@@ -80,10 +109,10 @@ export default function MerchantOnboardingPage() {
     if (currentStep > 0) setCurrentStep((s) => s - 1);
   };
 
-  const handleAddPhoto = () => {
-    const nextCount = Math.min(4, photosCount + 1);
-    setPhotosCount(nextCount);
-    form.setValue('samplePhotosCount', nextCount);
+  const handlePhotosSelected = (photos: File[]) => {
+    setSamplePhotos(photos);
+    setPhotosCount(photos.length);
+    form.setValue('samplePhotosCount', photos.length, { shouldValidate: true });
   };
 
   if (isSuccess) {
@@ -131,14 +160,16 @@ export default function MerchantOnboardingPage() {
               <OnboardingStepBusiness
                 form={form}
                 cacUploaded={cacUploaded}
-                onUploadCac={() => setCacUploaded(true)}
+                onUploadCac={(file) => { setCacDocument(file); setCacUploaded(true); }}
+                onRemoveCac={() => { setCacDocument(null); setCacUploaded(false); }}
               />
             )}
             {currentStep === 1 && (
               <OnboardingStepIdentity
                 form={form}
                 idUploaded={idUploaded}
-                onUploadId={() => setIdUploaded(true)}
+                onUploadId={(file) => { setIdentityDocument(file); setIdUploaded(true); }}
+                onRemoveId={() => { setIdentityDocument(null); setIdUploaded(false); }}
               />
             )}
             {currentStep === 2 && (
@@ -148,15 +179,23 @@ export default function MerchantOnboardingPage() {
               <OnboardingStepProducts
                 form={form}
                 photosCount={photosCount}
-                onAddPhoto={handleAddPhoto}
+                onPhotosSelected={handlePhotosSelected}
+                selectedPhotos={samplePhotos}
               />
             )}
             {currentStep === 4 && (
               <OnboardingStepCertifications
                 form={form}
                 certUploaded={certUploaded}
-                onUploadCert={() => setCertUploaded(true)}
+                onUploadCert={(file) => { setCertificationDocument(file); setCertUploaded(true); }}
+                onRemoveCert={() => { setCertificationDocument(null); setCertUploaded(false); }}
               />
+            )}
+
+            {submissionError && (
+              <p role="alert" className="mt-5 rounded-lg border border-error/30 bg-error/10 px-3 py-2 text-sm text-error">
+                {submissionError}
+              </p>
             )}
 
             <div className="flex items-center justify-between mt-8 pt-6 border-t border-border">

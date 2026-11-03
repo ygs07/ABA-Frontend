@@ -33,7 +33,7 @@ export function ProductImagesSection({
       <div className="p-6 space-y-4">
         <ImageUploadField
           label="Gallery Images"
-          description="Drag & drop or click to upload multiple images (JPEG, PNG, WebP up to 5MB each)."
+            description="Drag & drop or click to upload PNG or JPEG images. At least one is required; all images together must not exceed 12MB."
           values={images}
           onChange={onChange}
           maxFiles={8}

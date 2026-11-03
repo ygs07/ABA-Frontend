@@ -1,6 +1,7 @@
 import { Review, ReviewListResponse, ModerationReviewListResponse, SellerRating, ReviewSummary } from './types';
 import { mockReviews, mockReviewSummary, mockSellerRating } from './mocks';
 import { ReviewFormValues, RejectReviewFormValues, ReplyReviewFormValues, ReportReviewFormValues, SellerRatingFormValues } from './schemas';
+import { API_MODE, fetchApi } from '@/lib/api';
 
 // --- Types for mock API simulation ---
 interface ApiError {
@@ -17,9 +18,105 @@ export type ReviewFilters = {
   verified?: boolean;
 };
 
+type BackendReview = {
+  id: number;
+  customer_id: number;
+  reviewable_type: 'product' | 'merchant';
+  reviewable_id: number;
+  rating: number;
+  title?: string | null;
+  comment?: string | null;
+  likes: number;
+  status: number;
+  photos?: Array<{ url: string }>;
+  createdAt: string;
+  updatedAt: string;
+  customer?: { user?: { first_name?: string; last_name?: string } };
+};
+
+function moderationStatus(status: number): Review['status'] {
+  if (status === 2) return 'Published';
+  if (status === 3) return 'Rejected';
+  if (status === 4) return 'Reported';
+  return 'Pending';
+}
+
+function toReview(review: BackendReview): Review {
+  return {
+    id: String(review.id),
+    productId: review.reviewable_type === 'product' ? String(review.reviewable_id) : '',
+    merchantId: review.reviewable_type === 'merchant' ? String(review.reviewable_id) : '',
+    authorId: String(review.customer_id),
+    authorAlias: [review.customer?.user?.first_name, review.customer?.user?.last_name]
+      .filter(Boolean)
+      .join(' ') || 'Customer',
+    verifiedPurchase: true,
+    rating: review.rating,
+    title: review.title ?? undefined,
+    body: review.comment ?? '',
+    photos: (review.photos ?? []).map((photo) => photo.url),
+    status: moderationStatus(review.status),
+    helpfulVotes: review.likes,
+    createdAt: review.createdAt,
+    updatedAt: review.updatedAt,
+  };
+}
+
 // --- Mock implementations ---
 
 export async function getProductReviews(productId: string, filters?: ReviewFilters, page = 1, limit = 10): Promise<{ data: ReviewListResponse }> {
+  if (API_MODE !== 'mock') {
+    const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (filters?.rating) query.set('rating', String(filters.rating));
+    if (filters?.withPhotos) query.set('withPhotos', 'true');
+    const response = await fetchApi<{
+      data: Array<{
+        id: number;
+        customer_id: number;
+        reviewable_id: number;
+        rating: number;
+        title?: string | null;
+        comment?: string | null;
+        likes: number;
+        photos?: Array<{ url: string }>;
+        createdAt: string;
+        updatedAt: string;
+        customer?: { user?: { first_name?: string; last_name?: string } };
+      }>;
+      meta: { totalItems: number; currentPage: number; itemsPerPage: number };
+    }>(`/api/v1/storefront/products/${encodeURIComponent(productId)}/reviews?${query.toString()}`);
+    const reviews = response.data.map((review) => ({
+      id: String(review.id),
+      productId,
+      merchantId: '',
+      authorId: String(review.customer_id),
+      authorAlias: [review.customer?.user?.first_name, review.customer?.user?.last_name].filter(Boolean).join(' ') || 'Verified customer',
+      verifiedPurchase: true,
+      rating: review.rating,
+      title: review.title ?? undefined,
+      body: review.comment ?? '',
+      photos: (review.photos ?? []).map((photo) => photo.url),
+      status: 'Published' as const,
+      helpfulVotes: review.likes,
+      createdAt: review.createdAt,
+      updatedAt: review.updatedAt,
+    }));
+    const histogram = reviews.reduce<Record<1 | 2 | 3 | 4 | 5, number>>(
+      (counts, review) => ({ ...counts, [review.rating as 1 | 2 | 3 | 4 | 5]: (counts[review.rating as 1 | 2 | 3 | 4 | 5] ?? 0) + 1 }),
+      { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0 },
+    );
+    return { data: {
+      data: reviews,
+      total: response.meta.totalItems,
+      page: response.meta.currentPage,
+      limit: response.meta.itemsPerPage,
+      summary: {
+        averageRating: reviews.length ? reviews.reduce((total, review) => total + review.rating, 0) / reviews.length : 0,
+        totalReviews: response.meta.totalItems,
+        histogram,
+      },
+    } };
+  }
   // Simulate delay
   await new Promise(resolve => setTimeout(resolve, 600));
 
@@ -105,6 +202,30 @@ export async function reportReview(reviewId: string, data: ReportReviewFormValue
 // --- Admin / Moderation API ---
 
 export async function getModerationReviews(filters?: { status?: string }, page = 1, limit = 10): Promise<{ data: ModerationReviewListResponse }> {
+  if (API_MODE !== 'mock') {
+    const statusMap: Record<string, number> = {
+      Pending: 1,
+      Published: 2,
+      Rejected: 3,
+      Reported: 4,
+    };
+    const query = new URLSearchParams({ page: String(page), limit: String(limit) });
+    if (filters?.status && filters.status !== 'All') {
+      query.set('status', String(statusMap[filters.status]));
+    }
+    const response = await fetchApi<{
+      data: BackendReview[];
+      meta: { totalItems: number; currentPage: number; itemsPerPage: number };
+    }>(`/api/v1/reviews/moderation?${query.toString()}`);
+    return {
+      data: {
+        data: response.data.map(toReview),
+        total: response.meta.totalItems,
+        page: response.meta.currentPage,
+        limit: response.meta.itemsPerPage,
+      },
+    };
+  }
   await new Promise(resolve => setTimeout(resolve, 600));
   
   let filtered = [...mockReviews];
@@ -125,6 +246,14 @@ export async function getModerationReviews(filters?: { status?: string }, page =
 }
 
 export async function approveReview(reviewId: string): Promise<{ data: Review }> {
+  if (API_MODE !== 'mock') {
+    const review = await fetchApi<BackendReview>(`/api/v1/reviews/${encodeURIComponent(reviewId)}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 2 }),
+    });
+    return { data: toReview(review) };
+  }
   await new Promise(resolve => setTimeout(resolve, 600));
   const review = mockReviews.find(r => r.id === reviewId);
   if (!review) throw new Error('Review not found');
@@ -134,6 +263,14 @@ export async function approveReview(reviewId: string): Promise<{ data: Review }>
 }
 
 export async function rejectReview(reviewId: string, data: RejectReviewFormValues): Promise<{ data: Review }> {
+  if (API_MODE !== 'mock') {
+    const review = await fetchApi<BackendReview>(`/api/v1/reviews/${encodeURIComponent(reviewId)}/status`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 3 }),
+    });
+    return { data: toReview(review) };
+  }
   await new Promise(resolve => setTimeout(resolve, 600));
   const review = mockReviews.find(r => r.id === reviewId);
   if (!review) throw new Error('Review not found');

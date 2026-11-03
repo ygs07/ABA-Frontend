@@ -1,4 +1,4 @@
-import { ApiError } from '@/lib/api';
+import { API_MODE, ApiError, fetchApi } from '@/lib/api';
 import { CheckoutAddressInput, CheckoutPaymentInput } from './schemas';
 import { CheckoutSession } from './types';
 
@@ -20,7 +20,58 @@ export async function processCheckout(
   sessionId: string,
   address: CheckoutAddressInput,
   payment: CheckoutPaymentInput
-): Promise<{ data: { orderId: string, status: string } }> {
+): Promise<{ data: { orderId: string, status: string, authorizationUrl?: string } }> {
+  if (API_MODE !== 'mock') {
+    void sessionId;
+    const savedAddresses = await fetchApi<{ data: Array<{
+      id: number;
+      street: string;
+      city: string;
+      state: string;
+      zip: string;
+    }> }>('/api/v1/delivery-address?limit=100');
+    let deliveryAddress = savedAddresses.data.find((savedAddress) =>
+      savedAddress.street === address.street &&
+      savedAddress.city === address.city &&
+      savedAddress.state === address.state &&
+      savedAddress.zip === (address.zipCode ?? ''),
+    );
+    if (!deliveryAddress) {
+      deliveryAddress = await fetchApi<typeof deliveryAddress>('/api/v1/delivery-address', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: address.fullName,
+          street: address.street,
+          city: address.city,
+          state: address.state,
+          zip: address.zipCode || 'N/A',
+        }),
+      });
+    }
+    if (!deliveryAddress) {
+      throw new ApiError(500, 'Unable to create or select a delivery address');
+    }
+    const response = await fetchApi<{
+      order: { id: number; status?: number | string };
+      authorizationUrl?: string;
+    }>(payment.method === 'card' ? '/api/v1/checkout/paystack' : '/api/v1/checkout', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        deliveryAddressId: deliveryAddress.id,
+        deliveryMethod: 1,
+        paymentMethod: payment.method === 'wallet' ? 2 : 1,
+      }),
+    });
+    return {
+      data: {
+        orderId: String(response.order.id),
+        status: String(response.order.status ?? 'pending'),
+        authorizationUrl: response.authorizationUrl,
+      },
+    };
+  }
   await delay(1200);
 
   if (payment.method === 'wallet') {

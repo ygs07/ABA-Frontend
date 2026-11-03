@@ -1,37 +1,34 @@
 'use client';
-import { brand } from '@/config/brand';
-
-
 import Link from 'next/link';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { KpiCard } from '@/components/patterns/KpiCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/patterns/DataTable';
-
-const MOCK_REFERRALS = [
-  { id: 'REF-1002', referrer: `Aisha Bello (${brand.referralCodePrefix}492)`, referee: 'Michael Okon', source: 'Link', level: 'L1', date: '2026-09-30', status: 'Qualified', comm: 215000 },
-  { id: 'REF-1003', referrer: `Michael Okon (${brand.referralCodePrefix}881)`, referee: 'Sarah Jane', source: 'POS Code', level: 'L2', date: '2026-09-29', status: 'Pending Qualification', comm: 0 },
-  { id: 'REF-1004', referrer: `John Doe (${brand.referralCodePrefix}112)`, referee: 'Musa Ibrahim', source: 'Link', level: 'L1', date: '2026-09-28', status: 'Flagged', comm: 0 },
-];
+import { useQuery } from '@tanstack/react-query';
+import { getReferralRecords } from '@/features/referrals/api';
 
 export default function ReferralsDashboardPage() {
+  const { data, isLoading } = useQuery({
+    queryKey: ['referral-records'],
+    queryFn: getReferralRecords,
+  });
+  const referrals = data?.data ?? [];
+  const referrers = new Set(referrals.map((referral) => referral.referrerName));
   const columns = [
-    { accessorKey: 'id', header: 'Ref #' },
-    { accessorKey: 'referrer', header: 'Referrer (Upline)' },
-    { accessorKey: 'referee', header: 'Referred Customer' },
-    { accessorKey: 'level', header: 'Network Level' },
-    { accessorKey: 'source', header: 'Source' },
-    { accessorKey: 'date', header: 'Date Referred' },
+    { accessorKey: 'referralNumber', header: 'Ref #' },
+    { accessorKey: 'referrerName', header: 'Referrer (Upline)' },
+    { accessorKey: 'referredCustomerName', header: 'Referred Customer' },
+    { accessorKey: 'level', header: 'Network Level', cell: (info: any) => `L${info.getValue()}` },
+    { accessorKey: 'sourceChannel', header: 'Source' },
+    { accessorKey: 'dateReferred', header: 'Date Referred', cell: (info: any) => new Date(info.getValue()).toLocaleDateString() },
     { 
       accessorKey: 'status', 
       header: 'Status',
       cell: (info: any) => {
         const s = info.getValue();
         let color = 'bg-surface-2 text-text-muted';
-        if (s === 'Qualified') color = 'bg-success-bg text-success border border-success-border';
-        if (s === 'Pending Qualification') color = 'bg-warning-bg text-warning-dark border border-warning-border';
-        if (s === 'Flagged') color = 'bg-error-bg text-error border border-error-border';
+        if (s === 'Registered') color = 'bg-success-bg text-success border border-success-border';
         return <span className={`px-2 py-0.5 rounded text-xs font-medium ${color}`}>{s}</span>;
       }
     },
@@ -64,10 +61,10 @@ export default function ReferralsDashboardPage() {
       />
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <KpiCard title="Total Referrers" value="1,248" />
-        <KpiCard title="Qualified Referrals" value="8,930" className="text-success" />
-        <KpiCard title="Conversion Rate" value="68.4%" />
-        <KpiCard title="Flagged / Suspicious" value="12" className="text-error" />
+        <KpiCard title="Total Referrers" value={referrers.size} />
+        <KpiCard title="Total Referrals" value={referrals.length} className="text-success" />
+        <KpiCard title="Active Codes" value={new Set(referrals.map((referral) => referral.referrerCode)).size} />
+        <KpiCard title="Flagged / Suspicious" value="—" className="text-error" />
       </div>
 
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
@@ -83,7 +80,7 @@ export default function ReferralsDashboardPage() {
             </select>
           </div>
         </div>
-        <DataTable data={MOCK_REFERRALS} columns={columns} />
+        <DataTable data={referrals} columns={columns} isLoading={isLoading} />
       </div>
     </div>
   );

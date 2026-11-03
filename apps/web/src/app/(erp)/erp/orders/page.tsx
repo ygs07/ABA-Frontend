@@ -42,7 +42,7 @@ export default function OrdersPage() {
       accessorKey: 'orderNumber', 
       header: 'Order #',
       cell: (info: any) => (
-        <Link href={`/erp/orders/${info.getValue()}`} className="font-mono font-medium text-sm text-primary hover:underline">
+        <Link href={`/erp/orders/${info.row.original.id}`} className="font-mono font-medium text-sm text-primary hover:underline">
           {info.getValue()}
         </Link>
       )
@@ -112,7 +112,7 @@ export default function OrdersPage() {
       cell: (info: any) => {
         return (
           <div className="flex justify-end gap-1">
-            <Link href={`/erp/orders/${info.row.original.orderNumber}`}>
+            <Link href={`/erp/orders/${info.row.original.id}`}>
               <Button variant="ghost" size="sm" className="text-xs">View</Button>
             </Link>
           </div>

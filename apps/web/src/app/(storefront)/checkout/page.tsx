@@ -8,10 +8,12 @@ import { Check, ShieldCheck, MapPin, Truck, CreditCard, Wallet, AlertCircle, Loa
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { getCart } from '@/features/cart/api';
+import { useCartStore } from '@/features/cart/store';
 import { initializeCheckout, processCheckout } from '@/features/checkout/api';
 import { CheckoutAddressInput } from '@/features/checkout/schemas';
 import { AmountText } from '@/components/patterns/AmountText';
 import { ErrorState } from '@/components/patterns/ErrorState';
+import { getCustomerWalletBalance } from '@/features/portal/api';
 
 const MOCK_REFERRERS = [
   { id: '1', name: 'Chisom Nwokwu', moniker: '@chisomn', code: 'REF-CN2026', image: 'https://i.pravatar.cc/150?u=chisomn' },
@@ -23,6 +25,7 @@ const MOCK_REFERRERS = [
 
 export default function CheckoutPage() {
   const router = useRouter();
+  const clearCart = useCartStore((state) => state.clearCart);
   const [step, setStep] = useState(1);
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
@@ -64,6 +67,10 @@ export default function CheckoutPage() {
       return res.data;
     }
   });
+  const { data: walletBalance = 0, isLoading: isWalletLoading } = useQuery({
+    queryKey: ['portal_wallet_balance'],
+    queryFn: getCustomerWalletBalance,
+  });
 
   // 2. Initialize Checkout Session
   const { data: sessionData, isLoading: isSessionLoading } = useQuery({
@@ -87,8 +94,12 @@ export default function CheckoutPage() {
       );
       return res.data;
     },
-    onSuccess: (data) => {
-      // Pass the order ID to the success page via query param (or just redirect)
+    onSuccess: async (data) => {
+      await clearCart();
+      if (data.authorizationUrl) {
+        window.location.assign(data.authorizationUrl);
+        return;
+      }
       router.push(`/checkout/success?orderId=${data.orderId}`);
     }
   });
@@ -105,7 +116,7 @@ export default function CheckoutPage() {
     { num: 5, title: 'Review' },
   ];
 
-  if (isCartLoading || isSessionLoading) {
+  if (isCartLoading || isSessionLoading || isWalletLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex justify-center items-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
@@ -274,7 +285,7 @@ export default function CheckoutPage() {
                       <input type="radio" name="payment" checked={paymentMethod === 'wallet'} onChange={() => setPaymentMethod('wallet')} className="text-brand-600 w-4 h-4" />
                       <div>
                         <p className="font-semibold text-text flex items-center gap-2"><Wallet className="w-4 h-4" /> {brand.shortName} Wallet</p>
-                        <p className="text-sm text-text-muted">Balance: <AmountText amountInKobo={150000000} /></p>
+                        <p className="text-sm text-text-muted">Balance: <AmountText amountInKobo={walletBalance} /></p>
                       </div>
                     </div>
                   </label>

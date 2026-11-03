@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { MapPin, Phone, Mail, Loader2, Globe } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
-import { getMerchantById } from '@/features/merchant/api';
+import { getStorefrontMerchantById } from '@/features/merchant/api';
 import { getShopProducts } from '@/features/shop/api';
 import { ProductCard } from '@/components/storefront/ProductCard';
 import { ErrorState } from '@/components/patterns/ErrorState';
@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MerchantHeader } from '../_components/MerchantHeader';
 import { ReviewList } from '@/features/reviews';
 import { Button } from '@/components/ui/button';
+import { useAuthStore } from '@/features/auth/store';
 
 export default function MerchantProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = React.use(params);
@@ -32,11 +33,14 @@ export default function MerchantProfilePage({ params }: { params: Promise<{ id: 
   const categorySlug = searchParams.get('category') || undefined;
 
   const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const isCustomer = useAuthStore((state) =>
+    Boolean(state.isAuthenticated && (state.user?.userType === 'Customer' || state.user?.roles.includes('Customer'))),
+  );
 
   const { data: merchant, isLoading: isMerchantLoading, error: merchantError } = useQuery({
     queryKey: ['merchant', merchantId],
     queryFn: async () => {
-      const res = await getMerchantById(merchantId);
+      const res = await getStorefrontMerchantById(merchantId);
       return res.data;
     }
   });
@@ -209,7 +213,7 @@ export default function MerchantProfilePage({ params }: { params: Promise<{ id: 
               <div className="mt-8">
                 <ReviewList 
                   productId={merchantId} 
-                  isEligibleToReview={true} 
+                  isEligibleToReview={isCustomer}
                 />
               </div>
             </div>

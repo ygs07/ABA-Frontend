@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { Upload, CheckCircle2, FileText, X } from 'lucide-react';
 
 interface OnboardingFileUploadProps {
@@ -25,6 +25,7 @@ export function OnboardingFileUpload({
   onRemove,
 }: OnboardingFileUploadProps) {
   const inputRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
   const [localFileName, setLocalFileName] = useState<string | null>(fileName || null);
   const [fileSizeText, setFileSizeText] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -74,9 +75,15 @@ export function OnboardingFileUpload({
     }
   };
 
-  const handleTriggerClick = (e: React.MouseEvent) => {
-    e.preventDefault();
+  const openFilePicker = () => {
     inputRef.current?.click();
+  };
+
+  const handleCardKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      openFilePicker();
+    }
   };
 
   const handleRemove = (e: React.MouseEvent) => {
@@ -89,7 +96,10 @@ export function OnboardingFileUpload({
 
   return (
     <div
-      onClick={handleTriggerClick}
+      role="button"
+      tabIndex={0}
+      onClick={openFilePicker}
+      onKeyDown={handleCardKeyDown}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
@@ -102,11 +112,12 @@ export function OnboardingFileUpload({
       }`}
     >
       <input
+        id={inputId}
         ref={inputRef}
         type="file"
         accept={accept}
         onChange={handleFileChange}
-        className="hidden"
+        className="sr-only"
         aria-label={title}
       />
 
@@ -145,7 +156,12 @@ export function OnboardingFileUpload({
             <X className="w-4 h-4" />
           </button>
         )}
-        <span
+        <button
+          type="button"
+          onClick={(event) => {
+            event.stopPropagation();
+            openFilePicker();
+          }}
           className={`text-xs font-semibold px-3 py-1.5 rounded-lg border shadow-2xs transition-colors ${
             hasUploaded
               ? 'bg-white text-text border-border hover:bg-surface-1'
@@ -153,7 +169,7 @@ export function OnboardingFileUpload({
           }`}
         >
           {hasUploaded ? 'Change File' : 'Browse File'}
-        </span>
+        </button>
       </div>
     </div>
   );

@@ -1,157 +1,119 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createAdjustmentSchema, CreateAdjustmentInput } from '@/features/inventory/schemas';
-import { getWarehouses } from '@/features/inventory/api/inventory.api';
-import { Warehouse } from '@/features/inventory/types';
+import { adjustProductStock, adjustStock, getStockRecords, StockAdjustmentRecord } from '@/features/inventory/api/inventory.api';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
+function stockLabel(stockRecord: StockAdjustmentRecord) {
+  const productName = stockRecord.productVariant?.product?.name ?? stockRecord.product?.name ?? 'Product';
+  const variantName = stockRecord.productVariant?.name;
+  return `${productName}${variantName ? ` — ${variantName}` : ''} (${stockRecord.sku})`;
+}
+
 export default function NewAdjustmentPage() {
   const router = useRouter();
-  const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
+  const searchParams = useSearchParams();
+  const productId = searchParams.get('productId');
+  const stockId = searchParams.get('stockId');
+  const [stockRecords, setStockRecords] = useState<StockAdjustmentRecord[]>([]);
+  const [isLoadingStocks, setIsLoadingStocks] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { register, handleSubmit, watch, setValue, formState: { errors } } = useForm<CreateAdjustmentInput>({
+    resolver: zodResolver(createAdjustmentSchema) as any,
+    defaultValues: { stockId: '', quantityChange: 1, reason: 'Damaged', notes: '' },
+  });
+  const selectedStockId = watch('stockId');
+  const quantityChange = watch('quantityChange');
+  const selectedStock = stockRecords.find((stockRecord) => String(stockRecord.id) === selectedStockId);
+  const selectedProductId = productId ? Number(productId) : undefined;
+  const availableStockRecords = productId
+    ? stockRecords.filter(
+        (stockRecord) =>
+          String(stockRecord.product?.id) === productId ||
+          String(stockRecord.productVariant?.product?.id) === productId,
+      )
+    : stockRecords;
 
   useEffect(() => {
-    getWarehouses().then(setWarehouses);
-  }, []);
-
-  const { register, control, handleSubmit, watch, formState: { errors } } = useForm<CreateAdjustmentInput>({
-    resolver: zodResolver(createAdjustmentSchema) as any,
-    defaultValues: {
-      type: 'Deduction',
-      reason: 'Damaged',
-      items: [{ productId: '', adjustmentQty: 1 }]
-    }
-  });
-
-  const { fields, append, remove } = useFieldArray({
-    control,
-    name: 'items'
-  });
-
-  const adjustmentType = watch('type');
+    getStockRecords()
+      .then((loadedStockRecords) => {
+        setStockRecords(loadedStockRecords);
+        const matchingStockRecord = stockId
+          ? loadedStockRecords.find(
+              (stockRecord) => String(stockRecord.id) === stockId,
+            )
+          : productId
+            ? loadedStockRecords.find(
+                (stockRecord) =>
+                  String(stockRecord.product?.id) === productId ||
+                  String(stockRecord.productVariant?.product?.id) === productId,
+              )
+            : undefined;
+        if (matchingStockRecord) setValue('stockId', String(matchingStockRecord.id));
+      })
+      .catch(() => toast.error('Failed to load stock records'))
+      .finally(() => setIsLoadingStocks(false));
+  }, [productId, setValue, stockId]);
 
   const onSubmit = async (data: CreateAdjustmentInput) => {
     setIsSubmitting(true);
     try {
-      // Simulate API call
-      await new Promise(res => setTimeout(res, 1000));
-      toast.success('Stock adjustment submitted for approval');
-      router.push('/inventory');
-    } catch (err: any) {
-      toast.error(err.message || 'Failed to submit adjustment');
+      const updatedStock = data.stockId
+        ? await adjustStock(Number(data.stockId), data.quantityChange)
+        : selectedProductId
+          ? await adjustProductStock(selectedProductId, data.quantityChange)
+          : null;
+      if (!updatedStock) throw new Error('Select a stock item to adjust');
+      toast.success(`Stock adjusted. New quantity: ${updatedStock.quantity}`);
+      router.push('/erp/inventory/stock');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to adjust stock');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="space-y-6 max-w-4xl pb-20">
-      <PageHeader 
-        title="Stock Adjustment" 
-        description="Record shrinkages, damages, or found items."
-        backHref="/erp/inventory"
-      />
-
+    <div className="space-y-6 max-w-3xl pb-20">
+      <PageHeader title="Stock Adjustment" description="Increase or decrease the quantity of one stock record." backHref="/erp/inventory/stock" />
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-        
-        {/* Core Details */}
         <div className="bg-surface rounded-xl border border-border overflow-hidden">
-          <div className="bg-surface-2 px-6 py-4 border-b border-border flex justify-between items-center">
-            <h3 className="font-medium text-lg">Adjustment Details</h3>
-            <div className="flex gap-4 items-center">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" value="Deduction" {...register('type')} className="text-error focus:ring-error" />
-                <span className="text-sm font-medium text-error">Deduction (Shrinkage)</span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" value="Addition" {...register('type')} className="text-success focus:ring-success" />
-                <span className="text-sm font-medium text-success">Addition (Found)</span>
-              </label>
-            </div>
-          </div>
+          <div className="bg-surface-2 px-6 py-4 border-b border-border"><h3 className="font-medium text-lg">Adjustment details</h3></div>
           <div className="p-6 space-y-6">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Stock item {productId ? '' : <span className="text-error">*</span>}</label>
+              <select {...register('stockId')} disabled={isLoadingStocks || isSubmitting} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                <option value="">{isLoadingStocks ? 'Loading stock records…' : productId ? 'No stock record yet — this adjustment will create one' : 'Select a stock item'}</option>
+                {availableStockRecords.map((stockRecord) => <option key={stockRecord.id} value={stockRecord.id}>{stockLabel(stockRecord)} — {stockRecord.quantity} on hand</option>)}
+              </select>
+              {!productId && errors.stockId?.message && <p className="text-xs text-error">{errors.stockId.message}</p>}
+            </div>
+            {selectedStock && <div className="rounded-lg border border-border bg-surface-2 px-4 py-3 text-sm"><span className="text-text-muted">Current quantity: </span><span className="font-semibold">{selectedStock.quantity}</span>{typeof quantityChange === 'number' && quantityChange !== 0 && <><span className="text-text-muted"> → projected quantity: </span><span className={selectedStock.quantity + quantityChange < 0 ? 'font-semibold text-error' : 'font-semibold'}>{selectedStock.quantity + quantityChange}</span></>}</div>}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="text-sm font-medium">Location <span className="text-error">*</span></label>
-                <select {...register('locationId')} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                  <option value="">Select location</option>
-                  {warehouses.map(w => (
-                    <option key={w.id} value={w.id}>{w.name}</option>
-                  ))}
-                </select>
-                {errors.locationId && <p className="text-xs text-error">{errors.locationId.message}</p>}
+                <label className="text-sm font-medium">Quantity change <span className="text-error">*</span></label>
+                <Input type="number" {...register('quantityChange')} placeholder="Use -3 to deduct or 10 to add" disabled={isSubmitting} />
+                <p className="text-xs text-text-muted">Use a positive number to add stock or a negative number to deduct it.</p>
+                {errors.quantityChange?.message && <p className="text-xs text-error">{errors.quantityChange.message}</p>}
               </div>
               <div className="space-y-2">
-                <label className="text-sm font-medium">Reason Code <span className="text-error">*</span></label>
-                <select {...register('reason')} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary">
-                  <option value="Damaged">Damaged</option>
-                  <option value="Expired">Expired</option>
-                  <option value="Found">Found</option>
-                  <option value="Written off">Written off</option>
-                  <option value="Stock count correction">Stock count correction</option>
-                  <option value="Other">Other</option>
+                <label className="text-sm font-medium">Reason <span className="text-error">*</span></label>
+                <select {...register('reason')} disabled={isSubmitting} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                  <option value="Damaged">Damaged</option><option value="Expired">Expired</option><option value="Found">Found</option><option value="Written off">Written off</option><option value="Stock count correction">Stock count correction</option><option value="Other">Other</option>
                 </select>
               </div>
             </div>
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Additional Notes</label>
-              <Input {...register('notes')} placeholder="Provide more context for the approver..." />
-            </div>
+            <div className="space-y-2"><label className="text-sm font-medium">Additional notes</label><Input {...register('notes')} placeholder="Optional context for this adjustment" disabled={isSubmitting} /><p className="text-xs text-text-muted">Reason and notes will be stored once stock movements/auditing are introduced.</p></div>
           </div>
         </div>
-
-        {/* Items */}
-        <div className="bg-surface rounded-xl border border-border overflow-hidden">
-          <div className="bg-surface-2 px-6 py-4 border-b border-border flex justify-between items-center">
-            <h3 className="font-medium text-lg">Items to Adjust</h3>
-          </div>
-          <div className="p-6 space-y-4">
-            {fields.map((field, index) => (
-              <div key={field.id} className="flex gap-4 items-start p-4 border border-border rounded-lg bg-surface-2/30">
-                <div className="flex-1 grid grid-cols-3 gap-4">
-                  <div className="col-span-2 space-y-2">
-                    <label className="text-xs font-medium">Product ID</label>
-                    <Input {...register(`items.${index}.productId`)} placeholder="Enter Product SKU/ID" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-medium">Qty to {adjustmentType === 'Deduction' ? 'Deduct' : 'Add'}</label>
-                    <Input type="number" {...register(`items.${index}.adjustmentQty`)} min="1" className={adjustmentType === 'Deduction' ? 'text-error font-medium' : 'text-success font-medium'} />
-                  </div>
-                </div>
-                <Button type="button" variant="ghost" onClick={() => remove(index)} className="text-error mt-6">
-                  Remove
-                </Button>
-              </div>
-            ))}
-            {errors.items?.root && <p className="text-sm text-error">{errors.items.root.message}</p>}
-            
-            <Button 
-              type="button" 
-              variant="outline" 
-              onClick={() => append({ productId: '', adjustmentQty: 1 })}
-            >
-              Add Item
-            </Button>
-          </div>
-        </div>
-
-        <div className="flex items-center gap-4 border-t border-border pt-6">
-          <Button type="button" variant="outline" onClick={() => router.push('/inventory')} disabled={isSubmitting}>
-            Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Submitting...' : 'Submit Adjustment'}
-          </Button>
-        </div>
-
+        <div className="flex items-center gap-4 border-t border-border pt-6"><Button type="button" variant="outline" onClick={() => router.push('/erp/inventory/stock')} disabled={isSubmitting}>Cancel</Button><Button type="submit" disabled={isSubmitting || isLoadingStocks}>Apply adjustment</Button></div>
       </form>
     </div>
   );

@@ -58,38 +58,38 @@ interface NavGroup {
 const NAV_STRUCTURE: NavGroup[] = [
   {
     title: 'Main',
-    allowedRoles: ['Super Admin', 'Admin', 'Merchant user', 'Staff', 'Auditor'],
+    allowedRoles: ['Super Admin', 'Admin', 'Merchant', 'Staff', 'Auditor'],
     items: [
-      { name: 'Dashboard', href: '/erp/dashboard', icon: LayoutDashboard, allowedRoles: ['Super Admin', 'Admin', 'Merchant user', 'Staff', 'Auditor'] }
+      { name: 'Dashboard', href: '/erp/dashboard', icon: LayoutDashboard, allowedRoles: ['Super Admin', 'Admin', 'Merchant', 'Staff', 'Auditor'] }
     ]
   },
   {
     title: 'Sales',
-    allowedRoles: ['Super Admin', 'Admin', 'Merchant user', 'Staff'],
+    allowedRoles: ['Super Admin', 'Admin', 'Merchant', 'Staff'],
     items: [
-      { name: 'Orders', href: '/erp/orders', icon: ShoppingCart, badge: 12, badgeVariant: 'brand', allowedRoles: ['Super Admin', 'Admin', 'Merchant user', 'Staff'] },
-      { name: 'Customers', href: '/erp/customers', icon: Users, allowedRoles: ['Super Admin', 'Admin', 'Merchant user', 'Staff'] },
+      { name: 'Orders', href: '/erp/orders', icon: ShoppingCart, badge: 12, badgeVariant: 'brand', allowedRoles: ['Super Admin', 'Admin', 'Merchant', 'Staff'] },
+      { name: 'Customers', href: '/erp/customers', icon: Users, allowedRoles: ['Super Admin', 'Admin', 'Merchant', 'Staff'] },
       { 
         name: 'Referrals', 
         icon: Network, 
-        allowedRoles: ['Super Admin', 'Admin'],
+        allowedRoles: ['Super Admin', 'Admin', 'Merchant'],
         children: [
-          { name: 'Overview', href: '/erp/referrals', allowedRoles: ['Super Admin', 'Admin'] },
+          { name: 'Overview', href: '/erp/referrals', allowedRoles: ['Super Admin', 'Admin', 'Merchant'] },
           { name: 'Records', href: '/erp/referrals/records', allowedRoles: ['Super Admin', 'Admin'] },
           { name: 'Network', href: '/erp/referrals/network', allowedRoles: ['Super Admin', 'Admin'] },
-          { name: 'Codes & Links', href: '/erp/referrals/codes', allowedRoles: ['Super Admin', 'Admin'] },
+          { name: 'Codes & Links', href: '/erp/referrals/codes', allowedRoles: ['Super Admin', 'Admin', 'Merchant'] },
           { name: 'Suspicious Queue', href: '/erp/referrals/flags', allowedRoles: ['Super Admin', 'Admin'] },
           { name: 'Settings', href: '/erp/referrals/settings', allowedRoles: ['Super Admin', 'Admin'] }
         ]
       },
-      { name: 'Merchant POS', href: '/pos', icon: MonitorSmartphone, external: true, allowedRoles: ['Super Admin', 'Admin', 'Merchant user'] }
+      { name: 'Merchant POS', href: '/pos', icon: MonitorSmartphone, external: true, allowedRoles: ['Super Admin', 'Admin', 'Merchant'] }
     ]
   },
   {
     title: 'Catalog',
-    allowedRoles: ['Super Admin', 'Admin'],
+    allowedRoles: ['Super Admin', 'Admin', 'Merchant'],
     items: [
-      { name: 'Products', href: '/erp/products', icon: Package, allowedRoles: ['Super Admin', 'Admin'] },
+      { name: 'Products', href: '/erp/products', icon: Package, allowedRoles: ['Super Admin', 'Admin', 'Merchant'] },
       { name: 'Categories', href: '/erp/categories', icon: Tags, allowedRoles: ['Super Admin', 'Admin'] },
       { name: 'Merchants', href: '/erp/merchants', icon: Store, allowedRoles: ['Super Admin', 'Admin'] },
       { name: 'Suppliers', href: '/erp/suppliers', icon: Truck, allowedRoles: ['Super Admin', 'Admin'] }
@@ -205,27 +205,27 @@ const NAV_STRUCTURE: NavGroup[] = [
   },
   {
     title: 'Insights',
-    allowedRoles: ['Super Admin', 'Admin', 'Merchant user', 'Auditor'],
+    allowedRoles: ['Super Admin', 'Admin', 'Auditor'],
     items: [
       { name: 'Dashboards', href: '/erp/dashboards', icon: LayoutDashboard, allowedRoles: ['Super Admin', 'Admin', 'Auditor'] }
     ]
   },
   {
     title: 'Storefront',
-    allowedRoles: ['Super Admin', 'Admin', 'Merchant user'],
+    allowedRoles: ['Super Admin', 'Admin', 'Merchant'],
     items: [
       { name: 'Brand & Pages', href: '/erp/storefront/pages', icon: LayoutDashboard, allowedRoles: ['Super Admin', 'Admin'] },
       { name: 'Spotlight', href: '/erp/storefront/spotlight', icon: Tags, allowedRoles: ['Super Admin', 'Admin'] },
       { 
         name: 'Promotions', 
         icon: BadgePercent, 
-        allowedRoles: ['Super Admin', 'Admin', 'Merchant user'],
+        allowedRoles: ['Super Admin', 'Admin', 'Merchant'],
         children: [
-          { name: 'All Promotions', href: '/erp/promotions', allowedRoles: ['Super Admin', 'Admin', 'Merchant user'] },
+          { name: 'All Promotions', href: '/erp/promotions', allowedRoles: ['Super Admin', 'Admin', 'Merchant'] },
           { name: 'Packages (Settings)', href: '/erp/settings/promotions', allowedRoles: ['Super Admin', 'Admin'] }
         ]
       },
-      { name: 'Reviews', href: '/erp/storefront/reviews', icon: ScrollText, allowedRoles: ['Super Admin', 'Admin', 'Merchant user'] },
+      { name: 'Reviews', href: '/erp/storefront/reviews', icon: ScrollText, allowedRoles: ['Super Admin', 'Admin', 'Merchant'] },
       { name: 'Rewards', href: '/erp/storefront/rewards', icon: BadgePercent, allowedRoles: ['Super Admin', 'Admin'] }
     ]
   },
@@ -234,20 +234,10 @@ const NAV_STRUCTURE: NavGroup[] = [
     allowedRoles: ['Super Admin', 'Admin', 'Auditor'],
     items: [
       { name: 'Users', href: '/erp/settings/users', icon: ShieldCheck, allowedRoles: ['Super Admin', 'Admin'] },
+      { name: 'KYC Reviews', href: '/erp/kyc', icon: ShieldCheck, allowedRoles: ['Super Admin', 'Admin'] },
       { name: 'Roles & Permissions', href: '/erp/settings/roles', icon: Lock, allowedRoles: ['Super Admin'] },
       { name: 'Audit Logs', href: '/erp/settings/audit', icon: ScrollText, allowedRoles: ['Super Admin', 'Auditor'] },
       { name: 'Settings', href: '/erp/settings', icon: Settings, allowedRoles: ['Super Admin', 'Admin'] }
-    ]
-  },
-  {
-    title: 'Vendor Workspace',
-    allowedRoles: ['Vendor'],
-    items: [
-      { name: 'Dashboard', href: '/erp/dashboard', icon: LayoutDashboard, allowedRoles: ['Vendor'] },
-      { name: 'Orders', href: '/erp/orders', icon: ShoppingCart, allowedRoles: ['Vendor'] },
-      { name: 'Products', href: '/erp/products', icon: Package, allowedRoles: ['Vendor'] },
-      { name: 'Customers', href: '/erp/customers', icon: Users, allowedRoles: ['Vendor'] },
-      { name: 'Promotions', href: '/erp/promotions', icon: BadgePercent, allowedRoles: ['Vendor'] },
     ]
   },
   {

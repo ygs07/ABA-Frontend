@@ -130,9 +130,14 @@ export default function MerchantsListPage() {
         title="Merchants"
         description="Manage partner outlets, franchises, and their sales performance."
         action={
-          <Link href="/erp/merchants/new">
-            <Button>Add Merchant</Button>
-          </Link>
+          <div className="flex gap-2">
+            <Link href="/erp/merchants/onboarding-applications">
+              <Button variant="outline">Onboarding Applications</Button>
+            </Link>
+            <Link href="/erp/merchants/new">
+              <Button>Add Merchant</Button>
+            </Link>
+          </div>
         }
       />
 

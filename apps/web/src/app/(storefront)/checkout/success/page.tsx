@@ -1,10 +1,70 @@
-import React from 'react';
+'use client';
+
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CheckCircle2, ChevronRight, Package, Calendar, MapPin } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { AlertCircle, CheckCircle2, ChevronRight, Loader2, Package, Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { fetchApi } from '@/lib/api';
 
 export default function OrderSuccessPage() {
-  const orderNumber = 'ORD-2026-X8F9A';
+  const searchParams = useSearchParams();
+  const reference = searchParams.get('reference') ?? searchParams.get('trxref');
+  const [orderId, setOrderId] = useState(searchParams.get('orderId'));
+  const [verificationError, setVerificationError] = useState<string | null>(null);
+  const [isVerifying, setIsVerifying] = useState(Boolean(reference));
+
+  useEffect(() => {
+    if (!reference) return;
+
+    const verifyPayment = async () => {
+      try {
+        const payment = await fetchApi<{
+          order_id: number;
+          status: 'successful' | 'pending' | 'failed';
+        }>(`/api/v1/payments/paystack/${encodeURIComponent(reference)}/verify`);
+        if (payment.status !== 'successful') {
+          throw new Error('Your payment has not been confirmed yet.');
+        }
+        setOrderId(String(payment.order_id));
+      } catch (error) {
+        setVerificationError(
+          error instanceof Error
+            ? error.message
+            : 'Unable to verify your payment.',
+        );
+      } finally {
+        setIsVerifying(false);
+      }
+    };
+
+    void verifyPayment();
+  }, [reference]);
+
+  if (isVerifying) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-32 mt-20 text-center">
+        <Loader2 className="w-10 h-10 animate-spin text-brand-600 mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-text">Confirming your payment</h1>
+        <p className="text-text-muted mt-2">Please wait while we verify your Paystack payment.</p>
+      </div>
+    );
+  }
+
+  if (verificationError) {
+    return (
+      <div className="max-w-xl mx-auto px-4 sm:px-6 lg:px-8 py-32 mt-20 text-center">
+        <AlertCircle className="w-10 h-10 text-error mx-auto mb-4" />
+        <h1 className="text-2xl font-bold text-text">Payment verification pending</h1>
+        <p className="text-text-muted mt-2">{verificationError}</p>
+        <Link href="/portal/orders" className="inline-block mt-6">
+          <Button>View My Orders</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const orderNumber = orderId ? `Order #${orderId}` : 'Your order';
   
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 mt-20">
@@ -75,7 +135,7 @@ export default function OrderSuccessPage() {
       </div>
 
       <div className="flex flex-col sm:flex-row gap-4 justify-center">
-        <Link href={`/portal/orders?orderId=${orderNumber}`} className="flex-1">
+        <Link href={orderId ? `/portal/orders/${orderId}` : '/portal/orders'} className="flex-1">
           <Button variant="outline" size="lg" className="w-full h-12">View Order Details</Button>
         </Link>
         <Link href="/shop" className="flex-1">

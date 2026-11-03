@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { CartItem } from './types';
+import { API_MODE } from '@/lib/api';
 import * as cartApi from './api';
 
 interface CartState {
@@ -21,9 +22,18 @@ interface CartState {
 
 const calculateTotals = (items: CartItem[]) => {
   const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  const deliveryFee = items.length > 0 ? 150000 : 0; // Flat 1,500 NGN for mock
+  const deliveryFee = API_MODE === 'mock' && items.length > 0 ? 150000 : 0;
   const total = subtotal + deliveryFee;
   return { subtotal, deliveryFee, total };
+};
+
+const setCart = (set: (state: Partial<CartState>) => void, cart: { data: import('./types').Cart }) => {
+  set({
+    items: cart.data.items,
+    subtotal: cart.data.subtotal,
+    deliveryFee: cart.data.deliveryFee,
+    total: cart.data.total,
+  });
 };
 
 export const useCartStore = create<CartState>()(
@@ -62,8 +72,11 @@ export const useCartStore = create<CartState>()(
           const totals = calculateTotals(updatedItems);
           set({ items: updatedItems, ...totals });
 
-          // API sync (non-blocking for UI responsiveness)
-          cartApi.addToCart(newItem).catch(console.error);
+          const cart = await cartApi.addToCart(newItem);
+          setCart(set, cart);
+        } catch (error) {
+          console.error('Failed to add cart item:', error);
+          await get().syncWithServer();
         } finally {
           set({ isSyncing: false });
         }
@@ -74,7 +87,11 @@ export const useCartStore = create<CartState>()(
         try {
           const updatedItems = get().items.filter(i => i.id !== itemId);
           set({ items: updatedItems, ...calculateTotals(updatedItems) });
-          cartApi.removeFromCart(itemId).catch(console.error);
+          const cart = await cartApi.removeFromCart(itemId);
+          setCart(set, cart);
+        } catch (error) {
+          console.error('Failed to remove cart item:', error);
+          await get().syncWithServer();
         } finally {
           set({ isSyncing: false });
         }
@@ -85,7 +102,12 @@ export const useCartStore = create<CartState>()(
         try {
            const updatedItems = get().items.map(i => i.id === itemId ? { ...i, quantity } : i);
            set({ items: updatedItems, ...calculateTotals(updatedItems) });
-           cartApi.updateCartItemQuantity(itemId, quantity).catch(console.error);
+           const cart = await cartApi.updateCartItemQuantity(itemId, quantity);
+           setCart(set, cart);
+        } catch (error) {
+           console.error('Failed to update cart item:', error);
+           await get().syncWithServer();
+           throw error;
         } finally {
            set({ isSyncing: false });
         }
@@ -95,7 +117,11 @@ export const useCartStore = create<CartState>()(
         set({ isSyncing: true });
         try {
           set({ items: [], subtotal: 0, deliveryFee: 0, total: 0 });
-          cartApi.clearCart().catch(console.error);
+          const cart = await cartApi.clearCart();
+          setCart(set, cart);
+        } catch (error) {
+          console.error('Failed to clear cart:', error);
+          await get().syncWithServer();
         } finally {
           set({ isSyncing: false });
         }
@@ -105,12 +131,7 @@ export const useCartStore = create<CartState>()(
         set({ isSyncing: true });
         try {
           const { data } = await cartApi.getCart();
-          set({ 
-            items: data.items, 
-            subtotal: data.subtotal, 
-            deliveryFee: data.deliveryFee, 
-            total: data.total 
-          });
+          setCart(set, { data });
         } catch (error) {
           console.error('Failed to sync cart:', error);
         } finally {

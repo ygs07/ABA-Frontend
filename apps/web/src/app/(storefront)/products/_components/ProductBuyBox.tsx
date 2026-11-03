@@ -9,6 +9,10 @@ import { ProductVariant, Product } from '@/features/products/types';
 import { ShareMenu } from '@/components/patterns/ShareMenu';
 import { cn } from '@/lib/utils';
 import { brand } from '@/config/brand';
+import { useAuthStore } from '@/features/auth/store';
+import { useCartStore } from '@/features/cart/store';
+import { usePathname, useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 interface ProductBuyBoxProps {
   product: Product;
@@ -18,10 +22,38 @@ interface ProductBuyBoxProps {
 
 export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: ProductBuyBoxProps) {
   const [quantity, setQuantity] = useState(1);
+  const router = useRouter();
+  const pathname = usePathname();
+  const addToCart = useCartStore((state) => state.addToCart);
+  const isCustomer = useAuthStore((state) =>
+    Boolean(state.isAuthenticated && (state.user?.userType === 'Customer' || state.user?.roles.includes('Customer'))),
+  );
   
   const activePrice = selectedVariant ? selectedVariant.price : product.price;
   const activeStock = selectedVariant ? selectedVariant.stockCount : product.totalStock;
   const inStock = activeStock > 0;
+
+  const buyNow = async () => {
+    if (!isCustomer) {
+      router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    if (!selectedVariant || selectedVariant.stockCount < quantity) {
+      toast.error('The selected variant is unavailable in the requested quantity.');
+      return;
+    }
+    await addToCart({
+      productId: product.id,
+      productVariantId: selectedVariant.id,
+      productName: product.name,
+      productImage: product.images[0] ?? '',
+      merchantId: product.merchant?.id ?? '',
+      merchantName: product.merchant?.name ?? 'Merchant',
+      price: selectedVariant.price,
+      quantity,
+    });
+    router.push('/checkout');
+  };
 
   return (
     <div className="flex flex-col lg:sticky lg:top-40 bg-surface rounded-2xl p-6 lg:border lg:border-border lg:shadow-sm">
@@ -133,7 +165,7 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
 
       {/* 6. Actions */}
       <div className="flex flex-col gap-3 mb-6">
-        <Button variant="primary" size="lg" className="w-full text-base font-semibold">
+        <Button variant="primary" size="lg" className="w-full text-base font-semibold" onClick={buyNow} disabled={!inStock || quantity > activeStock}>
           Buy It Now
         </Button>
         <AddToCartButton product={product} quantity={quantity} />

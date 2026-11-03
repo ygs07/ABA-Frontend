@@ -1,15 +1,20 @@
 'use client';
 
 import { brand } from '@/config/brand';
-import { getProducts } from '@/features/products/api/products.api';
+import { API_MODE, fetchApi } from '@/lib/api';
+import { getProducts, toProduct } from '@/features/products/api/products.api';
 import { ProductCard } from '@/components/storefront/ProductCard';
 import { useQuery } from '@tanstack/react-query';
 import { Loader2 } from 'lucide-react';
 
 export function TrendingProducts() {
   const { data, isLoading } = useQuery({
-    queryKey: ['products'],
-    queryFn: getProducts
+    queryKey: ['trending-products'],
+    queryFn: async () => {
+      if (API_MODE === 'mock') return getProducts();
+      const products = await fetchApi<Parameters<typeof toProduct>[0][]>('/api/v1/storefront/trending-products');
+      return { data: products.map(toProduct) };
+    },
   });
 
   return (

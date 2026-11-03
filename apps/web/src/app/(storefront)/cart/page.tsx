@@ -8,8 +8,12 @@ import { Trash2, ShieldCheck, ArrowRight, Store, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCartStore } from '@/features/cart/store';
 import { AmountText } from '@/components/patterns/AmountText';
+import { getCartAvailability } from '@/features/cart/api';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function CartPage() {
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
   const { 
     items, 
@@ -18,14 +22,34 @@ export default function CartPage() {
     total, 
     updateQuantity, 
     removeFromCart, 
+    syncWithServer,
     isSyncing 
   } = useCartStore();
   const totalItems = useCartStore(state => state.getTotalItems());
 
+  const validateAndCheckout = async () => {
+    try {
+      const availability = await getCartAvailability();
+      if (!availability.is_available) {
+        const unavailableItem = availability.items.find((item) => !item.is_available);
+        toast.error(
+          unavailableItem
+            ? `Only ${unavailableItem.available_quantity} item(s) are available for one of your cart items.`
+            : 'One or more cart items are unavailable.',
+        );
+        return;
+      }
+      router.push('/checkout');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to validate cart availability.');
+    }
+  };
+
   // Avoid hydration mismatch by only rendering after mount
   useEffect(() => {
     setMounted(true);
-  }, []);
+    void syncWithServer();
+  }, [syncWithServer]);
 
   if (!mounted) {
     return (
@@ -108,7 +132,13 @@ export default function CartPage() {
                             {item.quantity}
                           </span>
                           <button 
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)} 
+                            onClick={async () => {
+                              try {
+                                await updateQuantity(item.id, item.quantity + 1);
+                              } catch (error) {
+                                toast.error(error instanceof Error ? error.message : 'Unable to update cart quantity.');
+                              }
+                            }}
                             className="flex-1 h-full text-lg hover:text-brand-600 hover:bg-surface-2 disabled:opacity-50"
                             disabled={isSyncing}
                           >
@@ -157,11 +187,9 @@ export default function CartPage() {
               </div>
             </div>
 
-            <Link href="/checkout" className="block">
-              <Button size="lg" className="w-full rounded-full h-12 text-base">
-                Proceed to Checkout <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
-            </Link>
+            <Button size="lg" className="w-full rounded-full h-12 text-base" onClick={validateAndCheckout} disabled={isSyncing}>
+              Proceed to Checkout <ArrowRight className="w-5 h-5 ml-2" />
+            </Button>
 
             <div className="mt-6 flex items-center gap-2 text-xs text-text-muted justify-center">
               <ShieldCheck className="w-4 h-4 text-success-main" />

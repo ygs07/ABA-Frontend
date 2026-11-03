@@ -14,6 +14,9 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const pathname = usePathname();
   const router = useRouter();
   const { user, logout } = useAuthStore();
+  const isCustomer = Boolean(
+    user && (user.userType === 'Customer' || user.roles.includes('Customer')),
+  );
 
   const handleSignOut = async () => {
     try {
@@ -31,7 +34,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     { name: 'My Wallet', href: '/portal/wallet', icon: Wallet },
     { name: 'Referrals', href: '/portal/referrals', icon: Users },
     { name: 'Rewards', href: '/portal/rewards', icon: Medal },
-    { name: 'Profile', href: '/portal/profile', icon: Settings },
+    ...(isCustomer ? [{ name: 'Profile', href: '/portal/profile', icon: Settings }] : []),
     { name: 'Notifications', href: '/portal/notifications', icon: Bell },
     // saved-sellers
   ];

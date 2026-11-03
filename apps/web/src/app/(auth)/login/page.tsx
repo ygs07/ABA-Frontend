@@ -33,7 +33,7 @@ function LoginContent() {
   const { register, handleSubmit, formState: { errors } } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
     defaultValues: { 
-      email: isMock ? `admin@${brand.domain}` : '',
+      identifier: isMock ? `admin@${brand.domain}` : '',
       password: isMock ? 'password123' : '',
       rememberMe: false 
     },
@@ -88,7 +88,7 @@ function LoginContent() {
           >
             <option value="Super Admin">Super Admin</option>
             <option value="Admin">Admin</option>
-            <option value="Merchant user">Merchant User</option>
+            <option value="Merchant">Merchant</option>
             <option value="Staff">Staff</option>
             <option value="Auditor">Auditor</option>
           </select>
@@ -97,11 +97,12 @@ function LoginContent() {
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <Input
-          label="Email address"
-          type="email"
-          {...register('email')}
-          error={errors.email?.message}
-          autoComplete="email"
+          label="Email address or username"
+          type="text"
+          {...register('identifier')}
+          error={errors.identifier?.message}
+          autoComplete="username"
+          placeholder="you@example.com or your_username"
           autoFocus
         />
 

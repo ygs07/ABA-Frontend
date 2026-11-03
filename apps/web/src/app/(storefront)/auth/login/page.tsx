@@ -28,7 +28,7 @@ export default function StorefrontLoginPage() {
     setError(null);
 
     try {
-      const response = await loginRequest({ email: identifier, password });
+      const response = await loginRequest({ identifier, password });
       const role = response.user.userType ?? response.user.roles[0];
       if (!role) throw new Error('This user does not have an assigned user type or role.');
       await setAuthCookie(response.token, role);
@@ -57,18 +57,19 @@ export default function StorefrontLoginPage() {
         <form className="mt-8 space-y-6" onSubmit={handleLogin}>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-text mb-1">Email address</label>
+              <label className="block text-sm font-medium text-text mb-1">Email address or username</label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <Mail className="h-5 w-5 text-text-muted" />
                 </div>
                 <input
-                  type="email"
+                  type="text"
                   required
+                  autoComplete="username"
                   value={identifier}
                   onChange={(e) => setIdentifier(e.target.value)}
                   className="block w-full pl-10 pr-3 py-2 border border-border rounded-md text-text focus:outline-none focus:ring-2 focus:ring-brand-500 bg-surface-1 sm:text-sm"
-                  placeholder="jane.doe@example.com"
+                  placeholder="jane.doe@example.com or jane_doe"
                 />
               </div>
             </div>

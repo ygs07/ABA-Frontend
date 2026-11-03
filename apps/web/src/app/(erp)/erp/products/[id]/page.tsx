@@ -94,7 +94,12 @@ export default function ProductDetailsPage() {
 
         <div className="flex gap-2">
           <Button variant="outline">Duplicate</Button>
-          <Button variant="outline">Adjust Stock</Button>
+          <Button
+            variant="outline"
+            onClick={() => router.push(`/erp/inventory/adjustments/new?productId=${encodeURIComponent(product.id)}`)}
+          >
+            Adjust Stock
+          </Button>
           <Button>Edit</Button>
         </div>
       </div>

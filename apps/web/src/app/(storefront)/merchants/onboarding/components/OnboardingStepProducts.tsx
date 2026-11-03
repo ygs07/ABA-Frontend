@@ -8,27 +8,30 @@ import { ShoppingBag, Box, Camera, CheckCircle2 } from 'lucide-react';
 interface OnboardingStepProductsProps {
   form: UseFormReturn<MerchantOnboardingData>;
   photosCount: number;
-  onAddPhoto: () => void;
+  onPhotosSelected: (photos: File[]) => void;
+  selectedPhotos: File[];
 }
 
 export function OnboardingStepProducts({
   form,
   photosCount,
-  onAddPhoto,
+  onPhotosSelected,
+  selectedPhotos,
 }: OnboardingStepProductsProps) {
   const { register, formState: { errors } } = form;
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleSlotClick = () => {
+  const openPhotoPicker = () => {
     fileInputRef.current?.click();
   };
 
   const handleFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
-      const added = Math.min(4, photosCount + files.length);
-      form.setValue('samplePhotosCount', added);
-      onAddPhoto();
+      const nextPhotos = [...selectedPhotos, ...Array.from(files)].slice(0, 4);
+      form.setValue('samplePhotosCount', nextPhotos.length, { shouldValidate: true });
+      onPhotosSelected(nextPhotos);
+      e.target.value = '';
     }
   };
 
@@ -86,7 +89,7 @@ export function OnboardingStepProducts({
           accept="image/*"
           multiple
           onChange={handleFiles}
-          className="hidden"
+          className="sr-only"
           aria-label="Upload sample product photos"
         />
         <div className="flex items-center justify-between mb-2">
@@ -99,9 +102,10 @@ export function OnboardingStepProducts({
           {[0, 1, 2, 3].map((index) => {
             const hasPhoto = index < photosCount;
             return (
-              <div
+              <button
+                type="button"
                 key={index}
-                onClick={handleSlotClick}
+                onClick={openPhotoPicker}
                 className={`h-24 rounded-xl border flex flex-col items-center justify-center gap-1.5 cursor-pointer transition-all ${
                   hasPhoto
                     ? 'border-brand-500 bg-brand-50/50 text-brand-700 hover:bg-brand-50'
@@ -119,7 +123,7 @@ export function OnboardingStepProducts({
                     <span className="text-[11px]">Add Photo</span>
                   </>
                 )}
-              </div>
+              </button>
             );
           })}
         </div>

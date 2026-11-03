@@ -8,6 +8,10 @@ import { useForm, Controller } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Checkbox } from '@/components/ui/checkbox';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { fetchApi } from '@/lib/api';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -20,11 +24,16 @@ const formSchema = z.object({
   levels: z.number().min(1).max(10),
   baseAmountNet: z.boolean(),
   approvalMode: z.string(),
-  holdingPeriod: z.number().min(0)
+  holdingPeriod: z.number().min(0),
+  levelRates: z.array(z.object({
+    level: z.number(),
+    percentageAmount: z.number().min(0).max(100),
+  })),
 });
 
 export default function CreateCommissionPlanPage() {
-  const { register, control, handleSubmit, formState: { errors }, watch } = useForm<z.infer<typeof formSchema>>({
+  const router = useRouter();
+  const { register, control, handleSubmit, formState: { errors }, watch, getValues, setValue } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
@@ -37,12 +46,55 @@ export default function CreateCommissionPlanPage() {
       levels: 1,
       baseAmountNet: true,
       approvalMode: 'Auto-approve',
-      holdingPeriod: 7
+      holdingPeriod: 7,
+      levelRates: [{ level: 1, percentageAmount: 0 }],
     }
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
+  const levels = watch('levels');
+  useEffect(() => {
+    const existingRates = getValues('levelRates');
+    setValue(
+      'levelRates',
+      Array.from({ length: levels || 1 }, (_, index) => ({
+        level: index + 1,
+        percentageAmount: existingRates[index]?.percentageAmount ?? 0,
+      })),
+    );
+  }, [getValues, levels, setValue]);
+
+  async function onSubmit(values: z.infer<typeof formSchema>) {
+    try {
+      await fetchApi('/api/v1/commission-rules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: values.name,
+          description: values.description || undefined,
+          isActive: values.status === 'Active',
+          commissionType: 1,
+          percentageAmount: values.levelRates[0]?.percentageAmount,
+          effectiveFrom: values.effectiveFrom,
+          effectiveTo: values.effectiveTo || undefined,
+          qualificationTrigger: {
+            'Order Paid': 'order_paid',
+            'Order Delivered': 'order_delivered',
+            'First Order Only': 'first_order_only',
+          }[values.trigger],
+          minimumOrderValue: values.minOrderValue,
+          networkLevels: values.levels,
+          levelRates: values.levelRates,
+          baseAmountNet: values.baseAmountNet,
+          approvalMode:
+            values.approvalMode === 'Manual approval' ? 'manual' : 'automatic',
+          holdingPeriodDays: values.holdingPeriod,
+        }),
+      });
+      toast.success('Commission plan created');
+      router.push('/erp/commissions/rules');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to create commission plan');
+    }
   }
 
   return (
@@ -132,13 +184,44 @@ export default function CreateCommissionPlanPage() {
               </div>
             </div>
 
+            <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Minimum Order Value</label>
+                <Input type="number" min="0" {...register('minOrderValue', { valueAsNumber: true })} />
+                <p className="text-[10px] text-text-muted">Orders below this amount do not qualify.</p>
+              </div>
+              <div className="flex items-center gap-3 pt-7">
+                <Controller
+                  control={control}
+                  name="baseAmountNet"
+                  render={({ field }) => (
+                    <Checkbox
+                      id="baseAmountNet"
+                      checked={field.value}
+                      onCheckedChange={(checked) => field.onChange(checked === true)}
+                    />
+                  )}
+                />
+                <label htmlFor="baseAmountNet" className="text-sm font-medium cursor-pointer">
+                  Calculate on net order amount
+                </label>
+              </div>
+            </div>
+
             <div className="border border-border rounded-lg p-4 bg-surface-2 mt-4 space-y-4">
               <h4 className="font-semibold text-sm">Level Rates configuration</h4>
               <p className="text-xs text-text-muted">Specify the rate for each level up to the configured network levels.</p>
-              {Array.from({ length: watch('levels') || 1 }).map((_, i) => (
+              {Array.from({ length: levels || 1 }).map((_, i) => (
                 <div key={i} className="flex gap-4 items-center">
                   <span className="text-sm font-medium w-16">Level {i + 1}</span>
-                  <Input type="number" placeholder="Percentage (%)" className="w-32" />
+                  <Input
+                    type="number"
+                    placeholder="Percentage (%)"
+                    className="w-32"
+                    {...register(`levelRates.${i}.percentageAmount`, {
+                      valueAsNumber: true,
+                    })}
+                  />
                   <span className="text-sm text-text-muted">% of base amount</span>
                 </div>
               ))}

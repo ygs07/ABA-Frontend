@@ -15,6 +15,7 @@ type BackendVariant = {
   cost_price?: string | number | null;
   is_active: boolean;
   attributes?: Record<string, string> | null;
+  stock_quantity?: number;
 };
 
 type BackendProduct = {
@@ -22,7 +23,7 @@ type BackendProduct = {
   name: string;
   slug: string;
   description?: string | null;
-  brand?: string | null;
+  brand?: { id: number; name: string } | string | null;
   base_cost_price?: string | number | null;
   base_selling_price?: string | number | null;
   base_unit_of_measurement?: string | null;
@@ -31,12 +32,22 @@ type BackendProduct = {
   reorder_quantity?: number;
   is_active: boolean;
   category?: { id: number; name: string } | null;
+  merchant?: { id: number; business_name: string } | null;
+  images?: Array<{ id: number; url: string; original_name?: string } | string>;
   variants?: BackendVariant[];
   updatedAt?: string;
   updated_at?: string;
+  total_stock?: number;
 };
 
 type PaginatedProducts = { data: BackendProduct[] };
+
+export type ProductBrandOption = {
+  id: number;
+  name: string;
+  slug: string;
+  is_verified: boolean;
+};
 
 export type ProductOverview = {
   totalProducts: number;
@@ -59,17 +70,17 @@ function toVariant(variant: BackendVariant): ProductVariant {
     reorderLevel: 0,
     images: [],
     isActive: variant.is_active,
-    stockCount: 0,
+    stockCount: variant.stock_quantity ?? 0,
     attributes: variant.attributes
       ? Object.entries(variant.attributes).map(([name, value]) => ({ name, type: 'text', value }))
       : undefined,
   };
 }
 
-function toProduct(product: BackendProduct): Product {
+export function toProduct(product: BackendProduct): Product {
   const variants = product.variants?.map(toVariant) ?? [];
-  const price = numberValue(product.base_cost_price) || variants[0]?.cost || 0;
-  const sellingPrice = numberValue(product.base_selling_price) || variants[0]?.price || 0;
+  const price = numberValue(product.base_selling_price) || variants[0]?.price || 0;
+  const sellingPrice = price;
 
   return {
     id: String(product.id),
@@ -82,11 +93,13 @@ function toProduct(product: BackendProduct): Product {
     category: product.category
       ? { id: String(product.category.id), name: product.category.name } as Product['category']
       : undefined,
-    brand: product.brand ?? undefined,
+    brand: typeof product.brand === 'string' ? product.brand : product.brand?.name,
     description: product.description ?? undefined,
     unitOfMeasure: product.base_unit_of_measurement ?? 'unit',
     status: product.is_active ? 'Active' : 'Draft',
-    images: [],
+    images: (product.images ?? []).map((image) =>
+      typeof image === 'string' ? image : image.url,
+    ),
     price,
     sellingPrice,
     priceIncludesTax: true,
@@ -97,10 +110,16 @@ function toProduct(product: BackendProduct): Product {
     reorderQuantity: product.reorder_quantity ?? 0,
     allowBackorder: false,
     isCommissionable: false,
-    totalStock: 0,
+    totalStock: product.total_stock ?? variants.reduce((total, variant) => total + variant.stockCount, 0),
     updatedAt: product.updatedAt ?? product.updated_at ?? new Date().toISOString(),
     rating: 0,
     reviewCount: 0,
+    merchant: product.merchant
+      ? ({
+          id: String(product.merchant.id),
+          name: product.merchant.business_name,
+        } as Product['merchant'])
+      : undefined,
   };
 }
 
@@ -112,6 +131,14 @@ export const getProducts = async (): Promise<{ data: Product[] }> => {
 
   await delay(500);
   return { data: MOCK_PRODUCTS };
+};
+
+export const getProductBrands = async (): Promise<{ data: ProductBrandOption[] }> => {
+  if (API_MODE !== 'mock') {
+    return fetchApi<{ data: ProductBrandOption[] }>('/api/v1/product-brands?limit=100');
+  }
+
+  return { data: [] };
 };
 
 export const getProductOverview = async (): Promise<ProductOverview> => {
@@ -144,23 +171,43 @@ export const getProductById = async (id: string): Promise<Product> => {
 
 export const createProduct = async (data: CreateProductInput): Promise<Product> => {
   if (API_MODE !== 'mock') {
+    const productTypeMap: Record<CreateProductInput['type'], number> = {
+      'Finished good': 1,
+      'Raw material': 2,
+      Service: 3,
+      Bundle: 4,
+    };
+    const productImages = data.images ?? [];
+    if (!productImages.length) {
+      throw new Error('Add at least one PNG or JPEG product image.');
+    }
+
+    const formData = new FormData();
+    formData.append('categoryId', data.categoryId);
+    if (data.vendorId) formData.append('merchantId', data.vendorId);
+    formData.append('name', data.name);
+    if (data.description) formData.append('description', data.description);
+    if (data.brandId) formData.append('brandId', data.brandId);
+    formData.append('isActive', String(data.status === 'Active'));
+    formData.append('baseCostPrice', String(data.cost));
+    formData.append('baseSellingPrice', String(data.sellingPrice));
+    formData.append('baseUnitOfMeasurement', data.unitOfMeasure);
+    formData.append('type', String(productTypeMap[data.type]));
+    formData.append('reorderLevel', String(data.reorderLevel));
+    formData.append('reorderQuantity', String(data.reorderQuantity));
+
+    await Promise.all(
+      productImages.map(async (imageUrl, index) => {
+        const response = await fetch(imageUrl);
+        const imageBlob = await response.blob();
+        const extension = imageBlob.type === 'image/png' ? 'png' : 'jpg';
+        formData.append('productImages', imageBlob, `product-image-${index + 1}.${extension}`);
+      }),
+    );
+
     const product = await fetchApi<BackendProduct>('/api/v1/products', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        categoryId: Number(data.categoryId),
-        vendorId: data.vendorId ? Number(data.vendorId) : undefined,
-        name: data.name,
-        description: data.description || undefined,
-        brand: data.brand || undefined,
-        isActive: data.status === 'Active',
-        baseCostPrice: String(data.cost),
-        baseSellingPrice: String(data.sellingPrice),
-        baseUnitOfMeasurement: data.unitOfMeasure,
-        type: data.type,
-        reorderLevel: data.reorderLevel,
-        reorderQuantity: data.reorderQuantity,
-      }),
+      body: formData,
     });
 
     if (data.hasVariants && data.variants?.length) {

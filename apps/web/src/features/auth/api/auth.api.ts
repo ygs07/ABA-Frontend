@@ -28,6 +28,7 @@ const USER_ROLES: readonly UserRole[] = [
   "Super Admin",
   "Admin",
   "Customer",
+  "Merchant",
   "Vendor",
   "Marketer",
   "Merchant user",
@@ -36,6 +37,7 @@ const USER_ROLES: readonly UserRole[] = [
 ];
 
 function asUserRole(value: string | undefined): UserRole | undefined {
+  if (value === "Vendor") return "Merchant";
   return USER_ROLES.includes(value as UserRole) ? (value as UserRole) : undefined;
 }
 
@@ -68,7 +70,7 @@ export const login = async (data: LoginInput): Promise<LoginResponse> => {
     const { access_token } = await fetchApi<{ access_token: string }>("/api/v1/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ email: data.email, password: data.password }),
+      body: JSON.stringify({ identifier: data.identifier, password: data.password }),
     });
 
     const profile = await fetchApi<BackendUser>("/api/v1/auth/me", {
@@ -79,15 +81,15 @@ export const login = async (data: LoginInput): Promise<LoginResponse> => {
   }
 
   await delay(800);
-  if (data.email === "locked@buynigeria.example.com") {
+  if (data.identifier === "locked@buynigeria.example.com") {
     throw new Error(
       "Account locked. Try again in 15 minutes or reset your password",
     );
   }
-  if (data.email === "suspended@buynigeria.example.com") {
+  if (data.identifier === "suspended@buynigeria.example.com") {
     throw new Error("Your account is suspended. Contact your administrator");
   }
-  if (data.email === "wrong@buynigeria.example.com") {
+  if (data.identifier === "wrong@buynigeria.example.com") {
     throw new Error("Email/phone or password is incorrect");
   }
 
@@ -96,13 +98,13 @@ export const login = async (data: LoginInput): Promise<LoginResponse> => {
     user: {
       id: "usr-1",
       name: "Admin User",
-      email: data.email,
+      email: data.identifier,
       roles: ["Admin"],
       status: "Active",
       twoFactorEnabled: false,
       createdAt: new Date().toISOString(),
     },
-    requires2FA: data.email === "2fa@buynigeria.example.com",
+    requires2FA: data.identifier === "2fa@buynigeria.example.com",
   };
 };
 
@@ -117,13 +119,27 @@ export function getUserHome(user: User): string {
   }
 }
 
-export const signup = async (data: SignupInput): Promise<unknown> => {
+export const signup = async (data: SignupInput): Promise<LoginResponse> => {
   if (API_MODE === "mock") {
     await delay(800);
-    return undefined;
+    return {
+      token: 'mock-jwt-token-123',
+      user: {
+        id: `customer-${Date.now()}`,
+        name: `${data.first_name} ${data.last_name}`,
+        firstName: data.first_name,
+        lastName: data.last_name,
+        email: data.email,
+        roles: ['Customer'],
+        userType: 'Customer',
+        status: 'Active',
+        twoFactorEnabled: false,
+        createdAt: new Date().toISOString(),
+      },
+    };
   }
 
-  return fetchApi<unknown>("/api/v1/auth/signup", {
+  const { access_token } = await fetchApi<{ access_token: string }>("/api/v1/auth/signup", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
@@ -131,6 +147,10 @@ export const signup = async (data: SignupInput): Promise<unknown> => {
       referralCode: data.referralCode || undefined,
     }),
   });
+  const profile = await fetchApi<BackendUser>('/api/v1/auth/me', {
+    headers: { Authorization: `Bearer ${access_token}` },
+  });
+  return { token: access_token, user: toUser(profile) };
 };
 
 export const logout = async (): Promise<void> => {

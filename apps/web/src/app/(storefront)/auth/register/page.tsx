@@ -5,9 +5,11 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Mail, Lock, Phone, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { signup } from '@/features/auth/api/auth.api';
+import { getUserHome, signup } from '@/features/auth/api/auth.api';
 import { SignupInput, signupSchema } from '@/features/auth/schemas';
 import { ReferralSignupField } from '@/features/auth/components/ReferralSignupField';
+import { setAuthCookie } from '@/features/auth/actions';
+import { useAuthStore } from '@/features/auth/store';
 
 import { Suspense } from 'react';
 
@@ -15,6 +17,7 @@ function StorefrontRegisterContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const refCodeParam = searchParams.get('ref') || searchParams.get('referrer') || '';
+  const login = useAuthStore((state) => state.login);
   
   const [formData, setFormData] = useState({
     first_name: '',
@@ -51,8 +54,11 @@ function StorefrontRegisterContent() {
 
     setIsLoading(true);
     try {
-      await signup(parsed.data satisfies SignupInput);
-      router.push('/auth/login?registered=1');
+      const response = await signup(parsed.data satisfies SignupInput);
+      const role = response.user.userType ?? response.user.roles[0] ?? 'Customer';
+      await setAuthCookie(response.token, role);
+      login(response.user, role);
+      router.push(getUserHome(response.user));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Unable to create your account.');
     } finally {

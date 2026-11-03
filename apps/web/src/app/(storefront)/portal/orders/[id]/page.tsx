@@ -5,9 +5,10 @@ import Link from 'next/link';
 import { ArrowLeft, Package, MapPin, CreditCard, Clock, FileText, ExternalLink, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
-import { getCustomerOrderById } from '@/features/portal/api';
+import { downloadCustomerInvoice, getCustomerOrderById } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
+import { toast } from 'sonner';
 
 export default function OrderDetailsPage({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = React.use(params);
@@ -42,6 +43,18 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
   const subtotal = order.items.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const deliveryFee = order.total - subtotal;
 
+  const downloadInvoice = async () => {
+    if (!order.backendId) {
+      toast.error('Invoice download is unavailable for this order.');
+      return;
+    }
+    try {
+      await downloadCustomerInvoice(order.backendId);
+    } catch (downloadError) {
+      toast.error(downloadError instanceof Error ? downloadError.message : 'Unable to download the invoice.');
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -65,7 +78,7 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
           </p>
         </div>
         <div className="flex gap-3">
-          <Button variant="outline" className="flex items-center gap-2">
+          <Button variant="outline" className="flex items-center gap-2" onClick={() => void downloadInvoice()}>
             <FileText className="w-4 h-4" /> Invoice
           </Button>
           <Button variant="destructive" className="bg-error hover:bg-error-hover text-white" disabled={order.status === 'Cancelled' || order.status === 'Delivered'}>

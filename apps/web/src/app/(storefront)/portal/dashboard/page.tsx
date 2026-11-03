@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { ShoppingBag, Wallet, Users, ChevronRight, Package, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
-import { getCustomerOrders, getWalletTransactions, getReferralStats } from '@/features/portal/api';
+import { getCustomerOrders, getCustomerWalletBalance, getWalletTransactions, getReferralStats } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
 
@@ -19,12 +19,17 @@ export default function PortalDashboard() {
     queryFn: async () => (await getWalletTransactions()).data
   });
 
+  const { data: walletBalance, isLoading: isLoadingWalletBalance } = useQuery({
+    queryKey: ['portal_wallet_balance'],
+    queryFn: getCustomerWalletBalance,
+  });
+
   const { data: referralData, isLoading: isLoadingReferral } = useQuery({
     queryKey: ['portal_referrals'],
     queryFn: async () => (await getReferralStats()).data
   });
 
-  if (isLoadingOrders || isLoadingWallet || isLoadingReferral) {
+  if (isLoadingOrders || isLoadingWallet || isLoadingWalletBalance || isLoadingReferral) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
@@ -32,7 +37,7 @@ export default function PortalDashboard() {
     );
   }
 
-  if (!ordersData || !walletData || !referralData) {
+  if (!ordersData || !walletData || walletBalance === undefined || !referralData) {
     return (
       <Alert variant="destructive">
         Failed to load dashboard data. Please try again.
@@ -41,7 +46,7 @@ export default function PortalDashboard() {
   }
 
   const pendingOrders = ordersData.filter(o => o.status === 'Pending' || o.status === 'Processing');
-  const balance = 150000000; // Mock balance based on transactions would be calculated here ideally
+  const balance = walletBalance;
 
   return (
     <div className="space-y-6">

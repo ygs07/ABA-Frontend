@@ -9,13 +9,15 @@ import { User, Phone, Mail, ShieldCheck } from 'lucide-react';
 interface OnboardingStepIdentityProps {
   form: UseFormReturn<MerchantOnboardingData>;
   idUploaded: boolean;
-  onUploadId: () => void;
+  onUploadId: (file: File) => void;
+  onRemoveId: () => void;
 }
 
 export function OnboardingStepIdentity({
   form,
   idUploaded,
   onUploadId,
+  onRemoveId,
 }: OnboardingStepIdentityProps) {
   const { register, formState: { errors } } = form;
 
@@ -111,9 +113,12 @@ export function OnboardingStepIdentity({
         accept=".pdf,.jpg,.jpeg,.png"
         onFileSelect={(file) => {
           form.setValue('idDocumentName', file.name);
-          onUploadId();
+          onUploadId(file);
         }}
-        onRemove={() => form.setValue('idDocumentName', undefined)}
+        onRemove={() => {
+          form.setValue('idDocumentName', undefined);
+          onRemoveId();
+        }}
       />
     </div>
   );

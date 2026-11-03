@@ -16,6 +16,7 @@ export interface PortalShippingAddress {
 
 export interface PortalOrder {
   id: string;
+  backendId?: number;
   date: string;
   status: 'Pending' | 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   total: number;

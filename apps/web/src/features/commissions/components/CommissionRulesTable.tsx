@@ -6,6 +6,7 @@ import { getCommissionPlans } from '../api';
 import { DataTable } from '@/components/patterns/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 export function CommissionRulesTable() {
   const { data, isLoading } = useQuery({
@@ -47,7 +48,7 @@ export function CommissionRulesTable() {
       id: 'actions',
       cell: (info: any) => (
         <div className="flex gap-2">
-          <Button variant="outline" size="sm">Edit</Button>
+          <Link href={`/erp/commissions/rules/${encodeURIComponent(info.row.original.id)}`}><Button variant="outline" size="sm">Edit</Button></Link>
         </div>
       )
     }

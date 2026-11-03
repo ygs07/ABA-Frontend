@@ -1,6 +1,7 @@
 export interface CartItem {
   id: string;
   productId: string;
+  productVariantId?: string;
   productName: string;
   productImage: string;
   merchantId: string;

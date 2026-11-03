@@ -8,7 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { KpiCard } from '@/components/patterns/KpiCard';
 import { AmountText } from '@/components/patterns/AmountText';
-import { getCustomers } from '@/features/customers/api/customers.api';
+import {
+  CustomerOverview,
+  getCustomerOverview,
+  getCustomers,
+} from '@/features/customers/api/customers.api';
 import { Customer } from '@/features/customers/types';
 import { toast } from 'sonner';
 
@@ -16,12 +20,17 @@ export default function CustomersListPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [overview, setOverview] = useState<CustomerOverview | null>(null);
 
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
-      const data = await getCustomers();
+      const [data, customerOverview] = await Promise.all([
+        getCustomers(),
+        getCustomerOverview(),
+      ]);
       setCustomers(data);
+      setOverview(customerOverview);
     } catch (err) {
       toast.error('Failed to load customers');
     } finally {
@@ -114,10 +123,10 @@ export default function CustomersListPage() {
   ];
 
   const kpis = [
-    { label: 'Total Customers', value: '1,245' },
-    { label: 'New This Period', value: '+45' },
-    { label: 'Active (90d)', value: '890' },
-    { label: 'With Referrals', value: '312' },
+    { label: 'Total Customers', value: overview?.totalCustomers.toLocaleString() ?? '—' },
+    { label: 'New This Month', value: overview ? `+${overview.newCustomersThisMonth.toLocaleString()}` : '—' },
+    { label: 'Active (90d)', value: overview?.activeCustomersLast90Days.toLocaleString() ?? '—' },
+    { label: 'With Referrals', value: overview?.customersWithReferrals.toLocaleString() ?? '—' },
   ];
 
   return (

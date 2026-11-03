@@ -1,4 +1,31 @@
 import { StockLevel, StockMovement, Warehouse } from '../types';
+import { API_MODE, fetchApi } from '@/lib/api';
+
+export type StockAdjustmentRecord = {
+  id: number;
+  sku: string;
+  quantity: number;
+  product?: { id: number; name: string } | null;
+  productVariant?: { id: number; name: string; product?: { id: number; name: string } | null } | null;
+};
+
+type BackendProductStock = {
+  id: number;
+  name: string;
+  type?: number | null;
+  base_cost_price?: string | number | null;
+  reorder_level?: number | null;
+  category?: { name: string } | null;
+};
+
+type BackendErpStockRecord = StockAdjustmentRecord & {
+  product?: BackendProductStock | null;
+  productVariant?: (StockAdjustmentRecord['productVariant'] & {
+    product?: BackendProductStock | null;
+  }) | null;
+};
+
+type PaginatedStockRecords = { data: BackendErpStockRecord[] };
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -70,8 +97,90 @@ const MOCK_STOCK_LEVELS: StockLevel[] = [
 ];
 
 export const getStockLevels = async (): Promise<StockLevel[]> => {
+  if (API_MODE !== 'mock') {
+    const response = await fetchApi<PaginatedStockRecords>('/api/v1/stocks/erp?limit=100');
+    return response.data.map((stockRecord) => {
+      const product = stockRecord.productVariant?.product ?? stockRecord.product;
+      const productName = product?.name ?? stockRecord.productVariant?.name ?? 'Product';
+      const unitCost = Number(product?.base_cost_price ?? 0) * 100;
+      const productType = product?.type === 2 ? 'Raw material' : 'Finished good';
+      const reorderLevel = product?.reorder_level ?? 0;
+      const status: StockLevel['status'] = stockRecord.quantity === 0
+        ? 'Out of Stock'
+        : stockRecord.quantity <= reorderLevel
+          ? 'Low Stock'
+          : 'In Stock';
+      return {
+        id: String(stockRecord.id),
+        productId: String(product?.id ?? stockRecord.productVariant?.id ?? ''),
+        productName,
+        sku: stockRecord.sku,
+        category: product?.category?.name ?? 'Uncategorized',
+        type: productType,
+        locationId: '',
+        locationName: 'Default stock',
+        onHand: stockRecord.quantity,
+        reserved: 0,
+        available: stockRecord.quantity,
+        inTransit: 0,
+        onOrder: 0,
+        reorderLevel,
+        unitCost,
+        totalValue: unitCost * stockRecord.quantity,
+        status,
+      };
+    });
+  }
   await delay(800);
   return MOCK_STOCK_LEVELS;
+};
+
+export const getStockRecords = async (): Promise<StockAdjustmentRecord[]> => {
+  if (API_MODE !== 'mock') {
+    const response = await fetchApi<PaginatedStockRecords>('/api/v1/stocks/erp?limit=100');
+    return response.data;
+  }
+
+  return MOCK_STOCK_LEVELS.map((stockLevel, index) => ({
+    id: index + 1,
+    sku: stockLevel.sku,
+    quantity: stockLevel.onHand,
+    product: { id: Number(index + 1), name: stockLevel.productName },
+  }));
+};
+
+export const adjustStock = async (stockId: number, quantityChange: number): Promise<StockAdjustmentRecord> => {
+  if (API_MODE !== 'mock') {
+    return fetchApi<StockAdjustmentRecord>(`/api/v1/stocks/${encodeURIComponent(stockId)}/adjust`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantityChange }),
+    });
+  }
+
+  const stockRecord = (await getStockRecords()).find((record) => record.id === stockId);
+  if (!stockRecord) throw new Error('Stock record not found');
+  if (stockRecord.quantity + quantityChange < 0) {
+    throw new Error('Stock quantity cannot be negative');
+  }
+  return { ...stockRecord, quantity: stockRecord.quantity + quantityChange };
+};
+
+export const adjustProductStock = async (productId: number, quantityChange: number): Promise<StockAdjustmentRecord> => {
+  if (API_MODE !== 'mock') {
+    return fetchApi<StockAdjustmentRecord>(`/api/v1/stocks/products/${encodeURIComponent(productId)}/adjust`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ quantityChange }),
+    });
+  }
+
+  const matchingStockRecord = (await getStockRecords()).find(
+    (stockRecord) => stockRecord.product?.id === productId,
+  );
+  if (matchingStockRecord) return adjustStock(matchingStockRecord.id, quantityChange);
+  if (quantityChange < 0) throw new Error('Cannot deduct stock before recording an initial quantity');
+  return { id: Date.now(), sku: `PRODUCT-${productId}`, quantity: quantityChange, product: { id: productId, name: 'Product' } };
 };
 
 export const getWarehouses = async (): Promise<Warehouse[]> => {

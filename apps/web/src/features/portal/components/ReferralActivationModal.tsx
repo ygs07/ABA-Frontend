@@ -7,6 +7,7 @@ import { ReferralKycStep } from './ReferralKycStep';
 import { ReferralPaymentStep } from './ReferralPaymentStep';
 import { ReferralSuccessStep } from './ReferralSuccessStep';
 import { toast } from 'sonner';
+import { initializeKycActivation, verifyKycActivation } from '../api';
 
 interface ReferralActivationModalProps {
   open: boolean;
@@ -30,9 +31,12 @@ export function ReferralActivationModal({ open, onOpenChange }: ReferralActivati
   };
 
   const handlePayFee = async () => {
-    await payActivationFee();
-    toast.success('₦5,000 paid & credited to shopping wallet!');
-    setStep(2);
+    const checkout = await initializeKycActivation();
+    const { default: PaystackPop } = await import('@paystack/inline-js');
+    new PaystackPop().newTransaction({ key: checkout.publicKey, email: checkout.email, amount: checkout.amount, reference: checkout.reference,
+      onSuccess: async ({ reference }) => { await verifyKycActivation(reference); await payActivationFee(); toast.success('Payment verified and ₦5,000 credited to Shopping Credits.'); setStep(2); },
+      onCancel: () => toast.message('Activation payment cancelled.'),
+    });
   };
 
   const handleClose = () => {

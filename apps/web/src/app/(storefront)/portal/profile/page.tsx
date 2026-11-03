@@ -1,8 +1,24 @@
-import React from 'react';
+ 'use client';
+
+import React, { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { User, Mail, Phone, Lock, MapPin } from 'lucide-react';
+import { useAuthStore } from '@/features/auth/store';
 
 export default function PortalProfile() {
+  const router = useRouter();
+  const { user, isAuthenticated } = useAuthStore();
+  const isCustomer = Boolean(
+    isAuthenticated && user && (user.userType === 'Customer' || user.roles.includes('Customer')),
+  );
+
+  useEffect(() => {
+    if (!isCustomer) router.replace('/auth/login?next=/portal/profile');
+  }, [isCustomer, router]);
+
+  if (!isCustomer) return null;
+
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text">Profile Settings</h1>

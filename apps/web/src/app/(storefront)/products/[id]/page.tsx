@@ -13,6 +13,7 @@ import { ProductVariant } from '@/features/products/types';
 import { AboutSellerTab } from '../_components/AboutSellerTab';
 import { ProductInfoTabs } from '../_components/ProductInfoTabs';
 import { ProductBuyBox } from '../_components/ProductBuyBox';
+import { useAuthStore } from '@/features/auth/store';
 
 export default function ProductDetailPage({ 
   params,
@@ -24,6 +25,9 @@ export default function ProductDetailPage({
   const unwrappedParams = React.use(params);
   const unwrappedSearchParams = React.use(searchParams);
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | undefined>();
+  const isCustomer = useAuthStore((state) =>
+    Boolean(state.isAuthenticated && (state.user?.userType === 'Customer' || state.user?.roles.includes('Customer'))),
+  );
 
   const { data: product, isLoading, error } = useQuery({
     queryKey: ['product_detail', unwrappedParams.id],
@@ -142,7 +146,7 @@ export default function ProductDetailPage({
       {/* About Seller & Reviews */}
       <div id="reviews" className="mt-16 pt-8 border-t border-border">
         {product.merchant && (
-          <AboutSellerTab merchant={product.merchant} productId={product.id} />
+          <AboutSellerTab merchant={product.merchant} productId={product.id} isEligibleToReview={isCustomer} />
         )}
       </div>
     </div>

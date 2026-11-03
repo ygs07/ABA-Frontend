@@ -1,8 +1,11 @@
 import { Metadata } from 'next';
 import { PageHeader } from '@/components/patterns/PageHeader';
-import { RewardSummaryCards, RewardsLedgerTable } from '@/features/rewards/components';
+import {
+  RewardRulesOverview,
+  RewardSummaryCards,
+  RewardsLedgerTable,
+} from '@/features/rewards/components';
 import { brand } from '@/config/brand';
-import { getRewardRules } from '@/features/rewards/api';
 
 export const metadata: Metadata = {
   title: `My ${brand.rewardsName}`,
@@ -10,8 +13,6 @@ export const metadata: Metadata = {
 
 export default async function CustomerRewardsPage() {
   const userId = 'user-1'; // Hardcoded for mock portal
-  const rules = await getRewardRules();
-  const activeRules = rules.filter(r => r.active);
 
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -28,27 +29,7 @@ export default async function CustomerRewardsPage() {
         </div>
 
         <div className="space-y-8">
-          <div className="border rounded-xl bg-white shadow-sm overflow-hidden">
-            <div className="p-6 pb-2 border-b border-border">
-              <h3 className="text-lg font-semibold">How to Earn</h3>
-            </div>
-            <div className="p-6">
-              <ul className="space-y-4">
-                {activeRules.map(rule => (
-                  <li key={rule.id} className="flex justify-between items-center border-b pb-2 last:border-0 last:pb-0">
-                    <div>
-                      <div className="font-medium text-sm">{rule.key.replace('_', ' ').replace(/\b\w/g, c => c.toUpperCase())}</div>
-                      {rule.needsVerifiedPurchase && <div className="text-xs text-gray-500">Requires verified purchase</div>}
-                    </div>
-                    <div className="font-bold text-green-600">+{rule.points}</div>
-                  </li>
-                ))}
-                {activeRules.length === 0 && (
-                  <li className="text-sm text-gray-500">No active earning rules.</li>
-                )}
-              </ul>
-            </div>
-          </div>
+          <RewardRulesOverview />
 
           <div className="border rounded-xl bg-gray-50 shadow-sm overflow-hidden">
             <div className="p-6 pb-2 border-b border-border">

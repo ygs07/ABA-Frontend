@@ -9,13 +9,15 @@ import { Award } from 'lucide-react';
 interface OnboardingStepCertificationsProps {
   form: UseFormReturn<MerchantOnboardingData>;
   certUploaded: boolean;
-  onUploadCert: () => void;
+  onUploadCert: (file: File) => void;
+  onRemoveCert: () => void;
 }
 
 export function OnboardingStepCertifications({
   form,
   certUploaded,
   onUploadCert,
+  onRemoveCert,
 }: OnboardingStepCertificationsProps) {
   const { register, watch, formState: { errors } } = form;
   const certType = watch('certificationType');
@@ -63,9 +65,12 @@ export function OnboardingStepCertifications({
             accept=".pdf,.jpg,.jpeg,.png"
             onFileSelect={(file) => {
               form.setValue('certificationDocumentName', file.name);
-              onUploadCert();
+              onUploadCert(file);
             }}
-            onRemove={() => form.setValue('certificationDocumentName', undefined)}
+            onRemove={() => {
+              form.setValue('certificationDocumentName', undefined);
+              onRemoveCert();
+            }}
           />
         </div>
       )}

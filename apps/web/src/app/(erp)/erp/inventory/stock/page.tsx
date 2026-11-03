@@ -115,9 +115,12 @@ export default function StockLevelsPage() {
       id: 'actions',
       header: '',
       cell: (info: any) => {
+        const stockLevel = info.row.original as StockLevel;
         return (
           <div className="flex justify-end gap-1">
-            <Button variant="ghost" size="sm" className="text-xs">Adjust</Button>
+            <Link href={`/erp/inventory/adjustments/new?stockId=${encodeURIComponent(stockLevel.id)}`}>
+              <Button variant="ghost" size="sm" className="text-xs">Adjust</Button>
+            </Link>
             <Button variant="ghost" size="sm" className="text-xs">Movements</Button>
           </div>
         );

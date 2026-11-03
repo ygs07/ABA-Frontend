@@ -1,11 +1,45 @@
+import { useEffect, useState } from 'react';
 import { Order } from '../types';
 import { AmountText } from '@/components/patterns/AmountText';
+import { Button } from '@/components/ui/button';
 
 interface OrderItemsTabProps {
   order: Order;
+  onUpdateItem: (itemId: string, data: { quantity?: number; status?: number }) => Promise<void>;
 }
 
-export function OrderItemsTab({ order }: OrderItemsTabProps) {
+const statusCodeByText: Record<string, number> = {
+  pending: 1,
+  processing: 2,
+  shipped_or_ready_for_pickup: 3,
+  complete: 4,
+  cancelled: 5,
+  refund_requested: 6,
+};
+
+export function OrderItemsTab({ order, onUpdateItem }: OrderItemsTabProps) {
+  const [drafts, setDrafts] = useState<Record<string, { quantity: number; status: number }>>({});
+
+  useEffect(() => {
+    setDrafts(Object.fromEntries(order.lines.map((line) => [line.id, {
+      quantity: line.quantity,
+      status: statusCodeByText[line.status?.toLowerCase() ?? 'pending'] ?? 1,
+    }])));
+  }, [order]);
+
+  const updateDraft = (lineId: string, changes: Partial<{ quantity: number; status: number }>) => {
+    setDrafts((current) => ({ ...current, [lineId]: { ...current[lineId], ...changes } }));
+  };
+
+  const saveLine = async (line: Order['lines'][number]) => {
+    const draft = drafts[line.id];
+    const currentStatus = statusCodeByText[line.status?.toLowerCase() ?? 'pending'] ?? 1;
+    await onUpdateItem(line.id, {
+      ...(draft.quantity !== line.quantity ? { quantity: draft.quantity } : {}),
+      ...(draft.status !== currentStatus ? { status: draft.status } : {}),
+    });
+  };
+
   return (
     <div className="bg-surface rounded-xl border border-border overflow-hidden">
       <div className="overflow-x-auto">
@@ -19,6 +53,7 @@ export function OrderItemsTab({ order }: OrderItemsTabProps) {
               <th className="px-6 py-3 font-medium text-right">Tax</th>
               <th className="px-6 py-3 font-medium text-right">Line Total</th>
               <th className="px-6 py-3 font-medium text-center">Status</th>
+              <th className="px-6 py-3 font-medium text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
@@ -28,20 +63,13 @@ export function OrderItemsTab({ order }: OrderItemsTabProps) {
                   <p className="font-medium text-text">{line.productName}</p>
                   <p className="text-xs text-text-muted font-mono mt-0.5">{line.sku}</p>
                 </td>
-                <td className="px-6 py-4 text-center font-medium">{line.quantity}</td>
+                <td className="px-6 py-4 text-center font-medium"><input type="number" min="1" value={drafts[line.id]?.quantity ?? line.quantity} onChange={(event) => updateDraft(line.id, { quantity: Number(event.target.value) })} className="h-8 w-16 rounded border border-border bg-surface px-2 text-center" /></td>
                 <td className="px-6 py-4 text-right"><AmountText amountInKobo={line.unitPrice} /></td>
                 <td className="px-6 py-4 text-right"><AmountText amountInKobo={line.discount} /></td>
                 <td className="px-6 py-4 text-right"><AmountText amountInKobo={line.tax} /></td>
                 <td className="px-6 py-4 text-right font-medium"><AmountText amountInKobo={line.lineTotal} /></td>
-                <td className="px-6 py-4 text-center">
-                  <span className={`px-2 py-0.5 rounded text-xs font-medium border ${
-                    line.status === 'Fulfilled' ? 'bg-success/10 text-success border-success/20' :
-                    line.status === 'Returned' ? 'bg-error/10 text-error border-error/20' :
-                    'bg-surface-2 text-text-muted border-border'
-                  }`}>
-                    {line.status || 'Pending'}
-                  </span>
-                </td>
+                <td className="px-6 py-4 text-center"><select value={drafts[line.id]?.status ?? 1} onChange={(event) => updateDraft(line.id, { status: Number(event.target.value) })} className="h-8 rounded border border-border bg-surface px-2 text-xs"><option value="1">Pending</option><option value="2">Processing</option><option value="3">Shipped / ready</option><option value="4">Complete</option><option value="5">Cancelled</option><option value="6">Refund requested</option></select></td>
+                <td className="px-6 py-4 text-right"><Button size="sm" variant="outline" onClick={() => void saveLine(line)}>Save</Button></td>
               </tr>
             ))}
           </tbody>

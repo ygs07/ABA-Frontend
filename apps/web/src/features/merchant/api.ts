@@ -6,7 +6,7 @@ import { CreateMerchantInput } from '../merchants/schemas';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
-type BackendVendor = {
+type BackendMerchant = {
   id: number | string;
   business_name: string;
   business_owner_phone_number: string;
@@ -23,40 +23,61 @@ type BackendVendor = {
   created_at?: string;
 };
 
-type PaginatedVendors = { data: BackendVendor[] };
+type PaginatedMerchants = { data: BackendMerchant[] };
 
-function toMerchantType(type: BackendVendor['merchant_type']): Merchant['type'] {
+type BackendStorefrontMerchant = Pick<
+  BackendMerchant,
+  | 'id'
+  | 'business_name'
+  | 'business_address'
+  | 'website'
+  | 'bio'
+  | 'merchant_type'
+  | 'status'
+  | 'verified_at'
+  | 'createdAt'
+  | 'created_at'
+> & {
+  avatar?: { url: string } | null;
+  banner?: { url: string } | null;
+  ordersCount?: number;
+  rating?: number;
+  storeCategories?: { categories?: Array<{ count: number }> };
+  salesHistory?: Array<{ month: string; ordersCount: number }>;
+};
+
+function toMerchantType(type: BackendMerchant['merchant_type']): Merchant['type'] {
   return type === 1 ? 'Own outlet' : type === 2 ? 'Franchise' : 'Partner';
 }
 
-function toMerchantStatus(status: BackendVendor['status']): Merchant['status'] {
+function toMerchantStatus(status: BackendMerchant['status']): Merchant['status'] {
   return status === 2 ? 'Active' : status === 3 ? 'Rejected' : status === 4 ? 'Suspended' : 'Pending';
 }
 
-function toMerchant(vendor: BackendVendor): Merchant {
+function toMerchant(merchantRecord: BackendMerchant): Merchant {
   return {
-    id: String(vendor.id),
-    merchantNo: `VEN-${vendor.id}`,
-    name: vendor.business_name,
-    legalName: vendor.business_name,
-    type: toMerchantType(vendor.merchant_type),
-    rcNumber: vendor.rc_tax_id ?? undefined,
-    description: vendor.bio ?? undefined,
-    isVerified: Boolean(vendor.verified_at),
-    ownerName: vendor.business_owner_name,
-    phone: vendor.business_owner_phone_number,
-    email: vendor.business_owner_email,
-    website: vendor.website ?? undefined,
-    address: vendor.business_address,
+    id: String(merchantRecord.id),
+    merchantNo: `MER-${merchantRecord.id}`,
+    name: merchantRecord.business_name,
+    legalName: merchantRecord.business_name,
+    type: toMerchantType(merchantRecord.merchant_type),
+    rcNumber: merchantRecord.rc_tax_id ?? undefined,
+    description: merchantRecord.bio ?? undefined,
+    isVerified: Boolean(merchantRecord.verified_at),
+    ownerName: merchantRecord.business_owner_name,
+    phone: merchantRecord.business_owner_phone_number,
+    email: merchantRecord.business_owner_email,
+    website: merchantRecord.website ?? undefined,
+    address: merchantRecord.business_address,
     city: '',
     state: '',
-    settlementBank: { bankName: '', accountNumber: '', accountName: vendor.business_owner_name },
+    settlementBank: { bankName: '', accountNumber: '', accountName: merchantRecord.business_owner_name },
     settlementFrequency: 'Weekly',
     priceList: 'Default',
     discountLimit: 0,
     creditLimit: 0,
-    status: vendor.verified_at ? 'Active' : toMerchantStatus(vendor.status),
-    onboardedAt: vendor.createdAt ?? vendor.created_at ?? new Date().toISOString(),
+    status: merchantRecord.verified_at ? 'Active' : toMerchantStatus(merchantRecord.status),
+    onboardedAt: merchantRecord.createdAt ?? merchantRecord.created_at ?? new Date().toISOString(),
     salesPeriod: 0,
     ordersCount: 0,
     stockValue: 0,
@@ -64,16 +85,16 @@ function toMerchant(vendor: BackendVendor): Merchant {
   };
 }
 
-function toMerchantProfile(vendor: BackendVendor): MerchantProfile {
-  const merchant = toMerchant(vendor);
+function toMerchantProfile(merchantRecord: BackendMerchant): MerchantProfile {
+  const merchant = toMerchant(merchantRecord);
 
   return {
     ...merchant,
-    description: vendor.bio ?? '',
+    description: merchantRecord.bio ?? '',
     rating: 0,
     reviewCount: 0,
     joinedDate: merchant.onboardedAt,
-    isVerified: Boolean(vendor.verified_at),
+    isVerified: Boolean(merchantRecord.verified_at),
     totalProducts: 0,
     location: merchant.address,
     followerCount: 0,
@@ -85,9 +106,60 @@ function toMerchantProfile(vendor: BackendVendor): MerchantProfile {
   };
 }
 
+function toStorefrontMerchantProfile(merchantRecord: BackendStorefrontMerchant): MerchantProfile {
+  const joinedDate = merchantRecord.createdAt ?? merchantRecord.created_at ?? new Date().toISOString();
+
+  return {
+    id: String(merchantRecord.id),
+    merchantNo: `MER-${merchantRecord.id}`,
+    name: merchantRecord.business_name,
+    legalName: merchantRecord.business_name,
+    type: toMerchantType(merchantRecord.merchant_type),
+    description: merchantRecord.bio ?? '',
+    isVerified: Boolean(merchantRecord.verified_at),
+    ownerName: '',
+    phone: '',
+    email: '',
+    website: merchantRecord.website ?? undefined,
+    address: merchantRecord.business_address,
+    city: '',
+    state: '',
+    logoUrl: merchantRecord.avatar?.url,
+    bannerImage: merchantRecord.banner?.url,
+    settlementBank: { bankName: '', accountNumber: '', accountName: '' },
+    settlementFrequency: 'Weekly',
+    priceList: 'Default',
+    discountLimit: 0,
+    creditLimit: 0,
+    status: toMerchantStatus(merchantRecord.status),
+    onboardedAt: joinedDate,
+    salesPeriod: 0,
+    ordersCount: merchantRecord.ordersCount ?? 0,
+    stockValue: 0,
+    outstandingBalance: 0,
+    rating: merchantRecord.rating ?? 0,
+    reviewCount: 0,
+    joinedDate,
+    totalProducts: merchantRecord.storeCategories?.categories?.reduce(
+      (total, category) => total + category.count,
+      0,
+    ) ?? 0,
+    location: merchantRecord.business_address,
+    followerCount: 0,
+    onTimeDispatch: 0,
+    returnRate: 0,
+    avgResponseTime: 'Not available',
+    monthlyOrderCounts: (merchantRecord.salesHistory ?? []).map((history) => ({
+      month: history.month,
+      count: history.ordersCount,
+    })),
+    isSaved: false,
+  };
+}
+
 export const getMerchants = async (): Promise<{ data: Merchant[] }> => {
   if (API_MODE !== 'mock') {
-    const response = await fetchApi<PaginatedVendors>('/api/v1/vendors?limit=100');
+    const response = await fetchApi<PaginatedMerchants>('/api/v1/merchants?limit=100');
     return { data: response.data.map(toMerchant) };
   }
 
@@ -97,8 +169,8 @@ export const getMerchants = async (): Promise<{ data: Merchant[] }> => {
 
 export const getMerchantById = async (id: string): Promise<{ data: MerchantProfile }> => {
   if (API_MODE !== 'mock') {
-    const vendor = await fetchApi<BackendVendor>(`/api/v1/vendors/${encodeURIComponent(id)}`);
-    return { data: toMerchantProfile(vendor) };
+    const merchantRecord = await fetchApi<BackendMerchant>(`/api/v1/merchants/${encodeURIComponent(id)}`);
+    return { data: toMerchantProfile(merchantRecord) };
   }
 
   await delay(500);
@@ -131,13 +203,30 @@ export const getMerchantById = async (id: string): Promise<{ data: MerchantProfi
   return { data: profile };
 };
 
+export const getStorefrontMerchantById = async (
+  id: string,
+): Promise<{ data: MerchantProfile }> => {
+  if (API_MODE !== 'mock') {
+    const merchantRecord = await fetchApi<BackendStorefrontMerchant>(
+      `/api/v1/storefront/merchants/${encodeURIComponent(id)}`,
+    );
+    return { data: toStorefrontMerchantProfile(merchantRecord) };
+  }
+
+  return getMerchantById(id);
+};
+
 export const createMerchant = async (data: CreateMerchantInput): Promise<{ data: Merchant }> => {
   if (API_MODE !== 'mock') {
-    const vendor = await fetchApi<BackendVendor>('/api/v1/vendors', {
+    const merchantRecord = await fetchApi<BackendMerchant>('/api/v1/merchants', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         userId: data.userId,
+        userFirstName: data.userFirstName,
+        userLastName: data.userLastName,
+        userUsername: data.userUsername,
+        userPassword: data.userPassword,
         businessName: data.name,
         businessOwnerPhoneNumber: data.phone,
         businessAddress: [data.address, data.city, data.state, data.lga].filter(Boolean).join(', '),
@@ -149,7 +238,7 @@ export const createMerchant = async (data: CreateMerchantInput): Promise<{ data:
       }),
     });
 
-    return { data: toMerchant(vendor) };
+    return { data: toMerchant(merchantRecord) };
   }
 
   await delay(1000);
@@ -177,10 +266,10 @@ export const createMerchant = async (data: CreateMerchantInput): Promise<{ data:
 
 export const approveMerchant = async (id: string): Promise<{ data: Merchant }> => {
   if (API_MODE !== 'mock') {
-    const vendor = await fetchApi<BackendVendor>(`/api/v1/vendors/${encodeURIComponent(id)}/verify`, {
+    const merchantRecord = await fetchApi<BackendMerchant>(`/api/v1/merchants/${encodeURIComponent(id)}/approve`, {
       method: 'PATCH',
     });
-    return { data: toMerchant(vendor) };
+    return { data: toMerchant(merchantRecord) };
   }
 
   await delay(500);
@@ -193,10 +282,10 @@ export const approveMerchant = async (id: string): Promise<{ data: Merchant }> =
 
 export const suspendMerchant = async (id: string): Promise<{ data: Merchant }> => {
   if (API_MODE !== 'mock') {
-    const vendor = await fetchApi<BackendVendor>(`/api/v1/vendors/${encodeURIComponent(id)}/suspend`, {
+    const merchantRecord = await fetchApi<BackendMerchant>(`/api/v1/merchants/${encodeURIComponent(id)}/suspend`, {
       method: 'PATCH',
     });
-    return { data: toMerchant(vendor) };
+    return { data: toMerchant(merchantRecord) };
   }
 
   await delay(500);
@@ -204,6 +293,50 @@ export const suspendMerchant = async (id: string): Promise<{ data: Merchant }> =
   if (!merchant) throw new Error('Merchant not found');
   merchant.status = 'Suspended';
   return { data: merchant };
+};
+
+export const updateMerchant = async (
+  id: string,
+  data: Partial<CreateMerchantInput>,
+): Promise<{ data: Merchant }> => {
+  if (API_MODE !== 'mock') {
+    const merchantType = data.type === undefined
+      ? undefined
+      : data.type === 'Own outlet' ? 1 : data.type === 'Franchise' ? 2 : 3;
+    const merchantRecord = await fetchApi<BackendMerchant>(`/api/v1/merchants/${encodeURIComponent(id)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...(data.name === undefined ? {} : { businessName: data.name }),
+        ...(data.phone === undefined ? {} : { businessOwnerPhoneNumber: data.phone }),
+        ...(data.address === undefined ? {} : {
+          businessAddress: [data.address, data.city, data.state, data.lga].filter(Boolean).join(', '),
+        }),
+        ...(data.ownerName === undefined ? {} : { businessOwnerName: data.ownerName }),
+        ...(data.email === undefined ? {} : { businessOwnerEmail: data.email }),
+        ...(data.website === undefined ? {} : { website: data.website || undefined }),
+        ...(data.rcNumber === undefined ? {} : { rcTaxId: data.rcNumber || undefined }),
+        ...(merchantType === undefined ? {} : { merchantType }),
+      }),
+    });
+    return { data: toMerchant(merchantRecord) };
+  }
+
+  const merchant = MOCK_MERCHANTS.find((item) => item.id === id || item.merchantNo === id);
+  if (!merchant) throw new Error('Merchant not found');
+  Object.assign(merchant, data);
+  return { data: merchant };
+};
+
+export const deleteMerchant = async (id: string): Promise<void> => {
+  if (API_MODE !== 'mock') {
+    await fetchApi<void>(`/api/v1/merchants/${encodeURIComponent(id)}`, { method: 'DELETE' });
+    return;
+  }
+
+  const merchantIndex = MOCK_MERCHANTS.findIndex((item) => item.id === id || item.merchantNo === id);
+  if (merchantIndex === -1) throw new Error('Merchant not found');
+  MOCK_MERCHANTS.splice(merchantIndex, 1);
 };
 
 

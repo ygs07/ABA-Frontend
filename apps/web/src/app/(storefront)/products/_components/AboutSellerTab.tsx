@@ -8,9 +8,10 @@ import { ReviewList } from '@/features/reviews';
 interface AboutSellerTabProps {
   merchant: Merchant;
   productId: string;
+  isEligibleToReview: boolean;
 }
 
-export function AboutSellerTab({ merchant, productId }: AboutSellerTabProps) {
+export function AboutSellerTab({ merchant, productId, isEligibleToReview }: AboutSellerTabProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-12 py-8 animate-in fade-in">
       {/* Left Column: About Seller */}
@@ -127,7 +128,7 @@ export function AboutSellerTab({ merchant, productId }: AboutSellerTabProps) {
         <div className="mt-8">
           <ReviewList 
             productId={productId} 
-            isEligibleToReview={true} 
+            isEligibleToReview={isEligibleToReview}
           />
         </div>
       </div>

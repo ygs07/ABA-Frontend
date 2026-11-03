@@ -39,8 +39,8 @@ export function ImageUploadField({
     const validFiles: File[] = [];
     for (let i = 0; i < fileList.length; i++) {
       const file = fileList[i];
-      if (!file.type.startsWith('image/')) {
-        setErrorMessage('Only image files (JPEG, PNG, WebP) are allowed.');
+      if (!['image/jpeg', 'image/png'].includes(file.type)) {
+        setErrorMessage('Only PNG and JPEG image files are allowed.');
         return;
       }
       if (file.size > maxSizeBytes) {
@@ -127,7 +127,7 @@ export function ImageUploadField({
           <input
             ref={inputRef}
             type="file"
-            accept="image/png,image/jpeg,image/webp"
+            accept="image/png,image/jpeg"
             multiple={!isSingle}
             className="hidden"
             onChange={(e) => handleFiles(e.target.files)}
@@ -140,7 +140,7 @@ export function ImageUploadField({
             <span className="font-semibold text-brand-600 hover:underline">Click to browse</span>
             <span className="text-text-muted"> or drag & drop</span>
           </div>
-          <p className="text-[11px] text-text-muted">PNG, JPG, or WEBP up to 5MB</p>
+          <p className="text-[11px] text-text-muted">PNG or JPG up to 5MB each</p>
         </div>
       )}
 

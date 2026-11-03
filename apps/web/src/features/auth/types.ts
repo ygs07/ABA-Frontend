@@ -2,6 +2,7 @@ export type UserRole =
   | 'Super Admin'
   | 'Admin'
   | 'Customer'
+  | 'Merchant'
   | 'Vendor'
   | 'Marketer'
   // Legacy UI roles retained while their backend mappings are finalized.

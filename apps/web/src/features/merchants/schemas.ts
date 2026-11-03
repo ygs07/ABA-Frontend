@@ -1,7 +1,11 @@
 import { z } from 'zod';
 
 export const createMerchantSchema = z.object({
-  userId: z.number().int().positive('Enter the existing user ID for this vendor'),
+  userId: z.number().int().positive().optional(),
+  userFirstName: z.string().min(2, 'First name is required'),
+  userLastName: z.string().min(2, 'Last name is required'),
+  userUsername: z.string().min(3, 'Username must be at least 3 characters'),
+  userPassword: z.string().min(8, 'Password must be at least 8 characters'),
   // Business
   name: z.string().min(2, 'Name must be at least 2 characters'),
   legalName: z.string().min(2, 'Legal name is required'),

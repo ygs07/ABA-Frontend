@@ -1,4 +1,4 @@
-import { ApiError } from '@/lib/api';
+import { API_MODE, ApiError, fetchApi } from '@/lib/api';
 import { SpotlightSettings, SpotlightHistoryLog, SpotlightMerchant, AnalyticsEvent } from './types';
 import { mockSpotlightSettings, mockSpotlightHistory } from './mocks';
 import { mockShopMerchants, mockShopProducts } from '../shop/mocks';
@@ -41,6 +41,28 @@ export async function getSpotlightHistory(): Promise<{ data: SpotlightHistoryLog
 }
 
 export async function getStorefrontSpotlight(): Promise<{ data: SpotlightMerchant[] }> {
+  if (API_MODE !== 'mock') {
+    const merchants = await fetchApi<Array<{
+      id: number;
+      businessName: string;
+      website?: string | null;
+      productCount?: string | number;
+      avatar?: { url: string } | null;
+      banner?: { url: string } | null;
+    }>>('/api/v1/storefront/merchants-spotlight');
+    return {
+      data: merchants.map((merchant) => ({
+        id: String(merchant.id),
+        name: merchant.businessName,
+        logoUrl: merchant.avatar?.url,
+        bannerUrl: merchant.banner?.url,
+        location: merchant.website ?? 'Nigeria',
+        rating: 0,
+        orderCount: 0,
+        topProducts: [],
+      })),
+    };
+  }
   await delay(600);
   
   // Implementation of the scoring/rotation engine mock

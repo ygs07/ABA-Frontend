@@ -9,13 +9,15 @@ import { CheckCircle2, Clock, Store } from 'lucide-react';
 interface OnboardingStepBusinessProps {
   form: UseFormReturn<MerchantOnboardingData>;
   cacUploaded: boolean;
-  onUploadCac: () => void;
+  onUploadCac: (file: File) => void;
+  onRemoveCac: () => void;
 }
 
 export function OnboardingStepBusiness({
   form,
   cacUploaded,
   onUploadCac,
+  onRemoveCac,
 }: OnboardingStepBusinessProps) {
   const { register, watch, setValue, formState: { errors } } = form;
   const isProvisional = watch('isProvisional');
@@ -129,9 +131,12 @@ export function OnboardingStepBusiness({
               accept=".pdf,.jpg,.jpeg,.png"
               onFileSelect={(file) => {
                 setValue('cacDocumentName', file.name);
-                onUploadCac();
+                onUploadCac(file);
               }}
-              onRemove={() => setValue('cacDocumentName', undefined)}
+              onRemove={() => {
+                setValue('cacDocumentName', undefined);
+                onRemoveCac();
+              }}
             />
           </div>
         </div>

@@ -1,5 +1,6 @@
 import { Customer } from '../types';
 import { CreateCustomerInput } from '../schemas';
+import { API_MODE, fetchApi } from '@/lib/api';
 
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -45,11 +46,95 @@ const MOCK_CUSTOMERS: Customer[] = [
 ];
 
 export const getCustomers = async (): Promise<Customer[]> => {
+  if (API_MODE !== 'mock') {
+    const response = await fetchApi<{ data: Array<{
+      id: number;
+      status: 'active' | 'inactive';
+      createdAt: string;
+      user: {
+        id: number;
+        first_name: string;
+        last_name: string;
+        phone?: string | null;
+        email: string;
+        username?: string;
+      };
+    }>; meta: unknown }>('/api/v1/customers?limit=100');
+    return response.data.map((customer) => ({
+      id: String(customer.id),
+      customerNo: `CUS-${String(customer.id).padStart(5, '0')}`,
+      type: 'Individual',
+      firstName: customer.user.first_name,
+      lastName: customer.user.last_name,
+      phone: customer.user.phone ?? '',
+      email: customer.user.email,
+      customerGroup: 'Retail',
+      referralCode: customer.user.username ?? '',
+      addresses: [],
+      creditLimit: 0,
+      status: customer.status === 'active' ? 'Active' : 'Suspended',
+      registeredAt: customer.createdAt,
+      ordersCount: 0,
+      totalSpent: 0,
+      walletBalance: 0,
+      referralsCount: 0,
+    }));
+  }
   await delay(800);
   return MOCK_CUSTOMERS;
 };
 
+export type CustomerOverview = {
+  totalCustomers: number;
+  newCustomersThisMonth: number;
+  activeCustomersLast90Days: number;
+  customersWithReferrals: number;
+};
+
+export const getCustomerOverview = async (): Promise<CustomerOverview> => {
+  if (API_MODE !== 'mock') {
+    return fetchApi<CustomerOverview>('/api/v1/customers/overview');
+  }
+
+  return {
+    totalCustomers: MOCK_CUSTOMERS.length,
+    newCustomersThisMonth: 0,
+    activeCustomersLast90Days: 0,
+    customersWithReferrals: 0,
+  };
+};
+
 export const getCustomerById = async (id: string): Promise<Customer> => {
+  if (API_MODE !== 'mock') {
+    const user = await fetchApi<{
+      id: number;
+      first_name: string;
+      last_name: string;
+      phone: string;
+      email: string;
+      username?: string;
+      createdAt: string;
+    }>(`/api/v1/users/${encodeURIComponent(id)}`);
+    return {
+      id: String(user.id),
+      customerNo: `CUS-${String(user.id).padStart(5, '0')}`,
+      type: 'Individual',
+      firstName: user.first_name,
+      lastName: user.last_name,
+      phone: user.phone,
+      email: user.email,
+      customerGroup: 'Retail',
+      referralCode: user.username ?? '',
+      addresses: [],
+      creditLimit: 0,
+      status: 'Active',
+      registeredAt: user.createdAt,
+      ordersCount: 0,
+      totalSpent: 0,
+      walletBalance: 0,
+      referralsCount: 0,
+    };
+  }
   await delay(500);
   const customer = MOCK_CUSTOMERS.find(c => c.id === id);
   if (!customer) throw new Error('Customer not found');

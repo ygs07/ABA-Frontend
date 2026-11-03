@@ -14,7 +14,7 @@ export const createProductSchema = z.object({
   type: z.enum(['Finished good', 'Raw material', 'Service', 'Bundle']),
   categoryId: z.string().min(1, 'Category is required'),
   vendorId: z.string().optional(),
-  brand: z.string().optional(),
+  brandId: z.string().optional(),
   description: z.string().max(2000).optional(),
   unitOfMeasure: z.string().min(1, 'Unit of measure is required'),
   barcode: z.string().optional(),

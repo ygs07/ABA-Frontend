@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useForm, Resolver } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { createProductSchema, CreateProductInput } from '@/features/products/schemas';
-import { createProduct } from '@/features/products/api/products.api';
+import { createProduct, getProductBrands } from '@/features/products/api/products.api';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -24,6 +24,7 @@ export default function NewProductPage() {
   const activeRole = useAuthStore((state) => state.activeRole);
   const canSelectVendor = activeRole === 'Admin' || activeRole === 'Super Admin';
   const { data: categoriesData } = useQuery({ queryKey: ['product-categories'], queryFn: getCategories });
+  const { data: brandsData } = useQuery({ queryKey: ['product-brands'], queryFn: getProductBrands });
   const { data: vendorsData } = useQuery({ queryKey: ['vendors'], queryFn: getMerchants, enabled: canSelectVendor });
 
   const { register, control, handleSubmit, watch, setValue, formState: { errors } } = useForm<CreateProductInput>({
@@ -122,11 +123,34 @@ export default function NewProductPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Unit of Measure <span className="text-error">*</span></label>
-                <Input {...register('unitOfMeasure')} placeholder="pcs, kg, meters" error={errors.unitOfMeasure?.message} />
+                <select {...register('unitOfMeasure')} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                  <option value="">Select a unit</option>
+                  <option value="piece">Piece</option>
+                  <option value="pair">Pair</option>
+                  <option value="pack">Pack</option>
+                  <option value="box">Box</option>
+                  <option value="set">Set</option>
+                  <option value="dozen">Dozen</option>
+                  <option value="kg">Kilogram (kg)</option>
+                  <option value="g">Gram (g)</option>
+                  <option value="litre">Litre</option>
+                  <option value="ml">Millilitre (ml)</option>
+                  <option value="metre">Metre</option>
+                  <option value="cm">Centimetre (cm)</option>
+                </select>
+                {errors.unitOfMeasure?.message && <p className="text-sm text-error">{errors.unitOfMeasure.message}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Brand (Optional)</label>
-                <Input {...register('brand')} placeholder="Brand Name" error={errors.brand?.message} />
+                <select {...register('brandId')} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                  <option value="">No brand</option>
+                  {brandsData?.data.map((productBrand) => (
+                    <option key={productBrand.id} value={productBrand.id}>
+                      {productBrand.name}{productBrand.is_verified ? ' ✓' : ''}
+                    </option>
+                  ))}
+                </select>
+                {errors.brandId?.message && <p className="text-sm text-error">{errors.brandId.message}</p>}
               </div>
             </div>
           </div>

@@ -59,9 +59,26 @@ export default function NewMerchantPage() {
           </div>
           <div className="p-6 space-y-6">
             <div className="space-y-2">
-              <label className="text-sm font-medium">Existing User ID <span className="text-error">*</span></label>
-              <Input type="number" {...register('userId', { valueAsNumber: true })} placeholder="e.g. 42" error={errors.userId?.message} />
-              <p className="text-xs text-text-muted">Create the user account first, then use its numeric ID to assign the vendor profile.</p>
+              <label className="text-sm font-medium">Merchant Owner Account</label>
+              <p className="text-xs text-text-muted">A user account is created with the details below when this merchant is submitted.</p>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Owner First Name <span className="text-error">*</span></label>
+                <Input {...register('userFirstName')} placeholder="Amina" error={errors.userFirstName?.message} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Owner Last Name <span className="text-error">*</span></label>
+                <Input {...register('userLastName')} placeholder="Yusuf" error={errors.userLastName?.message} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Username <span className="text-error">*</span></label>
+                <Input {...register('userUsername')} placeholder="amina.yusuf" error={errors.userUsername?.message} />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Account Password <span className="text-error">*</span></label>
+                <Input type="password" {...register('userPassword')} error={errors.userPassword?.message} />
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">

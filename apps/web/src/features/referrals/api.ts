@@ -1,6 +1,6 @@
 import { brand } from '@/config/brand';
-import { ApiError } from '@/lib/api';
-import { NetworkNodeData } from './types';
+import { API_MODE, ApiError, fetchApi } from '@/lib/api';
+import { NetworkNodeData, ReferralCode, ReferralRecord } from './types';
 import { mockNetworkUsers, mockReferralRecords, mockReferralCodes, mockReferralFlags } from './mocks';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
@@ -31,12 +31,68 @@ export async function getNetworkTree(rootId: string = `${brand.referralCodePrefi
   return { data: prunedTree };
 }
 
-export async function getReferralRecords() {
+export async function getReferralRecords(): Promise<{ data: ReferralRecord[] }> {
+  if (API_MODE !== 'mock') {
+    const response = await fetchApi<{ data: Array<{
+      id: number;
+      referralCode: { code: string };
+      referrer: { id: number; username?: string; firstName?: string; lastName?: string };
+      referred: { id: number; username?: string; firstName?: string; lastName?: string };
+      createdAt: string;
+    }> }>('/api/v1/referrals?limit=100');
+    return {
+      data: response.data.map((referral) => ({
+        id: String(referral.id),
+        referralNumber: `REF-${String(referral.id).padStart(6, '0')}`,
+        referrerName: [referral.referrer.firstName, referral.referrer.lastName]
+          .filter(Boolean)
+          .join(' ') || referral.referrer.username || 'Referrer',
+        referrerCode: referral.referralCode.code,
+        referredCustomerName: [referral.referred.firstName, referral.referred.lastName]
+          .filter(Boolean)
+          .join(' ') || referral.referred.username || 'Customer',
+        referredCustomerId: String(referral.referred.id),
+        level: 1,
+        sourceChannel: 'Referral code',
+        dateReferred: referral.createdAt,
+        status: 'Registered' as const,
+        flags: 0,
+      })),
+    };
+  }
   await delay(300);
   return { data: [...mockReferralRecords] };
 }
 
-export async function getReferralCodes() {
+export async function getReferralCodes(): Promise<{ data: ReferralCode[] }> {
+  if (API_MODE !== 'mock') {
+    const response = await fetchApi<{ data: Array<{
+      id: number;
+      code: string;
+      is_active: boolean;
+      signups_count?: number;
+      createdAt: string;
+      marketer?: { user?: { first_name?: string; last_name?: string; username?: string } };
+      customer?: { user?: { first_name?: string; last_name?: string; username?: string } };
+    }> }>('/api/v1/referral-codes?limit=100');
+    return {
+      data: response.data.map((referralCode) => {
+        const owner = referralCode.marketer?.user ?? referralCode.customer?.user;
+        return {
+          id: String(referralCode.id),
+          code: referralCode.code,
+          ownerName: [owner?.first_name, owner?.last_name]
+            .filter(Boolean)
+            .join(' ') || owner?.username || 'Referral owner',
+          clicks: 0,
+          signups: referralCode.signups_count ?? 0,
+          conversions: 0,
+          status: referralCode.is_active ? 'Active' : 'Disabled',
+          createdDate: referralCode.createdAt,
+        };
+      }),
+    };
+  }
   await delay(300);
   return { data: [...mockReferralCodes] };
 }

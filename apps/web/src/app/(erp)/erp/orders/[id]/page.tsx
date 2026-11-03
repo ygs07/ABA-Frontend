@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getOrderById } from '@/features/sales/api/sales.api';
+import { getOrderById, updateOrderItem, updateOrderStatus } from '@/features/sales/api/sales.api';
 import { Order } from '@/features/sales/types';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/patterns/KpiCard';
@@ -24,6 +24,40 @@ export default function OrderDetailPage() {
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('Overview');
+  const [selectedStatus, setSelectedStatus] = useState<number | null>(null);
+
+  const fulfilOrder = async () => {
+    if (!order) return;
+    try {
+      const updatedOrder = await updateOrderStatus(order.id, 3);
+      setOrder(updatedOrder);
+      toast.success('Order marked as ready for delivery or pickup');
+    } catch {
+      toast.error('Failed to update the order status');
+    }
+  };
+
+  const updateStatus = async () => {
+    if (!order || !selectedStatus) return;
+    try {
+      const updatedOrder = await updateOrderStatus(order.id, selectedStatus);
+      setOrder(updatedOrder);
+      toast.success('Order status updated and customer notified');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update order status');
+    }
+  };
+
+  const updateItem = async (itemId: string, data: { quantity?: number; status?: number }) => {
+    if (!order) return;
+    try {
+      const updatedOrder = await updateOrderItem(order.id, itemId, data);
+      setOrder(updatedOrder);
+      toast.success('Order item updated');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update order item');
+    }
+  };
 
   useEffect(() => {
     getOrderById(id)
@@ -61,8 +95,21 @@ export default function OrderDetailPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline">Print Invoice</Button>
           <Button variant="outline">Record Payment</Button>
-          <Button>Fulfil Order</Button>
+          <Button onClick={fulfilOrder}>Fulfil Order</Button>
         </div>
+      </div>
+
+      <div className="bg-surface rounded-xl border border-border p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="flex-1"><p className="font-medium">Update order status</p><p className="text-sm text-text-muted">Customers receive an email with a tracking link after each change.</p></div>
+        <select value={selectedStatus ?? ''} onChange={(event) => setSelectedStatus(Number(event.target.value) || null)} className="h-10 rounded-md border border-border bg-surface px-3 text-sm">
+          <option value="">Choose next status</option>
+          {order.status === 'Pending' && <option value="2">Processing</option>}
+          {(order.status === 'Pending' || order.status === 'Processing') && <option value="5">Cancelled</option>}
+          {order.status === 'Processing' && <option value="3">Shipped / Ready for pickup</option>}
+          {order.status === 'Ready' ? <option value="4">Order complete</option> : null}
+          {['Pending', 'Processing', 'Ready', 'Completed'].includes(order.status) && <option value="6">Refund requested</option>}
+        </select>
+        <Button onClick={updateStatus} disabled={!selectedStatus}>Update status</Button>
       </div>
 
       {/* Step Indicator */}
@@ -129,7 +176,7 @@ export default function OrderDetailPage() {
       {/* Tab Content */}
       <div className="pt-2">
         {activeTab === 'Overview' && <OrderOverviewTab order={order} />}
-        {activeTab === 'Items' && <OrderItemsTab order={order} />}
+        {activeTab === 'Items' && <OrderItemsTab order={order} onUpdateItem={updateItem} />}
         {activeTab === 'Payments' && <OrderPaymentsTab order={order} />}
         {activeTab === 'Fulfilment' && <OrderFulfilmentTab order={order} />}
         {activeTab === 'Returns' && <OrderReturnsTab order={order} />}
