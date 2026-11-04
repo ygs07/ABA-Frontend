@@ -79,7 +79,16 @@ export default function PayoutSettingsPage() {
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Schedule</label>
-                <Select defaultValue={settings.data.schedule} onValueChange={(value) => setSchedule(value === 'Weekly Friday' ? 'weekly_friday' : value.toLowerCase().replace(' ', '_'))}>
+                <Select
+                  defaultValue={settings.data.schedule}
+                  onValueChange={(value) =>
+                    setSchedule(
+                      value === 'Weekly Friday'
+                        ? 'weekly_friday'
+                        : value?.toLowerCase().replace(' ', '_') ?? 'on_request',
+                    )
+                  }
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="On request">On request</SelectItem>
@@ -97,7 +106,10 @@ export default function PayoutSettingsPage() {
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Required KYC Level</label>
-                <Select defaultValue={settings.data.requiredKycLevel.toString()} onValueChange={setRequiredKycLevel}>
+                <Select
+                  defaultValue={settings.data.requiredKycLevel.toString()}
+                  onValueChange={(value) => setRequiredKycLevel(value ?? '3')}
+                >
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
                     <SelectItem value="1">Level 1 (Basic)</SelectItem>
