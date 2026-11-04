@@ -32,16 +32,18 @@ export default function ShopPage() {
 function ShopContent() {
     const searchParams = useSearchParams();
     const selectedCategory = searchParams.get('category');
+    const searchTerm = searchParams.get('search');
 
     const [selectedMerchant, setSelectedMerchant] = useState<string | null>(null);
     const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
 
     const { data: productsData, isLoading: isLoadingProducts } = useQuery({
-        queryKey: ['shop_products', selectedCategory, selectedMerchant],
+        queryKey: ['shop_products', selectedCategory, selectedMerchant, searchTerm],
         queryFn: async () => {
             const res = await getShopProducts({
                 categorySlug: selectedCategory || undefined,
                 merchantId: selectedMerchant || undefined,
+                q: searchTerm || undefined,
             });
             return res.data;
         }
@@ -63,7 +65,7 @@ function ShopContent() {
                         <span className="text-text">Shop</span>
                     </nav>
                     <div className="flex justify-between items-center">
-                        <h1 className="text-3xl font-bold text-text">Shop {selectedCategory ? selectedCategory : 'All Categories'}</h1>
+                        <h1 className="text-3xl font-bold text-text">{searchTerm ? `Search results for "${searchTerm}"` : `Shop ${selectedCategory ? selectedCategory : 'All Categories'}`}</h1>
                         <Sheet>
                             <SheetTrigger render={<Button variant="outline" className="lg:hidden flex items-center gap-2" />}>
                                 <SlidersHorizontal className="w-4 h-4" />

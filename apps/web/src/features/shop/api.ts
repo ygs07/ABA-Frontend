@@ -12,6 +12,43 @@ import { toProduct } from '../products/api/products.api';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+export type StorefrontSearchResult = {
+  query: string;
+  products: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    price: string | null;
+    image: { id: number; url: string; original_name: string } | null;
+    merchant: { id: number; businessName: string } | null;
+    brand: { id: number; name: string; slug: string } | null;
+  }>;
+  merchants: Array<{
+    id: number;
+    businessName: string;
+    website: string | null;
+    avatar: { id: number; url: string; original_name: string } | null;
+  }>;
+  categories: Array<{
+    id: number;
+    name: string;
+    slug: string;
+    type: 'category' | 'subcategory';
+    categorySlug: string | null;
+  }>;
+  brands: Array<{ id: number; name: string; slug: string }>;
+};
+
+export async function searchStorefront(query: string): Promise<StorefrontSearchResult> {
+  const trimmedQuery = query.trim();
+  if (!trimmedQuery) {
+    return { query: '', products: [], merchants: [], categories: [], brands: [] };
+  }
+  return fetchApi<StorefrontSearchResult>(
+    `/api/v1/storefront/search?q=${encodeURIComponent(trimmedQuery)}&limit=5`,
+  );
+}
+
 export async function getShopCategories(): Promise<{ data: Category[] }> {
   if (API_MODE !== 'mock') {
     const response = await fetchApi<{ data: Array<{
