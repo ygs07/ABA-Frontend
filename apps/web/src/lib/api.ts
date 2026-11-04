@@ -11,6 +11,23 @@ export class ApiError extends Error {
 
 export const API_MODE = process.env.NEXT_PUBLIC_API_MODE || "api";
 
+let isRedirectingForUnauthorizedResponse = false;
+
+async function redirectToLoginAfterUnauthorizedResponse() {
+  if (typeof window === 'undefined' || isRedirectingForUnauthorizedResponse) return;
+  isRedirectingForUnauthorizedResponse = true;
+  window.localStorage.removeItem('aba_ui_auth_state');
+  document.cookie = 'aba_auth_role=; Max-Age=0; path=/';
+  try {
+    const { removeAuthCookie } = await import('@/features/auth/actions');
+    await removeAuthCookie();
+  } finally {
+    const currentPath = `${window.location.pathname}${window.location.search}`;
+    const loginPath = `/auth/login?next=${encodeURIComponent(currentPath)}`;
+    window.location.replace(loginPath);
+  }
+}
+
 type ApiEnvelope<T> = {
   success?: boolean;
   statusCode?: number;
@@ -42,10 +59,18 @@ export async function fetchApi<T>(
   if (!res.ok) {
     const payload = (await res.json().catch(() => undefined)) as ApiEnvelope<unknown> | undefined;
     const message = payload?.message || (typeof payload?.data === "string" ? payload.data : undefined);
-    throw new ApiError(
+    const error = new ApiError(
       res.status,
       message || `Request failed with status ${res.status}`,
     );
+    if (
+      res.status === 401 &&
+      typeof window !== 'undefined' &&
+      !window.location.pathname.startsWith('/auth/')
+    ) {
+      await redirectToLoginAfterUnauthorizedResponse();
+    }
+    throw error;
   }
 
   if (res.status === 204 || res.headers.get("content-length") === "0") {

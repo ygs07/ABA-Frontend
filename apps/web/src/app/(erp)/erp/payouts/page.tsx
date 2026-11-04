@@ -4,8 +4,17 @@ import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { PayoutsTable } from '@/features/payouts/components/PayoutsTable';
+import { createPayoutBatch } from '@/features/payouts/api';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 
 export default function PayoutsPage() {
+  const queryClient = useQueryClient();
+  const batchMutation = useMutation({
+    mutationFn: () => createPayoutBatch(),
+    onSuccess: async () => { toast.success('Payout batch created from approved requests'); await queryClient.invalidateQueries({ queryKey: ['payouts'] }); await queryClient.invalidateQueries({ queryKey: ['payout-batches'] }); },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Unable to create payout batch'),
+  });
   return (
     <div className="space-y-6 pb-20 mx-auto max-w-7xl">
       <PageHeader 
@@ -14,7 +23,7 @@ export default function PayoutsPage() {
         action={
           <div className="flex gap-2">
             <Button variant="outline">Export Bank CSV</Button>
-            <Button>Approve Batch (0)</Button>
+            <Button onClick={() => batchMutation.mutate()} disabled={batchMutation.isPending}>Create Approved Batch</Button>
           </div>
         }
       />

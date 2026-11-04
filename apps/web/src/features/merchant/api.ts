@@ -21,6 +21,10 @@ type BackendMerchant = {
   verified_at?: string | null;
   createdAt?: string;
   created_at?: string;
+  ordersCount?: number;
+  rating?: number;
+  reviewCount?: number;
+  location?: { street_address: string; city: string; state: string; lga?: string | null } | null;
 };
 
 type PaginatedMerchants = { data: BackendMerchant[] };
@@ -37,11 +41,13 @@ type BackendStorefrontMerchant = Pick<
   | 'verified_at'
   | 'createdAt'
   | 'created_at'
+  | 'ordersCount'
+  | 'rating'
+  | 'reviewCount'
+  | 'location'
 > & {
   avatar?: { url: string } | null;
   banner?: { url: string } | null;
-  ordersCount?: number;
-  rating?: number;
   storeCategories?: { categories?: Array<{ count: number }> };
   salesHistory?: Array<{ month: string; ordersCount: number }>;
 };
@@ -68,9 +74,10 @@ function toMerchant(merchantRecord: BackendMerchant): Merchant {
     phone: merchantRecord.business_owner_phone_number,
     email: merchantRecord.business_owner_email,
     website: merchantRecord.website ?? undefined,
-    address: merchantRecord.business_address,
-    city: '',
-    state: '',
+    address: merchantRecord.location?.street_address ?? merchantRecord.business_address,
+    city: merchantRecord.location?.city ?? '',
+    state: merchantRecord.location?.state ?? '',
+    lga: merchantRecord.location?.lga ?? undefined,
     settlementBank: { bankName: '', accountNumber: '', accountName: merchantRecord.business_owner_name },
     settlementFrequency: 'Weekly',
     priceList: 'Default',
@@ -92,7 +99,7 @@ function toMerchantProfile(merchantRecord: BackendMerchant): MerchantProfile {
     ...merchant,
     description: merchantRecord.bio ?? '',
     rating: 0,
-    reviewCount: 0,
+    reviewCount: merchantRecord.reviewCount ?? 0,
     joinedDate: merchant.onboardedAt,
     isVerified: Boolean(merchantRecord.verified_at),
     totalProducts: 0,
@@ -121,9 +128,10 @@ function toStorefrontMerchantProfile(merchantRecord: BackendStorefrontMerchant):
     phone: '',
     email: '',
     website: merchantRecord.website ?? undefined,
-    address: merchantRecord.business_address,
-    city: '',
-    state: '',
+    address: merchantRecord.location?.street_address ?? merchantRecord.business_address,
+    city: merchantRecord.location?.city ?? '',
+    state: merchantRecord.location?.state ?? '',
+    lga: merchantRecord.location?.lga ?? undefined,
     logoUrl: merchantRecord.avatar?.url,
     bannerImage: merchantRecord.banner?.url,
     settlementBank: { bankName: '', accountNumber: '', accountName: '' },
@@ -138,13 +146,15 @@ function toStorefrontMerchantProfile(merchantRecord: BackendStorefrontMerchant):
     stockValue: 0,
     outstandingBalance: 0,
     rating: merchantRecord.rating ?? 0,
-    reviewCount: 0,
+    reviewCount: merchantRecord.reviewCount ?? 0,
     joinedDate,
     totalProducts: merchantRecord.storeCategories?.categories?.reduce(
       (total, category) => total + category.count,
       0,
     ) ?? 0,
-    location: merchantRecord.business_address,
+    location: merchantRecord.location
+      ? [merchantRecord.location.street_address, merchantRecord.location.city, merchantRecord.location.state].filter(Boolean).join(', ')
+      : merchantRecord.business_address,
     followerCount: 0,
     onTimeDispatch: 0,
     returnRate: 0,

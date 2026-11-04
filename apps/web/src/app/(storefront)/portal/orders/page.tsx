@@ -79,8 +79,12 @@ export default function PortalOrdersPage() {
               <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-surface-2 rounded-lg flex items-center justify-center shrink-0">
-                    <Package className="w-6 h-6 text-text-muted" />
+                  <div className="w-12 h-12 overflow-hidden bg-surface-2 rounded-lg flex items-center justify-center shrink-0">
+                    {order.items[0]?.imageUrl ? (
+                      <img src={order.items[0].imageUrl} alt={order.items[0].imageOriginalName || order.items[0].productName} className="h-full w-full object-cover" />
+                    ) : (
+                      <Package className="w-6 h-6 text-text-muted" />
+                    )}
                   </div>
                   <div>
                     <div className="flex items-center gap-2 mb-1">

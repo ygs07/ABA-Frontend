@@ -1,23 +1,16 @@
 'use client';
 
-import { brand } from '@/config/brand';
 import { useState } from 'react';
-import Link from 'next/link';
-import { Users, Copy, Share2, Check, DollarSign, Target, Loader2, Network } from 'lucide-react';
+import { Users, Copy, Share2, Check, DollarSign, Target, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
 import { getReferralStats } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
 import { ReferralActivationCard } from '@/features/portal/components/ReferralActivationCard';
-import { PromoterLeaderboardCard } from '@/features/portal/components/PromoterLeaderboardCard';
-import { useReferralActivationStore } from '@/features/portal/referralActivationStore';
 
 export default function PortalReferralsPage() {
   const [copied, setCopied] = useState(false);
-  const storeReferralCode = useReferralActivationStore((s) => s.referralCode);
-  const referralCode = storeReferralCode || `${brand.referralCodePrefix}JANE-123`;
-  const referralLink = `https://${brand.domain}/register?ref=${referralCode}`;
 
   const { data: referralData, isLoading, error } = useQuery({
     queryKey: ['portal_referrals_page'],
@@ -27,8 +20,13 @@ export default function PortalReferralsPage() {
     },
   });
 
-  const copyToClipboard = () => {
-    navigator.clipboard.writeText(referralLink);
+  const referralCode = referralData?.referralCode ?? '';
+  const referralLink = referralCode
+    ? `${typeof window === 'undefined' ? '' : window.location.origin}/auth/register?ref=${encodeURIComponent(referralCode)}`
+    : '';
+  const copyToClipboard = async () => {
+    if (!referralLink) return;
+    await navigator.clipboard.writeText(referralLink);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -49,25 +47,12 @@ export default function PortalReferralsPage() {
     );
   }
 
-  const mockLeaderboard = [
-    { rank: 1, name: 'Chima Obi', networkSize: 142, earned: 15400000 },
-    { rank: 2, name: 'Aisha Bello', networkSize: 98, earned: 8900000 },
-    { rank: 3, name: 'Samuel O.', networkSize: 85, earned: 7600000 },
-    { rank: 4, name: 'Grace Johnson', networkSize: 72, earned: 5200000 },
-    { rank: 5, name: 'Tunde A.', networkSize: 64, earned: 4100000 },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-text">Referral Network</h1>
         <div className="flex items-center gap-3">
-          <Link href="/portal/referrals/profile">
-            <Button variant="outline" className="flex items-center gap-2">
-              <Network className="w-4 h-4" />Marketer Profile
-            </Button>
-          </Link>
           <Button onClick={copyToClipboard} className="flex items-center gap-2">
             <Share2 className="w-4 h-4" /> Share Link
           </Button>
@@ -75,7 +60,7 @@ export default function PortalReferralsPage() {
       </div>
 
       {/* Referral Activation Notice & KYC/Fee Payment Card */}
-      <ReferralActivationCard />
+      <ReferralActivationCard referralCode={referralCode} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -212,8 +197,6 @@ export default function PortalReferralsPage() {
         </div>
       </div>
 
-      {/* Promoter Leaderboard Section */}
-      <PromoterLeaderboardCard leaders={mockLeaderboard} />
     </div>
   );
 }

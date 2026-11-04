@@ -11,6 +11,7 @@ import {
   SheetTitle,
 } from '@/components/ui/sheet';
 import { Product } from '@/features/products/types';
+import { AmountText } from '@/components/patterns/AmountText';
 import Link from 'next/link';
 import { useCartStore } from '@/features/cart/store';
 import { CartItem } from '@/features/cart/types';
@@ -89,7 +90,7 @@ export function ProductQuickViewDrawer({ product, isOpen, onClose }: ProductQuic
           <div>
             <h2 className="text-xl font-semibold text-text mb-2">{product.name}</h2>
             <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-2xl font-bold text-brand-700">₦{product.price.toLocaleString()}</span>
+              <span className="text-2xl font-bold text-brand-700"><AmountText amountInKobo={product.price} /></span>
               {product.originalPrice && product.originalPrice > product.price && (
                 <span className="text-sm text-text-muted line-through">₦{product.originalPrice.toLocaleString()}</span>
               )}

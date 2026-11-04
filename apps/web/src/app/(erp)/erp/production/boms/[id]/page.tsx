@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/patterns/KpiCard';
@@ -11,15 +11,16 @@ import { getBomById } from '@/features/production/api/production.api';
 import { Bom } from '@/features/production/types';
 import { toast } from 'sonner';
 
-export default function BOMDetailPage({ params }: { params: { id: string } }) {
+export default function BOMDetailPage() {
   const router = useRouter();
+  const { id } = useParams<{ id: string }>();
   const [bom, setBom] = useState<Bom | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchBom = async () => {
       try {
-        const res = await getBomById(params.id);
+        const res = await getBomById(id);
         setBom(res.data);
       } catch (err) {
         toast.error('BOM not found');
@@ -29,7 +30,7 @@ export default function BOMDetailPage({ params }: { params: { id: string } }) {
       }
     };
     fetchBom();
-  }, [params.id, router]);
+  }, [id, router]);
 
   if (isLoading) return <div className="p-8">Loading...</div>;
   if (!bom) return null;

@@ -36,4 +36,5 @@ export interface PayoutSettings {
   autoApproveBelow: number;
   requiredKycLevel: number;
   holdingPeriodDays: number;
+  enforceNameMatching: boolean;
 }

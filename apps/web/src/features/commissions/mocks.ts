@@ -21,7 +21,7 @@ export const mockCommissionRecords: CommissionRecord[] = [
     amount: 500000,
     planId: 'plan-1',
     planName: 'Default v3',
-    status: 'Approved'
+    status: 'Held'
   },
   {
     id: 'com-2',
@@ -55,7 +55,7 @@ export const mockCommissionRecords: CommissionRecord[] = [
     amount: 2500000,
     planId: 'plan-1',
     planName: 'Default v3',
-    status: 'Paid',
+    status: 'Released',
     payoutRef: 'PYT-001'
   }
 ];

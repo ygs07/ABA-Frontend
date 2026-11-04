@@ -3,12 +3,53 @@
 import Link from 'next/link';
 import { ShoppingBag, Wallet, Users, ChevronRight, Package, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
-import { getCustomerOrders, getCustomerWalletBalance, getWalletTransactions, getReferralStats } from '@/features/portal/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCustomerOrders, getCustomerWalletBalance, getWalletTransactions, getReferralStats, initializeWalletFunding, verifyWalletFunding } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 export default function PortalDashboard() {
+  const queryClient = useQueryClient();
+  const [isFundModalOpen, setIsFundModalOpen] = useState(false);
+  const [fundingAmount, setFundingAmount] = useState('');
+  const fundWalletMutation = useMutation({
+    mutationFn: async () => {
+      const amount = Number(fundingAmount);
+      if (!Number.isFinite(amount) || amount <= 0) throw new Error('Enter a valid amount to fund your wallet.');
+      const checkout = await initializeWalletFunding(amount.toFixed(2));
+      const { default: PaystackPop } = await import('@paystack/inline-js');
+      await new Promise<void>((resolve, reject) => {
+        new PaystackPop().newTransaction({
+          key: checkout.publicKey,
+          email: checkout.email,
+          amount: checkout.amount,
+          reference: checkout.reference,
+          onSuccess: async ({ reference }) => {
+            try {
+              await verifyWalletFunding(reference);
+              resolve();
+            } catch (error) {
+              reject(error);
+            }
+          },
+          onCancel: () => reject(new Error('Wallet funding was cancelled.')),
+        });
+      });
+    },
+    onSuccess: () => {
+      void Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['portal_wallet_balance'] }),
+        queryClient.invalidateQueries({ queryKey: ['portal_wallet'] }),
+        queryClient.invalidateQueries({ queryKey: ['portal_wallet_transactions'] }),
+      ]);
+      setFundingAmount('');
+      setIsFundModalOpen(false);
+      toast.success('Your wallet has been funded successfully.');
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Unable to fund wallet.'),
+  });
   const { data: ordersData, isLoading: isLoadingOrders } = useQuery({
     queryKey: ['portal_orders'],
     queryFn: async () => (await getCustomerOrders()).data
@@ -68,7 +109,7 @@ export default function PortalDashboard() {
             </div>
           </div>
           <div className="flex gap-2 relative z-10">
-            <Button size="sm" className="bg-white text-brand-700 hover:bg-brand-50 rounded-full h-8 px-4 text-xs font-semibold">Fund</Button>
+            <Button size="sm" onClick={() => setIsFundModalOpen(true)} className="bg-white text-brand-700 hover:bg-brand-50 rounded-full h-8 px-4 text-xs font-semibold">Fund</Button>
             <Button size="sm" variant="outline" className="border-white text-white hover:bg-white/10 rounded-full h-8 px-4 text-xs font-semibold">Withdraw</Button>
           </div>
         </div>
@@ -106,6 +147,21 @@ export default function PortalDashboard() {
         </div>
 
       </div>
+
+      {isFundModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45 p-4" role="dialog" aria-modal="true" aria-label="Fund wallet">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl">
+            <h2 className="text-lg font-bold text-text">Fund Wallet</h2>
+            <p className="mt-1 text-sm text-text-muted">Enter the amount you would like to add to your wallet.</p>
+            <label className="mt-5 block text-sm font-medium text-text">Amount (₦)</label>
+            <input autoFocus inputMode="decimal" value={fundingAmount} onChange={(event) => setFundingAmount(event.target.value)} placeholder="e.g. 5000" className="mt-2 h-11 w-full rounded-lg border border-border px-3 text-sm outline-none focus:border-brand-500" />
+            <div className="mt-6 flex justify-end gap-3">
+              <Button variant="outline" disabled={fundWalletMutation.isPending} onClick={() => setIsFundModalOpen(false)}>Cancel</Button>
+              <Button loading={fundWalletMutation.isPending} onClick={() => fundWalletMutation.mutate()}>Continue to Paystack</Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

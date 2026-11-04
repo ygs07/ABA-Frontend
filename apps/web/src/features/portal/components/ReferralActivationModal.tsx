@@ -7,26 +7,43 @@ import { ReferralKycStep } from './ReferralKycStep';
 import { ReferralPaymentStep } from './ReferralPaymentStep';
 import { ReferralSuccessStep } from './ReferralSuccessStep';
 import { toast } from 'sonner';
-import { initializeKycActivation, verifyKycActivation } from '../api';
+import {
+  initializeKycActivation,
+  saveKycActivationSubmission,
+  verifyKycActivation,
+} from '../api';
 
 interface ReferralActivationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  kycApproved?: boolean;
 }
 
-export function ReferralActivationModal({ open, onOpenChange }: ReferralActivationModalProps) {
+export function ReferralActivationModal({ open, onOpenChange, kycApproved = false }: ReferralActivationModalProps) {
   const [step, setStep] = useState<0 | 1 | 2>(0);
   const submitKyc = useReferralActivationStore((s) => s.submitKyc);
   const payActivationFee = useReferralActivationStore((s) => s.payActivationFee);
 
-  const handleKycContinue = (data: {
+  React.useEffect(() => {
+    if (open && kycApproved) setStep(1);
+  }, [open, kycApproved]);
+
+  const handleKycContinue = async (data: {
     idType: string;
     ninNumber: string;
     idDocumentName: string;
     proofOfAddressName: string;
+    identityDocument: File;
+    proofOfAddress: File;
   }) => {
+    await saveKycActivationSubmission({
+      idType: data.idType,
+      identityNumber: data.ninNumber,
+      identityDocument: data.identityDocument,
+      proofOfAddress: data.proofOfAddress,
+    });
     submitKyc(data);
-    toast.success('KYC documents submitted successfully.');
+    toast.success('KYC documents saved successfully.');
     setStep(1);
   };
 

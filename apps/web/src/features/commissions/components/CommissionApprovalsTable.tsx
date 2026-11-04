@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { getCommissionRecords } from '../api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { approveCommission, getCommissionRecords, reverseCommission } from '../api';
 import { DataTable } from '@/components/patterns/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { AmountText } from '@/components/patterns/AmountText';
@@ -10,10 +10,16 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { CommissionRecord } from '../types';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/features/auth/store';
 
 export function CommissionApprovalsTable() {
   const [selectedRecord, setSelectedRecord] = React.useState<CommissionRecord | null>(null);
-  const [action, setAction] = React.useState<'approve' | 'reject' | null>(null);
+  const [action, setAction] = React.useState<'approve' | 'reverse' | null>(null);
+  const queryClient = useQueryClient();
+  const canManageCommissions = useAuthStore((state) =>
+    state.user?.userType === 'Admin' || state.user?.userType === 'Super Admin',
+  );
   const { data, isLoading } = useQuery({
     queryKey: ['commission-records'],
     queryFn: () => getCommissionRecords()
@@ -25,6 +31,20 @@ export function CommissionApprovalsTable() {
     setSelectedRecord(null);
     setAction(null);
   };
+  const actionMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedRecord || !action) return;
+      if (action === 'approve') return approveCommission(selectedRecord.id);
+      return reverseCommission(selectedRecord.id);
+    },
+    onSuccess: () => {
+      toast.success(action === 'approve' ? 'Commission approved' : 'Commission reversed');
+      void queryClient.invalidateQueries({ queryKey: ['commission-records'] });
+      void queryClient.invalidateQueries({ queryKey: ['commission-kpis'] });
+      closeDialog();
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Unable to update commission'),
+  });
 
   const columns = [
     {
@@ -71,8 +91,10 @@ export function CommissionApprovalsTable() {
       id: 'actions',
       cell: (info: any) => (
         <div className="flex gap-2">
-          <Button variant="primary" size="sm" onClick={() => { setSelectedRecord(info.row.original); setAction('approve'); }}>Approve</Button>
-          <Button variant="outline" size="sm" className="text-error border-error-muted hover:bg-error-light hover:text-error" onClick={() => { setSelectedRecord(info.row.original); setAction('reject'); }}>Reject</Button>
+          {canManageCommissions && <>
+            <Button variant="primary" size="sm" onClick={() => { setSelectedRecord(info.row.original); setAction('approve'); }}>Approve</Button>
+            <Button variant="outline" size="sm" className="text-error border-error-muted hover:bg-error-light hover:text-error" onClick={() => { setSelectedRecord(info.row.original); setAction('reverse'); }}>Reverse</Button>
+          </>}
         </div>
       )
     }
@@ -88,17 +110,17 @@ export function CommissionApprovalsTable() {
     <Dialog open={Boolean(selectedRecord && action)} onOpenChange={(open) => { if (!open) closeDialog(); }}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{action === 'approve' ? 'Approve commission?' : 'Reject commission?'}</DialogTitle>
+          <DialogTitle>{action === 'approve' ? 'Approve commission?' : 'Reverse commission?'}</DialogTitle>
         </DialogHeader>
         <p className="text-sm text-text-muted">
           {action === 'approve'
             ? `Approve ${selectedRecord?.commissionNumber} for ${selectedRecord?.beneficiaryName}?`
-            : `Reject ${selectedRecord?.commissionNumber} for ${selectedRecord?.beneficiaryName}?`}
+            : `Reverse ${selectedRecord?.commissionNumber} for ${selectedRecord?.beneficiaryName}?`}
         </p>
         <DialogFooter>
           <Button variant="outline" onClick={closeDialog}>Cancel</Button>
-          <Button variant={action === 'reject' ? 'destructive' : 'primary'} onClick={closeDialog}>
-            {action === 'approve' ? 'Confirm approval' : 'Confirm rejection'}
+          <Button variant={action === 'reverse' ? 'destructive' : 'primary'} loading={actionMutation.isPending} onClick={() => actionMutation.mutate()}>
+            {action === 'approve' ? 'Confirm approval' : 'Confirm reversal'}
           </Button>
         </DialogFooter>
       </DialogContent>

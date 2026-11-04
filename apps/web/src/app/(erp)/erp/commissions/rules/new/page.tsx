@@ -12,6 +12,9 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { fetchApi } from '@/lib/api';
+import { useAuthStore } from '@/features/auth/store';
+import { getMerchants } from '@/features/merchant/api';
+import { useQuery } from '@tanstack/react-query';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -29,10 +32,18 @@ const formSchema = z.object({
     level: z.number(),
     percentageAmount: z.number().min(0).max(100),
   })),
+  merchantId: z.string().optional(),
 });
 
 export default function CreateCommissionPlanPage() {
   const router = useRouter();
+  const userType = useAuthStore((state) => state.user?.userType ?? state.activeRole);
+  const canSelectMerchant = userType === 'Admin' || userType === 'Super Admin';
+  const { data: merchantsData, isLoading: isLoadingMerchants } = useQuery({
+    queryKey: ['commission-rule-merchants'],
+    queryFn: getMerchants,
+    enabled: canSelectMerchant,
+  });
   const { register, control, handleSubmit, formState: { errors }, watch, getValues, setValue } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -64,6 +75,10 @@ export default function CreateCommissionPlanPage() {
   }, [getValues, levels, setValue]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (canSelectMerchant && !values.merchantId) {
+      toast.error('Select the merchant this commission rule applies to.');
+      return;
+    }
     try {
       await fetchApi('/api/v1/commission-rules', {
         method: 'POST',
@@ -88,6 +103,7 @@ export default function CreateCommissionPlanPage() {
           approvalMode:
             values.approvalMode === 'Manual approval' ? 'manual' : 'automatic',
           holdingPeriodDays: values.holdingPeriod,
+          ...(canSelectMerchant && values.merchantId ? { merchantId: Number(values.merchantId) } : {}),
         }),
       });
       toast.success('Commission plan created');
@@ -139,6 +155,20 @@ export default function CreateCommissionPlanPage() {
               <label className="text-sm font-medium">Description</label>
               <Input placeholder="Describe the purpose of this plan..." {...register('description')} />
             </div>
+
+            {canSelectMerchant && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Merchant <span className="text-error">*</span></label>
+                <select {...register('merchantId')} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                  <option value="">Select a merchant</option>
+                  {merchantsData?.data.map((merchant) => (
+                    <option key={merchant.id} value={merchant.id}>{merchant.name}</option>
+                  ))}
+                </select>
+                {isLoadingMerchants && <p className="text-xs text-text-muted">Loading merchants…</p>}
+                <p className="text-xs text-text-muted">Administrators choose the merchant this rule applies to. Merchants are automatically assigned to their own store.</p>
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

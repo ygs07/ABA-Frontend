@@ -114,7 +114,7 @@ export default function MerchantOnboardingApplicationsPage() {
                     <td className="px-5 py-4"><p>{application.owner_name}</p><p className="text-xs text-text-muted">{application.email}</p></td>
                     <td className="px-5 py-4 text-text-muted">{new Date(application.submitted_at).toLocaleDateString()}</td>
                     <td className="px-5 py-4"><span className="rounded-full bg-surface-2 px-2.5 py-1 text-xs font-medium">{statusLabel[application.status] ?? 'Unknown'}</span></td>
-                    <td className="px-5 py-4 text-right"><Button size="sm" variant="outline" onClick={() => setSelectedApplication(application)}><Eye className="mr-1.5 h-4 w-4" />Review</Button></td>
+                    <td className="px-5 py-4 text-right"><Link href={`/erp/merchants/onboarding-applications/${application.id}`}><Button size="sm" variant="outline"><Eye className="mr-1.5 h-4 w-4" />Review</Button></Link></td>
                   </tr>
                 ))}
               </tbody>

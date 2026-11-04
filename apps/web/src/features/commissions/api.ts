@@ -36,6 +36,28 @@ export async function getCommissionRecords(): Promise<{ data: CommissionRecord[]
   return { data: [...mockCommissionRecords] };
 }
 
+export async function approveCommission(commissionId: string): Promise<void> {
+  await fetchApi(`/api/v1/commissions/${encodeURIComponent(commissionId)}/approve`, {
+    method: 'POST',
+  });
+}
+
+export async function releaseCommission(commissionId: string): Promise<void> {
+  await fetchApi(`/api/v1/commissions/${encodeURIComponent(commissionId)}/release`, {
+    method: 'POST',
+  });
+}
+
+export async function reverseCommission(commissionId: string): Promise<void> {
+  await fetchApi(`/api/v1/commissions/${encodeURIComponent(commissionId)}/reverse`, {
+    method: 'POST',
+  });
+}
+
+export async function releaseEligibleCommissions(): Promise<void> {
+  await fetchApi('/api/v1/commissions/release-eligible', { method: 'POST' });
+}
+
 type BackendCommission = {
   id: number;
   source_type: string;
@@ -55,8 +77,8 @@ type BackendCommission = {
 function toCommissionRecord(commission: BackendCommission): CommissionRecord {
   const statusByCode: Record<number, CommissionRecord['status']> = {
     1: 'Pending',
-    2: 'Approved',
-    3: 'Paid',
+    2: 'Held',
+    3: 'Released',
     4: 'Reversed',
   };
   return {

@@ -23,7 +23,7 @@ export interface CommissionRecord {
   amount: number; // Commission value in Kobo
   planId: string;
   planName: string;
-  status: 'Pending' | 'Approved' | 'Paid' | 'Reversal Pending' | 'Reversed' | 'Clawback';
+  status: 'Pending' | 'Held' | 'Released' | 'Reversed';
   payoutRef?: string;
 }
 

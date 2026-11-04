@@ -104,6 +104,10 @@ export async function getDirectoryMerchants(params: DirectoryParams = {}): Promi
         createdAt?: string;
         avatar?: { url: string } | null;
         banner?: { url: string } | null;
+        ordersCount?: number;
+        rating?: number;
+        reviewCount?: number;
+        location?: { street_address: string; city: string; state: string; lga?: string | null } | null;
       }>;
       meta: {
         totalItems: number;
@@ -125,9 +129,10 @@ export async function getDirectoryMerchants(params: DirectoryParams = {}): Promi
         phone: '',
         email: '',
         website: merchant.website ?? undefined,
-        address: merchant.business_address ?? '',
-        city: '',
-        state: '',
+        address: merchant.location?.street_address ?? merchant.business_address ?? '',
+        city: merchant.location?.city ?? '',
+        state: merchant.location?.state ?? '',
+        lga: merchant.location?.lga ?? undefined,
         logoUrl: merchant.avatar?.url,
         bannerImage: merchant.banner?.url,
         settlementBank: { bankName: '', accountNumber: '', accountName: '' },
@@ -138,11 +143,11 @@ export async function getDirectoryMerchants(params: DirectoryParams = {}): Promi
         status: 'Active',
         onboardedAt: merchant.createdAt ?? new Date().toISOString(),
         salesPeriod: 0,
-        ordersCount: 0,
+        ordersCount: Number(merchant.ordersCount ?? 0),
         stockValue: 0,
         outstandingBalance: 0,
-        rating: 0,
-        reviewCount: 0,
+        rating: Number(merchant.rating ?? 0),
+        reviewCount: Number(merchant.reviewCount ?? 0),
         categoryPaths: [],
         spotlightScore: 0,
         isFeatured: false,

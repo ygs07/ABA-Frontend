@@ -1,17 +1,32 @@
 'use client';
 
 import Link from 'next/link';
-import { useQuery } from '@tanstack/react-query';
-import { getCommissionKPIs } from '@/features/commissions/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { getCommissionKPIs, releaseEligibleCommissions } from '@/features/commissions/api';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/patterns/KpiCard';
 import { AmountText } from '@/components/patterns/AmountText';
+import { toast } from 'sonner';
+import { useAuthStore } from '@/features/auth/store';
 
 export default function CommissionsDashboardPage() {
+  const queryClient = useQueryClient();
+  const canManageCommissions = useAuthStore((state) =>
+    state.user?.userType === 'Admin' || state.user?.userType === 'Super Admin',
+  );
   const { data: kpis, isLoading } = useQuery({
     queryKey: ['commission-kpis'],
     queryFn: () => getCommissionKPIs()
+  });
+  const releaseEligibleMutation = useMutation({
+    mutationFn: releaseEligibleCommissions,
+    onSuccess: () => {
+      toast.success('Eligible commissions released');
+      void queryClient.invalidateQueries({ queryKey: ['commission-kpis'] });
+      void queryClient.invalidateQueries({ queryKey: ['commission-records'] });
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : 'Unable to release eligible commissions'),
   });
 
   return (
@@ -27,6 +42,9 @@ export default function CommissionsDashboardPage() {
             <Link href="/erp/commissions/approvals">
               <Button>Pending Approvals</Button>
             </Link>
+            {canManageCommissions && <Button variant="outline" loading={releaseEligibleMutation.isPending} onClick={() => releaseEligibleMutation.mutate()}>
+              Release Eligible
+            </Button>}
           </div>
         }
       />

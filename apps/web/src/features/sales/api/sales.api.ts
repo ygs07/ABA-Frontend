@@ -201,6 +201,24 @@ export const getOrderById = async (id: string): Promise<Order> => {
   return order;
 };
 
+export const downloadOrderInvoice = async (orderId: string): Promise<void> => {
+  if (API_MODE === 'mock') return;
+  const response = await fetch(`/api/v1/invoices/orders/${encodeURIComponent(orderId)}/download`, { credentials: 'include' });
+  if (!response.ok) {
+    const payload = await response.json().catch(() => undefined) as { message?: string } | undefined;
+    throw new Error(payload?.message ?? 'Unable to download the invoice.');
+  }
+  const pdfBlob = await response.blob();
+  const objectUrl = URL.createObjectURL(pdfBlob);
+  const link = document.createElement('a');
+  link.href = objectUrl;
+  link.download = `invoice-${orderId}.pdf`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(objectUrl);
+};
+
 export const updateOrderStatus = async (
   id: string,
   status: number,

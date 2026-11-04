@@ -7,7 +7,6 @@ import { DataTable } from '@/components/patterns/DataTable';
 import { Badge } from '@/components/ui/badge';
 import { AmountText } from '@/components/patterns/AmountText';
 import { format } from 'date-fns';
-import { Button } from '@/components/ui/button';
 
 export function CommissionReversalsTable() {
   const { data, isLoading } = useQuery({
@@ -15,10 +14,7 @@ export function CommissionReversalsTable() {
     queryFn: () => getCommissionRecords()
   });
 
-  // Filter only reversed/clawback records
-  const reversedRecords = data?.data.filter(r => 
-    r.status === 'Reversal Pending' || r.status === 'Reversed' || r.status === 'Clawback'
-  ) || [];
+  const reversedRecords = data?.data.filter((record) => record.status === 'Reversed') || [];
 
   const columns = [
     {
@@ -65,8 +61,7 @@ export function CommissionReversalsTable() {
       id: 'actions',
       cell: (info: any) => (
         <div className="flex gap-2">
-          {info.row.original.status === 'Reversal Pending' && <Button variant="outline" size="sm">Approve Reversal</Button>}
-          <Button variant="ghost" size="sm">Details</Button>
+          <span className="text-xs text-text-muted">Finalized</span>
         </div>
       )
     }

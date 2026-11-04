@@ -16,7 +16,13 @@ type BackendOrder = {
     id: number;
     quantity: number;
     unit_price: string | number;
-    productVariant?: { product?: { id: number; name: string } };
+    productVariant?: {
+      product?: {
+        id: number;
+        name: string;
+        images?: Array<{ id: number; url: string; original_name?: string }>;
+      };
+    };
   }>;
 };
 
@@ -33,6 +39,8 @@ function toPortalOrder(order: BackendOrder): PortalOrder {
       productName: item.productVariant?.product?.name ?? 'Product',
       price: Number(item.unit_price) * 100,
       quantity: item.quantity,
+      imageUrl: item.productVariant?.product?.images?.[0]?.url,
+      imageOriginalName: item.productVariant?.product?.images?.[0]?.original_name,
     })),
     shippingAddress: {
       fullName: order.deliveryAddress?.name ?? 'Delivery address',
@@ -165,6 +173,28 @@ export async function getCustomerWalletBalance(): Promise<number> {
     .reduce((total, wallet) => total + Number(wallet.balance) * 100, 0);
 }
 
+export async function getShoppingCreditBalance(): Promise<number> {
+  if (API_MODE === 'mock') return 0;
+  const credit = await fetchApi<{ balance: string | number }>('/api/v1/shopping-credits/me');
+  return Number(credit.balance) * 100;
+}
+
+export async function getShoppingCreditStatus(): Promise<{ balance: number; isActivated: boolean }> {
+  if (API_MODE === 'mock') return { balance: 0, isActivated: false };
+  const credit = await fetchApi<{ balance: string | number; is_activated?: boolean }>('/api/v1/shopping-credits/me');
+  return { balance: Number(credit.balance) * 100, isActivated: Boolean(credit.is_activated) };
+}
+
+export async function getOwnKycProfile(): Promise<{ status: number } | null> {
+  if (API_MODE === 'mock') return null;
+  try {
+    return await fetchApi<{ status: number }>('/api/v1/kyc/profile');
+  } catch (error) {
+    if (error instanceof ApiError && error.status === 404) return null;
+    throw error;
+  }
+}
+
 export type WalletFundingCheckout = { reference: string; email: string; amount: number; publicKey: string };
 
 export async function initializeWalletFunding(amount: string): Promise<WalletFundingCheckout> {
@@ -182,6 +212,33 @@ export async function verifyWalletFunding(reference: string): Promise<void> {
 export type KycActivationCheckout = { reference: string; email: string; amount: number; publicKey: string };
 export async function initializeKycActivation(): Promise<KycActivationCheckout> { return fetchApi<KycActivationCheckout>('/api/v1/payments/kyc-activation/paystack/initialize', { method: 'POST' }); }
 export async function verifyKycActivation(reference: string): Promise<void> { await fetchApi(`/api/v1/payments/kyc-activation/paystack/${encodeURIComponent(reference)}/verify`, { method: 'POST' }); }
+
+const kycIdentityDocumentTypes: Record<string, number> = {
+  'National Identity Number (NIN)': 1,
+  "Voter's Card": 1,
+  "Driver's License": 3,
+  'International Passport': 2,
+};
+
+export async function saveKycActivationSubmission(input: {
+  idType: string;
+  identityNumber: string;
+  identityDocument: File;
+  proofOfAddress: File;
+}): Promise<void> {
+  const formData = new FormData();
+  formData.append(
+    'identityDocumentType',
+    String(kycIdentityDocumentTypes[input.idType] ?? 1),
+  );
+  formData.append('identityNumber', input.identityNumber);
+  formData.append('documents', input.identityDocument);
+  formData.append('documents', input.proofOfAddress);
+  await fetchApi('/api/v1/kyc/activation-submission', {
+    method: 'POST',
+    body: formData,
+  });
+}
 
 export type UserBankAccount = {
   id: number;
@@ -216,15 +273,52 @@ export async function removeUserBankAccount(id: number): Promise<void> {
   await fetchApi(`/api/v1/user-bank-accounts/${id}`, { method: 'DELETE' });
 }
 
+export type WalletWithdrawal = {
+  id: number;
+  payout_number: string;
+  amount: string;
+  fee_amount: string;
+  net_amount: string;
+  status: string;
+  requestedAt: string;
+};
+
+export async function requestWalletWithdrawal(input: {
+  amount: string;
+  bankAccountId: number;
+}): Promise<WalletWithdrawal> {
+  return fetchApi<WalletWithdrawal>('/api/v1/payouts/withdrawals', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
 export async function getReferralStats(): Promise<{ 
   data: { 
+    referralCode: string;
     stats: PortalReferralStat[], 
     metrics: { totalNetwork: number, activeBuyers: number, totalEarned: number } 
   } 
 }> {
+  if (API_MODE !== 'mock') {
+    const summary = await fetchApi<{
+      referralCode: string;
+      stats: Array<Omit<PortalReferralStat, 'earnings'> & { earnings: number }>;
+      metrics: { totalNetwork: number; activeBuyers: number; totalEarned: number };
+    }>('/api/v1/referrals/me/summary');
+    return {
+      data: {
+        ...summary,
+        stats: summary.stats.map((stat) => ({ ...stat, earnings: Math.round(Number(stat.earnings) * 100) })),
+        metrics: { ...summary.metrics, totalEarned: Math.round(Number(summary.metrics.totalEarned) * 100) },
+      },
+    };
+  }
   await delay(500);
   return { 
     data: {
+      referralCode: '',
       stats: mockPortalReferrals,
       metrics: {
         totalNetwork: 24,

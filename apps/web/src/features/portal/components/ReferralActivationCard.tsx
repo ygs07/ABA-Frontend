@@ -1,15 +1,28 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { CheckCircle2, Coins, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useReferralActivationStore } from '../referralActivationStore';
 import { ReferralActivationModal } from './ReferralActivationModal';
+import { getOwnKycProfile, getShoppingCreditStatus } from '../api';
 
-export function ReferralActivationCard() {
+export function ReferralActivationCard({ referralCode: providedReferralCode }: { referralCode?: string }) {
   const [modalOpen, setModalOpen] = useState(false);
-  const { status, referralCode } = useReferralActivationStore();
-  const isActive = status === 'active';
+  const [isKycApproved, setIsKycApproved] = useState(false);
+  const [isActivationPaid, setIsActivationPaid] = useState(false);
+  const { status, referralCode: storedReferralCode } = useReferralActivationStore();
+  const referralCode = providedReferralCode || storedReferralCode;
+  const isActive = (isKycApproved && isActivationPaid) || status === 'active';
+
+  useEffect(() => {
+    void Promise.all([getOwnKycProfile(), getShoppingCreditStatus()])
+      .then(([profile, credit]) => {
+        setIsKycApproved(profile?.status === 3);
+        setIsActivationPaid(credit.isActivated);
+      })
+      .catch(() => undefined);
+  }, []);
 
   if (isActive) {
     return (
@@ -53,7 +66,7 @@ export function ReferralActivationCard() {
           </div>
           <span className="text-xs text-text-muted flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-amber-700" />
-            Requirement: Complete KYC & ₦5,000 Fee
+            Requirement: {isKycApproved ? 'Pay ₦5,000 Activation Fee' : 'Complete KYC & ₦5,000 Fee'}
           </span>
         </div>
 
@@ -62,7 +75,7 @@ export function ReferralActivationCard() {
             Activate Your Referral Earning Account
           </h3>
           <p className="text-sm text-text-muted leading-relaxed max-w-2xl">
-            Every user receives a referral code upon registration, but earning commissions requires completing KYC verification and the one-time ₦5,000 membership fee.
+            {isKycApproved ? 'Your KYC is already approved. Complete the one-time ₦5,000 membership fee to activate commission earning.' : 'Every user receives a referral code upon registration, but earning commissions requires completing KYC verification and the one-time ₦5,000 membership fee.'}
           </p>
 
           <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/90 border border-amber-200 shadow-2xs">
@@ -97,6 +110,7 @@ export function ReferralActivationCard() {
       <ReferralActivationModal
         open={modalOpen}
         onOpenChange={setModalOpen}
+        kycApproved={isKycApproved}
       />
     </>
   );

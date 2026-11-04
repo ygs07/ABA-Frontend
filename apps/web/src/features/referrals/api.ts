@@ -17,6 +17,12 @@ function pruneLevels(node: NetworkNodeData, currentLevel: number, maxLevels: num
 }
 
 export async function getNetworkTree(rootId: string = `${brand.referralCodePrefix}492`, maxLevels: number = 999) {
+  if (API_MODE !== 'mock') {
+    const search = new URLSearchParams({ depth: String(maxLevels) });
+    if (rootId.trim()) search.set('root', rootId.trim());
+    const network = await fetchApi<NetworkNodeData>(`/api/v1/referrals/network?${search.toString()}`);
+    return { data: network };
+  }
   await delay(600);
   
   const rootNode = mockNetworkUsers[rootId];

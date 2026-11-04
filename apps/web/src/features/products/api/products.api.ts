@@ -58,6 +58,8 @@ export type ProductOverview = {
 
 const numberValue = (value?: string | number | null) =>
   value === null || value === undefined ? 0 : Number(value);
+const nairaToKobo = (value?: string | number | null) =>
+  Math.round(numberValue(value) * 100);
 
 function toVariant(variant: BackendVariant): ProductVariant {
   return {
@@ -65,8 +67,8 @@ function toVariant(variant: BackendVariant): ProductVariant {
     name: variant.name,
     sku: variant.sku,
     barcode: variant.barcode ?? undefined,
-    price: numberValue(variant.price),
-    cost: numberValue(variant.cost_price),
+    price: nairaToKobo(variant.price),
+    cost: nairaToKobo(variant.cost_price),
     reorderLevel: 0,
     images: [],
     isActive: variant.is_active,
@@ -79,7 +81,7 @@ function toVariant(variant: BackendVariant): ProductVariant {
 
 export function toProduct(product: BackendProduct): Product {
   const variants = product.variants?.map(toVariant) ?? [];
-  const price = numberValue(product.base_selling_price) || variants[0]?.price || 0;
+  const price = nairaToKobo(product.base_selling_price) || variants[0]?.price || 0;
   const sellingPrice = price;
 
   return {

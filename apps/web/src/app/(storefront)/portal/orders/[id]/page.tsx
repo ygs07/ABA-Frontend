@@ -155,7 +155,11 @@ export default function OrderDetailsPage({ params }: { params: Promise<{ id: str
                 {order.items.map(item => (
                   <div key={item.id} className="p-4 flex items-center gap-4">
                     <div className="w-16 h-16 bg-surface-2 rounded overflow-hidden shrink-0 flex items-center justify-center">
-                      <span className="text-brand-600 text-xs font-bold opacity-30">Image</span>
+                      {item.imageUrl ? (
+                        <img src={item.imageUrl} alt={item.imageOriginalName || item.productName} className="h-full w-full object-cover" />
+                      ) : (
+                        <span className="text-brand-600 text-xs font-bold opacity-30">Image</span>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-semibold text-text truncate">{item.productName}</h4>

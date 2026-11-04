@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { getOrderById, updateOrderItem, updateOrderStatus } from '@/features/sales/api/sales.api';
+import { downloadOrderInvoice, getOrderById, updateOrderItem, updateOrderStatus } from '@/features/sales/api/sales.api';
 import { Order } from '@/features/sales/types';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/patterns/KpiCard';
@@ -34,6 +34,14 @@ export default function OrderDetailPage() {
       toast.success('Order marked as ready for delivery or pickup');
     } catch {
       toast.error('Failed to update the order status');
+    }
+  };
+  const printInvoice = async () => {
+    if (!order) return;
+    try {
+      await downloadOrderInvoice(order.id);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to download the invoice');
     }
   };
 
@@ -93,7 +101,7 @@ export default function OrderDetailPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <Button variant="outline">Print Invoice</Button>
+          <Button variant="outline" onClick={() => void printInvoice()}>Print Invoice</Button>
           <Button variant="outline">Record Payment</Button>
           <Button onClick={fulfilOrder}>Fulfil Order</Button>
         </div>

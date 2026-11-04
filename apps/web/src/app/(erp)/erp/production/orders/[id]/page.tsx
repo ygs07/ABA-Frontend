@@ -1,4 +1,5 @@
 
-export default function ProductionOrderDetailPage({ params }: { params: { id: string } }) { 
-  return <div>Order Detail {params.id}</div>; 
+export default async function ProductionOrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
+  return <div>Order Detail {id}</div>;
 }

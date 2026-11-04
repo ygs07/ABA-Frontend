@@ -5,7 +5,7 @@ import { brand } from '@/config/brand';
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { LayoutDashboard, ShoppingBag, Wallet, Users, Settings, Bell, LogOut, Medal } from 'lucide-react';
+import { LayoutDashboard, ShoppingBag, Wallet, Users, Settings, Bell, LogOut, Medal, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store';
 import { logout as logoutRequest } from '@/features/auth/api/auth.api';
 import { removeAuthCookie } from '@/features/auth/actions';
@@ -33,6 +33,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     { name: 'Orders', href: '/portal/orders', icon: ShoppingBag },
     { name: 'My Wallet', href: '/portal/wallet', icon: Wallet },
     { name: 'Referrals', href: '/portal/referrals', icon: Users },
+    { name: 'KYC Profile', href: '/portal/kyc', icon: ShieldCheck },
     { name: 'Rewards', href: '/portal/rewards', icon: Medal },
     ...(isCustomer ? [{ name: 'Profile', href: '/portal/profile', icon: Settings }] : []),
     { name: 'Notifications', href: '/portal/notifications', icon: Bell },

@@ -59,6 +59,9 @@ export const getCustomers = async (): Promise<Customer[]> => {
         email: string;
         username?: string;
       };
+      ordersCount?: number;
+      totalSpent?: string | number;
+      walletBalance?: string | number;
     }>; meta: unknown }>('/api/v1/customers?limit=100');
     return response.data.map((customer) => ({
       id: String(customer.id),
@@ -74,9 +77,9 @@ export const getCustomers = async (): Promise<Customer[]> => {
       creditLimit: 0,
       status: customer.status === 'active' ? 'Active' : 'Suspended',
       registeredAt: customer.createdAt,
-      ordersCount: 0,
-      totalSpent: 0,
-      walletBalance: 0,
+      ordersCount: Number(customer.ordersCount ?? 0),
+      totalSpent: Math.round(Number(customer.totalSpent ?? 0) * 100),
+      walletBalance: Math.round(Number(customer.walletBalance ?? 0) * 100),
       referralsCount: 0,
     }));
   }

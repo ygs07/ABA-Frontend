@@ -2,11 +2,12 @@
 
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
-import { useQuery } from '@tanstack/react-query';
-import { getPayout } from '@/features/payouts/api';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { approvePayout, getPayout, processPayout, rejectPayout } from '@/features/payouts/api';
 import { Badge } from '@/components/ui/badge';
 import { AmountText } from '@/components/patterns/AmountText';
 import { useParams } from 'next/navigation';
+import { toast } from 'sonner';
 
 export default function PayoutDetailPage() {
   const params = useParams();
@@ -16,6 +17,19 @@ export default function PayoutDetailPage() {
     queryKey: ['payout', id],
     queryFn: () => getPayout(id)
   });
+  const queryClient = useQueryClient();
+  const refresh = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['payout', id] });
+    await queryClient.invalidateQueries({ queryKey: ['payouts'] });
+  };
+  const approveMutation = useMutation({ mutationFn: () => approvePayout(id), onSuccess: async () => { toast.success('Payout approved'); await refresh(); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'Unable to approve payout') });
+  const processMutation = useMutation({ mutationFn: () => processPayout(id), onSuccess: async () => { toast.success('Transfer submitted to Paystack'); await refresh(); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'Unable to process payout') });
+  const rejectMutation = useMutation({ mutationFn: (reason: string) => rejectPayout(id, reason), onSuccess: async () => { toast.success('Payout rejected and funds restored'); await refresh(); }, onError: (error) => toast.error(error instanceof Error ? error.message : 'Unable to reject payout') });
+
+  const reject = () => {
+    const reason = window.prompt('Why is this payout being rejected?');
+    if (reason?.trim()) rejectMutation.mutate(reason.trim());
+  };
 
   if (isLoading) return <div>Loading...</div>;
   if (!data?.data) return <div>Payout not found</div>;
@@ -30,9 +44,9 @@ export default function PayoutDetailPage() {
         backHref="/erp/payouts"
         action={
           <div className="flex gap-2">
-            {payout.status === 'Pending' && <Button variant="outline" className="text-error border-error-muted hover:bg-error-light hover:text-error">Reject</Button>}
-            {payout.status === 'Pending' && <Button variant="primary">Approve Payout</Button>}
-            {payout.status === 'Approved' && <Button variant="primary">Process Transfer</Button>}
+            {payout.status === 'Pending' && <Button variant="outline" onClick={reject} disabled={rejectMutation.isPending} className="text-error border-error-muted hover:bg-error-light hover:text-error">Reject</Button>}
+            {payout.status === 'Pending' && <Button variant="primary" onClick={() => approveMutation.mutate()} disabled={approveMutation.isPending}>Approve Payout</Button>}
+            {payout.status === 'Approved' && <Button variant="primary" onClick={() => processMutation.mutate()} disabled={processMutation.isPending}>Process Transfer</Button>}
           </div>
         }
       />

@@ -10,35 +10,54 @@ interface ReferralKycStepProps {
     ninNumber: string;
     idDocumentName: string;
     proofOfAddressName: string;
-  }) => void;
+    identityDocument: File;
+    proofOfAddress: File;
+  }) => Promise<void>;
   onCancel: () => void;
 }
 
 export function ReferralKycStep({ onContinue, onCancel }: ReferralKycStepProps) {
   const [idType, setIdType] = useState('National Identity Number (NIN)');
   const [ninNumber, setNinNumber] = useState('12345678901');
-  const [idUploaded, setIdUploaded] = useState(true);
-  const [addressUploaded, setAddressUploaded] = useState(true);
+  const [idUploaded, setIdUploaded] = useState(false);
+  const [addressUploaded, setAddressUploaded] = useState(false);
   const [idFileName, setIdFileName] = useState<string | null>(null);
   const [addressFileName, setAddressFileName] = useState<string | null>(null);
+  const [identityDocument, setIdentityDocument] = useState<File | null>(null);
+  const [proofOfAddress, setProofOfAddress] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const idInputRef = React.useRef<HTMLInputElement>(null);
-  const addressInputRef = React.useRef<HTMLInputElement>(null);
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (ninNumber.trim().length < 11) {
       setError('Please provide a valid 11-digit NIN or ID number.');
       return;
     }
+    if (!identityDocument || !proofOfAddress) {
+      setError('Please select both your identity document and proof of address.');
+      return;
+    }
     setError(null);
-    onContinue({
-      idType,
-      ninNumber: ninNumber.trim(),
-      idDocumentName: idUploaded ? 'nin_slip_verified.pdf' : 'id_document.pdf',
-      proofOfAddressName: addressUploaded ? 'utility_bill_verified.jpg' : 'address_doc.pdf',
-    });
+    setIsSubmitting(true);
+    try {
+      await onContinue({
+        idType,
+        ninNumber: ninNumber.trim(),
+        idDocumentName: idFileName ?? identityDocument.name,
+        proofOfAddressName: addressFileName ?? proofOfAddress.name,
+        identityDocument,
+        proofOfAddress,
+      });
+    } catch (submissionError) {
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : 'Unable to save your KYC documents. Please try again.',
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -89,21 +108,22 @@ export function ReferralKycStep({ onContinue, onCancel }: ReferralKycStepProps) 
 
         {/* Proof of Identity Upload */}
         <input
-          ref={idInputRef}
+          id="kyc-identity-document"
           type="file"
           accept=".pdf,.jpg,.jpeg,.png"
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) {
               setIdFileName(f.name);
+              setIdentityDocument(f);
               setIdUploaded(true);
             }
           }}
-          className="hidden"
+          className="sr-only"
           aria-label="Upload proof of identity"
         />
-        <div
-          onClick={() => idInputRef.current?.click()}
+        <label
+          htmlFor="kyc-identity-document"
           className={`p-3 rounded-lg border flex items-center justify-between cursor-pointer transition-colors ${
             idUploaded ? 'bg-success-50 border-success-main/40' : 'bg-surface-1 border-border hover:bg-surface-2'
           }`}
@@ -113,7 +133,7 @@ export function ReferralKycStep({ onContinue, onCancel }: ReferralKycStepProps) 
             <div>
               <p className="text-sm font-semibold text-text">Proof of Identity (Government ID)</p>
               <p className="text-xs text-text-muted">
-                {idFileName ? `${idFileName} (Selected)` : idUploaded ? 'nin_slip.pdf (Uploaded)' : 'Click to select document'}
+                {idFileName ? `${idFileName} (Selected)` : 'Click to select document'}
               </p>
             </div>
           </div>
@@ -122,25 +142,26 @@ export function ReferralKycStep({ onContinue, onCancel }: ReferralKycStepProps) 
           ) : (
             <Upload className="w-4 h-4 text-text-muted" />
           )}
-        </div>
+        </label>
 
         {/* Proof of Address Upload */}
         <input
-          ref={addressInputRef}
+          id="kyc-proof-of-address"
           type="file"
           accept=".pdf,.jpg,.jpeg,.png"
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) {
               setAddressFileName(f.name);
+              setProofOfAddress(f);
               setAddressUploaded(true);
             }
           }}
-          className="hidden"
+          className="sr-only"
           aria-label="Upload proof of address"
         />
-        <div
-          onClick={() => addressInputRef.current?.click()}
+        <label
+          htmlFor="kyc-proof-of-address"
           className={`p-3 rounded-lg border flex items-center justify-between cursor-pointer transition-colors ${
             addressUploaded ? 'bg-success-50 border-success-main/40' : 'bg-surface-1 border-border hover:bg-surface-2'
           }`}
@@ -150,7 +171,7 @@ export function ReferralKycStep({ onContinue, onCancel }: ReferralKycStepProps) 
             <div>
               <p className="text-sm font-semibold text-text">Proof of Address (Utility Bill)</p>
               <p className="text-xs text-text-muted">
-                {addressFileName ? `${addressFileName} (Selected)` : addressUploaded ? 'utility_bill.jpg (Uploaded)' : 'Click to select document'}
+                {addressFileName ? `${addressFileName} (Selected)` : 'Click to select document'}
               </p>
             </div>
           </div>
@@ -159,15 +180,15 @@ export function ReferralKycStep({ onContinue, onCancel }: ReferralKycStepProps) 
           ) : (
             <Upload className="w-4 h-4 text-text-muted" />
           )}
-        </div>
+        </label>
       </div>
 
       <div className="flex items-center justify-end gap-3 pt-3 border-t border-border">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
-          Continue to Fee Payment
+        <Button type="submit" disabled={isSubmitting}>
+          {isSubmitting ? 'Saving documents…' : 'Continue to Fee Payment'}
         </Button>
       </div>
     </form>

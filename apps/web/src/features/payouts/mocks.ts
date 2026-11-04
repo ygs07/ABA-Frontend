@@ -73,5 +73,6 @@ export const mockPayoutSettings: PayoutSettings = {
   feeRule: 'Flat ₦50',
   autoApproveBelow: 1000000, // ₦10,000
   requiredKycLevel: 2,
-  holdingPeriodDays: 3
+  holdingPeriodDays: 3,
+  enforceNameMatching: true
 };

@@ -155,12 +155,12 @@ const NAV_STRUCTURE: NavGroup[] = [
         icon: BadgePercent, 
         badge: 5, 
         badgeVariant: 'brand', 
-        allowedRoles: ['Super Admin', 'Admin'],
+        allowedRoles: ['Super Admin', 'Admin', 'Merchant'],
         children: [
-          { name: 'Overview', href: '/erp/commissions', allowedRoles: ['Super Admin', 'Admin'] },
-          { name: 'Records', href: '/erp/commissions/records', allowedRoles: ['Super Admin', 'Admin'] },
+          { name: 'Overview', href: '/erp/commissions', allowedRoles: ['Super Admin', 'Admin', 'Merchant'] },
+          { name: 'Records', href: '/erp/commissions/records', allowedRoles: ['Super Admin', 'Admin', 'Merchant'] },
           { name: 'Approvals', href: '/erp/commissions/approvals', allowedRoles: ['Super Admin', 'Admin'] },
-          { name: 'Plans & Rules', href: '/erp/commissions/rules', allowedRoles: ['Super Admin', 'Admin'] },
+          { name: 'Plans & Rules', href: '/erp/commissions/rules', allowedRoles: ['Super Admin', 'Admin', 'Merchant'] },
           { name: 'Simulator', href: '/erp/commissions/simulator', allowedRoles: ['Super Admin', 'Admin'] },
           { name: 'Reversals', href: '/erp/commissions/reversals', allowedRoles: ['Super Admin', 'Admin'] }
         ]
@@ -235,6 +235,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     items: [
       { name: 'Users', href: '/erp/settings/users', icon: ShieldCheck, allowedRoles: ['Super Admin', 'Admin'] },
       { name: 'KYC Reviews', href: '/erp/kyc', icon: ShieldCheck, allowedRoles: ['Super Admin', 'Admin'] },
+      { name: 'Merchant Onboarding', href: '/erp/merchants/onboarding-applications', icon: Store, allowedRoles: ['Super Admin', 'Admin'] },
       { name: 'Roles & Permissions', href: '/erp/settings/roles', icon: Lock, allowedRoles: ['Super Admin'] },
       { name: 'Audit Logs', href: '/erp/settings/audit', icon: ScrollText, allowedRoles: ['Super Admin', 'Auditor'] },
       { name: 'Settings', href: '/erp/settings', icon: Settings, allowedRoles: ['Super Admin', 'Admin'] }

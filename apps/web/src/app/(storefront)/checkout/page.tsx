@@ -18,7 +18,7 @@ import { getCart } from '@/features/cart/api';
 
 import { useCartStore } from '@/features/cart/store';
 
-import { initializeCheckout, processCheckout } from '@/features/checkout/api';
+import { getDeliveryAddresses, initializeCheckout, processCheckout } from '@/features/checkout/api';
 
 import { CheckoutAddressInput } from '@/features/checkout/schemas';
 
@@ -26,7 +26,7 @@ import { AmountText } from '@/components/patterns/AmountText';
 
 import { ErrorState } from '@/components/patterns/ErrorState';
 
-import { getCustomerWalletBalance } from '@/features/portal/api';
+import { getCustomerWalletBalance, getShoppingCreditBalance } from '@/features/portal/api';
 
 const MOCK_REFERRERS = [
 
@@ -51,6 +51,10 @@ function CheckoutContent() {
   const [step, setStep] = useState(1);
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
+  const [useShoppingCredits, setUseShoppingCredits] = useState(true);
+
+  const [selectedDeliveryAddressId, setSelectedDeliveryAddressId] = useState<number | undefined>();
+  const [isAddingAddress, setIsAddingAddress] = useState(false);
 
   const [referralInput, setReferralInput] = useState('');
 
@@ -86,17 +90,12 @@ setSearchResults([]);
 
   const [addressForm, setAddressForm] = useState<CheckoutAddressInput>({
 
-    fullName: 'Jane Doe',
-
-    phone: '+2348012345678',
-
-    street: '123 Market Street, Victoria Island',
-
-    city: 'Lagos',
-
-    state: 'Lagos',
-
-    zipCode: '101241'
+    fullName: '',
+    phone: '',
+    street: '',
+    city: '',
+    state: '',
+    zipCode: ''
 
 });
 
@@ -128,6 +127,28 @@ const res = await getCart();
 
 });
 
+  const { data: savedAddressesData, isLoading: isAddressesLoading, error: addressesError } = useQuery({
+    queryKey: ['delivery-addresses'],
+    queryFn: getDeliveryAddresses,
+  });
+  const { data: shoppingCreditBalance = 0 } = useQuery({ queryKey: ['shopping_credit_balance'], queryFn: getShoppingCreditBalance });
+
+  const savedAddresses = savedAddressesData?.data ?? [];
+
+  useEffect(() => {
+    if (selectedDeliveryAddressId || !savedAddresses.length) return;
+    const defaultAddress = savedAddresses[0];
+    setSelectedDeliveryAddressId(defaultAddress.id);
+    setAddressForm({
+      fullName: defaultAddress.name,
+      phone: '',
+      street: defaultAddress.street,
+      city: defaultAddress.city,
+      state: defaultAddress.state,
+      zipCode: defaultAddress.zip,
+    });
+  }, [savedAddresses, selectedDeliveryAddressId]);
+
 // 2. Initialize Checkout Session
 
   const { data: sessionData, isLoading: isSessionLoading } = useQuery({
@@ -157,13 +178,12 @@ mutationFn: async () => {
       if (!sessionData?.id) throw new Error('No active session');
 
 const res = await processCheckout(
-
-sessionData.id,
-
-addressForm,
-
-{ method: paymentMethod }
-
+        sessionData.id,
+        addressForm,
+        { method: paymentMethod },
+        selectedDeliveryAddressId,
+        (appliedReferral?.code ?? referralInput.trim()) || undefined,
+        useShoppingCredits,
 );
 
       return res.data;
@@ -208,7 +228,7 @@ processMutation.mutate();
 
 ];
 
-if (isCartLoading || isSessionLoading || isWalletLoading) {
+if (isCartLoading || isSessionLoading || isWalletLoading || isAddressesLoading) {
 
 return (
 
@@ -277,6 +297,13 @@ return (
                   {step > s.num ? <Check className="w-4 h-4" /> : s.num}
 
                 </div>
+
+                {shoppingCreditBalance > 0 && (
+                  <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+                    <input type="checkbox" checked={useShoppingCredits} onChange={(event) => setUseShoppingCredits(event.target.checked)} className="mt-1 h-4 w-4" />
+                    <span><span className="block text-sm font-semibold text-amber-900">Use Shopping Credits</span><span className="block text-xs text-amber-800">Apply up to <AmountText amountInKobo={shoppingCreditBalance} /> from your non-withdrawable shopping credits before charging your selected payment method.</span></span>
+                  </label>
+                )}
 
                 <span className={`text-xs mt-2 hidden sm:block ${step >= s.num ? 'font-semibold text-text' : 'text-text-muted'}`}>{s.title}</span>
 
@@ -366,41 +393,51 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                 <h2 className="text-xl font-bold text-text mb-6">Delivery Address</h2>
 
-                {/* Saved Address Mock */}
-
-                <div className="border-2 border-brand-600 rounded-lg p-4 bg-brand-50 mb-6 cursor-pointer relative flex items-start gap-4">
-
-                  <div className="mt-1">
-
-                    <MapPin className="w-5 h-5 text-brand-600" />
-
-                  </div>
-
-                  <div>
-
-                    <p className="font-semibold text-text">Home</p>
-
-                    <p className="text-sm text-text-muted mt-1">{addressForm.street}</p>
-
-                    <p className="text-sm text-text-muted">{addressForm.city}, {addressForm.zipCode}, {addressForm.state}</p>
-
-                  </div>
-
-                  <div className="absolute top-4 right-4">
-
-                    <Check className="w-5 h-5 text-brand-600" />
-
-                  </div>
-
+                {addressesError && <p className="mb-4 text-sm text-error">Unable to load your saved addresses.</p>}
+                <div className="space-y-3 mb-5">
+                  {savedAddresses.map((savedAddress) => {
+                    const isSelected = selectedDeliveryAddressId === savedAddress.id && !isAddingAddress;
+                    return (
+                      <button
+                        type="button"
+                        key={savedAddress.id}
+                        onClick={() => {
+                          setSelectedDeliveryAddressId(savedAddress.id);
+                          setIsAddingAddress(false);
+                          setAddressForm({ fullName: savedAddress.name, phone: '', street: savedAddress.street, city: savedAddress.city, state: savedAddress.state, zipCode: savedAddress.zip });
+                        }}
+                        className={`w-full border-2 rounded-lg p-4 text-left cursor-pointer relative flex items-start gap-4 ${isSelected ? 'border-brand-600 bg-brand-50' : 'border-border bg-white hover:border-brand-300'}`}
+                      >
+                        <MapPin className="mt-1 w-5 h-5 text-brand-600" />
+                        <div>
+                          <p className="font-semibold text-text">{savedAddress.name}</p>
+                          <p className="text-sm text-text-muted mt-1">{savedAddress.street}</p>
+                          <p className="text-sm text-text-muted">{savedAddress.city}, {savedAddress.state} {savedAddress.zip}</p>
+                        </div>
+                        {isSelected && <Check className="absolute top-4 right-4 w-5 h-5 text-brand-600" />}
+                      </button>
+                    );
+                  })}
                 </div>
 
-                <button className="text-brand-600 font-medium text-sm hover:underline">+ Add a new address</button>
+                <button type="button" onClick={() => { setSelectedDeliveryAddressId(undefined); setIsAddingAddress(true); }} className="text-brand-600 font-medium text-sm hover:underline">+ Add a new address</button>
+
+                {(isAddingAddress || savedAddresses.length === 0) && (
+                  <div className="mt-4 grid grid-cols-1 gap-3 rounded-lg border border-border bg-surface-1 p-4 sm:grid-cols-2">
+                    <input value={addressForm.fullName} onChange={(event) => setAddressForm({ ...addressForm, fullName: event.target.value })} placeholder="Address label (e.g. Home)" className="h-10 rounded-md border border-border bg-white px-3 text-sm" />
+                    <input value={addressForm.phone} onChange={(event) => setAddressForm({ ...addressForm, phone: event.target.value })} placeholder="Phone number" className="h-10 rounded-md border border-border bg-white px-3 text-sm" />
+                    <input value={addressForm.street} onChange={(event) => setAddressForm({ ...addressForm, street: event.target.value })} placeholder="Street address" className="h-10 rounded-md border border-border bg-white px-3 text-sm sm:col-span-2" />
+                    <input value={addressForm.city} onChange={(event) => setAddressForm({ ...addressForm, city: event.target.value })} placeholder="City" className="h-10 rounded-md border border-border bg-white px-3 text-sm" />
+                    <input value={addressForm.state} onChange={(event) => setAddressForm({ ...addressForm, state: event.target.value })} placeholder="State" className="h-10 rounded-md border border-border bg-white px-3 text-sm" />
+                    <input value={addressForm.zipCode} onChange={(event) => setAddressForm({ ...addressForm, zipCode: event.target.value })} placeholder="Postal code (optional)" className="h-10 rounded-md border border-border bg-white px-3 text-sm" />
+                  </div>
+                )}
 
                 <div className="mt-8 flex justify-between">
 
                   <Button variant="outline" onClick={prevStep}>Back</Button>
 
-                  <Button onClick={nextStep} size="lg">Continue to Delivery</Button>
+                  <Button onClick={nextStep} size="lg" disabled={!selectedDeliveryAddressId && (!addressForm.fullName || !addressForm.street || !addressForm.city || !addressForm.state)}>Continue to Delivery</Button>
 
                 </div>
 

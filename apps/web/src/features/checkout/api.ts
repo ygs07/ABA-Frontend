@@ -19,23 +19,25 @@ export async function initializeCheckout(cartId: string): Promise<{ data: Checko
 export async function processCheckout(
   sessionId: string,
   address: CheckoutAddressInput,
-  payment: CheckoutPaymentInput
+  payment: CheckoutPaymentInput,
+  selectedDeliveryAddressId?: number,
+  referralCode?: string,
+  useShoppingCredits?: boolean,
 ): Promise<{ data: { orderId: string, status: string, authorizationUrl?: string } }> {
   if (API_MODE !== 'mock') {
     void sessionId;
-    const savedAddresses = await fetchApi<{ data: Array<{
-      id: number;
-      street: string;
-      city: string;
-      state: string;
-      zip: string;
-    }> }>('/api/v1/delivery-address?limit=100');
-    let deliveryAddress = savedAddresses.data.find((savedAddress) =>
-      savedAddress.street === address.street &&
-      savedAddress.city === address.city &&
-      savedAddress.state === address.state &&
-      savedAddress.zip === (address.zipCode ?? ''),
-    );
+    const savedAddresses = await getDeliveryAddresses();
+    let deliveryAddress = selectedDeliveryAddressId
+      ? savedAddresses.data.find((savedAddress) => savedAddress.id === selectedDeliveryAddressId)
+      : undefined;
+    if (!deliveryAddress) {
+      deliveryAddress = savedAddresses.data.find((savedAddress) =>
+        savedAddress.street === address.street &&
+        savedAddress.city === address.city &&
+        savedAddress.state === address.state &&
+        savedAddress.zip === (address.zipCode ?? '')
+      );
+    }
     if (!deliveryAddress) {
       deliveryAddress = await fetchApi<typeof deliveryAddress>('/api/v1/delivery-address', {
         method: 'POST',
@@ -62,6 +64,8 @@ export async function processCheckout(
         deliveryAddressId: deliveryAddress.id,
         deliveryMethod: 1,
         paymentMethod: payment.method === 'wallet' ? 2 : 1,
+        ...(referralCode?.trim() ? { referralCode: referralCode.trim() } : {}),
+        useShoppingCredits,
       }),
     });
     return {
@@ -88,4 +92,18 @@ export async function processCheckout(
       status: 'Processing'
     }
   };
+}
+
+export type DeliveryAddress = {
+  id: number;
+  name: string;
+  street: string;
+  city: string;
+  state: string;
+  zip: string;
+  createdAt: string;
+};
+
+export async function getDeliveryAddresses(): Promise<{ data: DeliveryAddress[] }> {
+  return fetchApi<{ data: DeliveryAddress[] }>('/api/v1/delivery-address?limit=100');
 }

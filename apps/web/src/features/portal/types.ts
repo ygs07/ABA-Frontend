@@ -4,6 +4,8 @@ export interface PortalOrderItem {
   productName: string;
   price: number;
   quantity: number;
+  imageUrl?: string;
+  imageOriginalName?: string;
 }
 
 export interface PortalShippingAddress {

@@ -2,12 +2,14 @@
 
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
+import { useParams } from 'next/navigation';
 
-export default function PayoutBatchDetailPage({ params }: { params: { id: string } }) {
+export default function PayoutBatchDetailPage() {
+  const { id } = useParams<{ id: string }>();
   return (
     <div className="space-y-6 pb-20 mx-auto max-w-5xl">
       <PageHeader 
-        title={`Batch ${params.id}`} 
+        title={`Batch ${id}`}
         description="Review and process multiple payouts simultaneously."
         backHref="/erp/payouts/batches"
         action={

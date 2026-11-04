@@ -1,7 +1,4 @@
 'use client';
-import { brand } from '@/config/brand';
-
-
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
@@ -17,7 +14,7 @@ import { NetworkTree } from './NetworkTree';
 
 
 
-export function NetworkExplorer({ initialRootId = `${brand.referralCodePrefix}492` }: { initialRootId?: string }) {
+export function NetworkExplorer({ initialRootId = '' }: { initialRootId?: string }) {
   const router = useRouter();
   const rootId = initialRootId;
   const [searchInput, setSearchInput] = useState('');
@@ -58,7 +55,7 @@ export function NetworkExplorer({ initialRootId = `${brand.referralCodePrefix}49
       <form onSubmit={handleSearch} className="bg-surface rounded-xl border border-border p-4 flex gap-4 items-center">
         <div className="flex-1">
           <Input 
-            placeholder="Search user ID to set as Root... (e.g., ${brand.referralCodePrefix}881)" 
+            placeholder="Search by user ID, username, or referral code..."
             className="w-full"
             value={searchInput}
             onChange={(e) => setSearchInput(e.target.value)}
