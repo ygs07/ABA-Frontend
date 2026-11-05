@@ -51,6 +51,7 @@ function CheckoutContent() {
   const [step, setStep] = useState(1);
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
+  const [deliveryMethod, setDeliveryMethod] = useState<1 | 2 | 3>(1);
   const [useShoppingCredits, setUseShoppingCredits] = useState(true);
 
   const [selectedDeliveryAddressId, setSelectedDeliveryAddressId] = useState<number | undefined>();
@@ -134,6 +135,9 @@ const res = await getCart();
   const { data: shoppingCreditBalance = 0 } = useQuery({ queryKey: ['shopping_credit_balance'], queryFn: getShoppingCreditBalance });
 
   const savedAddresses = savedAddressesData?.data ?? [];
+  const deliveryFee = deliveryMethod === 2 ? 300000 : deliveryMethod === 1 ? 150000 : 0;
+  const shoppingCreditApplied = useShoppingCredits ? Math.min(shoppingCreditBalance, (cartData?.subtotal ?? 0) + deliveryFee) : 0;
+  const checkoutTotal = Math.max(0, (cartData?.subtotal ?? 0) + deliveryFee - shoppingCreditApplied);
 
   useEffect(() => {
     if (selectedDeliveryAddressId || !savedAddresses.length) return;
@@ -182,6 +186,7 @@ const res = await processCheckout(
         addressForm,
         { method: paymentMethod },
         selectedDeliveryAddressId,
+        deliveryMethod,
         (appliedReferral?.code ?? referralInput.trim()) || undefined,
         useShoppingCredits,
 );
@@ -298,13 +303,6 @@ return (
 
                 </div>
 
-                {shoppingCreditBalance > 0 && (
-                  <label className="mt-4 flex cursor-pointer items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
-                    <input type="checkbox" checked={useShoppingCredits} onChange={(event) => setUseShoppingCredits(event.target.checked)} className="mt-1 h-4 w-4" />
-                    <span><span className="block text-sm font-semibold text-amber-900">Use Shopping Credits</span><span className="block text-xs text-amber-800">Apply up to <AmountText amountInKobo={shoppingCreditBalance} /> from your non-withdrawable shopping credits before charging your selected payment method.</span></span>
-                  </label>
-                )}
-
                 <span className={`text-xs mt-2 hidden sm:block ${step >= s.num ? 'font-semibold text-text' : 'text-text-muted'}`}>{s.title}</span>
 
               </div>
@@ -312,6 +310,13 @@ return (
             ))}
 
           </div>
+
+          {shoppingCreditBalance > 0 && (
+            <label className="mb-8 flex cursor-pointer items-start gap-3 rounded-lg border border-amber-300 bg-amber-50 p-4">
+              <input type="checkbox" checked={useShoppingCredits} onChange={(event) => setUseShoppingCredits(event.target.checked)} className="mt-1 h-4 w-4" />
+              <span><span className="block text-sm font-semibold text-amber-900">Use Shopping Credits</span><span className="block text-xs text-amber-800">Apply up to <AmountText amountInKobo={shoppingCreditBalance} /> from your non-withdrawable shopping credits before charging your selected payment method.</span></span>
+            </label>
+          )}
 
           {processMutation.isError && (
 
@@ -455,11 +460,11 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                 <div className="space-y-4">
 
-                  <label className="border-2 border-brand-600 rounded-lg p-4 bg-brand-50 flex items-center justify-between cursor-pointer">
+                  <label className={`border-2 rounded-lg p-4 flex items-center justify-between cursor-pointer ${deliveryMethod === 1 ? 'border-brand-600 bg-brand-50' : 'border-border bg-white'}`}>
 
                     <div className="flex items-center gap-3">
 
-                      <input type="radio" name="delivery" defaultChecked className="text-brand-600 w-4 h-4" />
+                      <input type="radio" name="delivery" checked={deliveryMethod === 1} onChange={() => setDeliveryMethod(1)} className="text-brand-600 w-4 h-4" />
 
                       <div>
 
@@ -471,15 +476,15 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                     </div>
 
-                    <span className="font-bold"><AmountText amountInKobo={250000} /></span>
+                    <span className="font-bold"><AmountText amountInKobo={150000} /></span>
 
                   </label>
 
-                  <label className="border border-border rounded-lg p-4 bg-white flex items-center justify-between cursor-pointer hover:border-brand-300">
+                  <label className={`border-2 rounded-lg p-4 flex items-center justify-between cursor-pointer ${deliveryMethod === 2 ? 'border-brand-600 bg-brand-50' : 'border-border bg-white hover:border-brand-300'}`}>
 
                     <div className="flex items-center gap-3">
 
-                      <input type="radio" name="delivery" className="text-brand-600 w-4 h-4" />
+                      <input type="radio" name="delivery" checked={deliveryMethod === 2} onChange={() => setDeliveryMethod(2)} className="text-brand-600 w-4 h-4" />
 
                       <div>
 
@@ -491,7 +496,7 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                     </div>
 
-                    <span className="font-bold"><AmountText amountInKobo={500000} /></span>
+                    <span className="font-bold"><AmountText amountInKobo={300000} /></span>
 
                   </label>
 
@@ -625,7 +630,7 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                     <p className="text-sm text-text-muted capitalize">Method: {paymentMethod === 'card' ? 'Card Payment (Gateway)' : '{brand.shortName} Wallet'}</p>
 
-                    <p className="text-sm text-text-muted">Shipping: Standard Delivery</p>
+                    <p className="text-sm text-text-muted">Shipping: {deliveryMethod === 2 ? 'Express Delivery' : 'Standard Delivery'} (<AmountText amountInKobo={deliveryFee} />)</p>
 
                   </div>
 
@@ -653,7 +658,7 @@ disabled={processMutation.isPending}
 
                     ) : (
 
-                      <>Place Order (<AmountText amountInKobo={cartData.total} />)</>
+                      <>Place Order (<AmountText amountInKobo={checkoutTotal} />)</>
 
                     )}
 
@@ -837,7 +842,7 @@ setSearchResults([]);
 
                 <span className="text-text-muted">Delivery</span>
 
-                <span className="font-medium text-text"><AmountText amountInKobo={cartData.deliveryFee} /></span>
+                <span className="font-medium text-text"><AmountText amountInKobo={deliveryFee} /></span>
 
               </div>
 
@@ -847,7 +852,7 @@ setSearchResults([]);
 
                   <span className="font-bold text-text text-base">Total</span>
 
-                  <span className="font-bold text-brand-600 text-xl"><AmountText amountInKobo={cartData.total} /></span>
+                  <span className="font-bold text-brand-600 text-xl"><AmountText amountInKobo={checkoutTotal} /></span>
 
                 </div>
 

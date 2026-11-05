@@ -152,7 +152,7 @@ function ShopContent() {
                                 total: productsData?.length || 0,
                             }}
                             variant="numbered"
-                            onPageChange={(page) => {
+                            onPageChange={() => {
                             }}
                         />
                     </div>

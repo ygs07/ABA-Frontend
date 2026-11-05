@@ -7,11 +7,14 @@ import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/patterns/DataTable';
 import { useQuery } from '@tanstack/react-query';
 import { getReferralRecords } from '@/features/referrals/api';
+import { useState } from 'react';
 
 export default function ReferralsDashboardPage() {
+  const [search, setSearch] = useState('');
+  const [appliedSearch, setAppliedSearch] = useState('');
   const { data, isLoading } = useQuery({
-    queryKey: ['referral-records'],
-    queryFn: getReferralRecords,
+    queryKey: ['referral-records', appliedSearch],
+    queryFn: () => getReferralRecords({ search: appliedSearch }),
   });
   const referrals = data?.data ?? [];
   const referrers = new Set(referrals.map((referral) => referral.referrerName));
@@ -35,9 +38,11 @@ export default function ReferralsDashboardPage() {
     {
       id: 'actions',
       header: '',
-      cell: () => (
+      cell: (info: any) => (
         <div className="flex justify-end">
-          <Button variant="ghost" size="sm" className="h-8 text-xs">View</Button>
+          <Link href={`/erp/referrals/network/${encodeURIComponent(info.row.original.referrerCode)}`}>
+            <Button variant="ghost" size="sm" className="h-8 text-xs">View network</Button>
+          </Link>
         </div>
       )
     }
@@ -70,17 +75,13 @@ export default function ReferralsDashboardPage() {
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
         <div className="p-4 border-b border-border flex justify-between items-center bg-surface-2">
           <h3 className="font-medium">Recent Referrals</h3>
-          <div className="flex gap-2">
-            <Input placeholder="Search code or name..." className="h-9 w-64 text-sm" />
-            <select className="h-9 rounded-md border border-border bg-surface px-3 text-sm focus:ring-primary">
-              <option>All Statuses</option>
-              <option>Qualified</option>
-              <option>Pending</option>
-              <option>Flagged</option>
-            </select>
-          </div>
+          <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); setAppliedSearch(search); }}>
+            <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search code, referrer, or referred user..." className="h-9 w-72 text-sm" />
+            <Button type="submit" variant="outline" size="sm">Search</Button>
+            {appliedSearch && <Button type="button" variant="ghost" size="sm" onClick={() => { setSearch(''); setAppliedSearch(''); }}>Clear</Button>}
+          </form>
         </div>
-        <DataTable data={referrals} columns={columns} isLoading={isLoading} />
+        <DataTable data={referrals} columns={columns} isLoading={isLoading} emptyMessage="No referrals match the selected search." />
       </div>
     </div>
   );

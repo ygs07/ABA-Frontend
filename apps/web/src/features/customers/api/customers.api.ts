@@ -62,6 +62,8 @@ export const getCustomers = async (): Promise<Customer[]> => {
       ordersCount?: number;
       totalSpent?: string | number;
       walletBalance?: string | number;
+      deliveryAddresses?: Array<{ id: number; name: string; street: string; city: string; state: string }>;
+      orders?: Array<{ id: number; order_number: string; total_amount: string | number; status: string | number; createdAt: string; items: Array<unknown>; payments: Array<{ id: number; reference: string; amount: string | number; status: string; payment_method: string | null; paid_at: string | null; createdAt: string }> }>;
     }>; meta: unknown }>('/api/v1/customers?limit=100');
     return response.data.map((customer) => ({
       id: String(customer.id),
@@ -73,7 +75,7 @@ export const getCustomers = async (): Promise<Customer[]> => {
       email: customer.user.email,
       customerGroup: 'Retail',
       referralCode: customer.user.username ?? '',
-      addresses: [],
+      addresses: (customer.deliveryAddresses ?? []).map((address) => ({ id: String(address.id), label: address.name, street: address.street, city: address.city, state: address.state, lga: '', isDefault: false })),
       creditLimit: 0,
       status: customer.status === 'active' ? 'Active' : 'Suspended',
       registeredAt: customer.createdAt,
@@ -81,6 +83,7 @@ export const getCustomers = async (): Promise<Customer[]> => {
       totalSpent: Math.round(Number(customer.totalSpent ?? 0) * 100),
       walletBalance: Math.round(Number(customer.walletBalance ?? 0) * 100),
       referralsCount: 0,
+      orders: (customer.orders ?? []).map((order) => ({ id: String(order.id), orderNumber: order.order_number, total: Math.round(Number(order.total_amount) * 100), status: order.status, createdAt: order.createdAt, itemCount: order.items.length, payments: order.payments.map((payment) => ({ id: String(payment.id), reference: payment.reference, amount: Math.round(Number(payment.amount) * 100), status: payment.status, method: payment.payment_method, paidAt: payment.paid_at, createdAt: payment.createdAt })) })),
     }));
   }
   await delay(800);
@@ -109,33 +112,97 @@ export const getCustomerOverview = async (): Promise<CustomerOverview> => {
 
 export const getCustomerById = async (id: string): Promise<Customer> => {
   if (API_MODE !== 'mock') {
-    const user = await fetchApi<{
+    const customer = await fetchApi<{
       id: number;
-      first_name: string;
-      last_name: string;
-      phone: string;
-      email: string;
-      username?: string;
+      status: 'active' | 'inactive';
       createdAt: string;
-    }>(`/api/v1/users/${encodeURIComponent(id)}`);
+      user: {
+        id: number;
+        first_name: string;
+        last_name: string;
+        phone?: string | null;
+        email: string;
+        username?: string;
+      };
+      ordersCount?: number;
+      totalSpent?: string | number;
+      walletBalance?: string | number;
+      deliveryAddresses?: Array<{
+        id: number;
+        name: string;
+        street: string;
+        city: string;
+        state: string;
+      }>;
+      orders?: Array<{
+        id: number;
+        order_number: string;
+        total_amount: string | number;
+        status: number;
+        createdAt: string;
+        items?: Array<unknown>;
+        payments?: Array<{
+          id: number;
+          reference: string;
+          amount: string | number;
+          status: string;
+          payment_method: string | null;
+          paid_at: string | null;
+          createdAt: string;
+        }>;
+      }>;
+    }>(`/api/v1/customers/${encodeURIComponent(id)}`);
+    const orderStatuses: Record<number, string> = {
+      1: 'Pending',
+      2: 'Processing',
+      3: 'Shipped / Ready for pickup',
+      4: 'Complete',
+      5: 'Cancelled',
+      6: 'Refund requested',
+    };
     return {
-      id: String(user.id),
-      customerNo: `CUS-${String(user.id).padStart(5, '0')}`,
+      id: String(customer.id),
+      customerNo: `CUS-${String(customer.id).padStart(5, '0')}`,
       type: 'Individual',
-      firstName: user.first_name,
-      lastName: user.last_name,
-      phone: user.phone,
-      email: user.email,
+      firstName: customer.user.first_name,
+      lastName: customer.user.last_name,
+      phone: customer.user.phone ?? '',
+      email: customer.user.email,
       customerGroup: 'Retail',
-      referralCode: user.username ?? '',
-      addresses: [],
+      referralCode: customer.user.username ?? '',
+      addresses: (customer.deliveryAddresses ?? []).map((address) => ({
+        id: String(address.id),
+        label: address.name,
+        street: address.street,
+        city: address.city,
+        state: address.state,
+        lga: '',
+        isDefault: false,
+      })),
       creditLimit: 0,
-      status: 'Active',
-      registeredAt: user.createdAt,
-      ordersCount: 0,
-      totalSpent: 0,
-      walletBalance: 0,
+      status: customer.status === 'active' ? 'Active' : 'Suspended',
+      registeredAt: customer.createdAt,
+      ordersCount: Number(customer.ordersCount ?? 0),
+      totalSpent: Math.round(Number(customer.totalSpent ?? 0) * 100),
+      walletBalance: Math.round(Number(customer.walletBalance ?? 0) * 100),
       referralsCount: 0,
+      orders: (customer.orders ?? []).map((order) => ({
+        id: String(order.id),
+        orderNumber: order.order_number,
+        total: Math.round(Number(order.total_amount) * 100),
+        status: orderStatuses[order.status] ?? 'Unknown',
+        createdAt: order.createdAt,
+        itemCount: order.items?.length ?? 0,
+        payments: (order.payments ?? []).map((payment) => ({
+          id: String(payment.id),
+          reference: payment.reference,
+          amount: Math.round(Number(payment.amount) * 100),
+          status: payment.status,
+          method: payment.payment_method,
+          paidAt: payment.paid_at,
+          createdAt: payment.createdAt,
+        })),
+      })),
     };
   }
   await delay(500);

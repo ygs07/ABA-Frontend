@@ -67,7 +67,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     title: 'Sales',
     allowedRoles: ['Super Admin', 'Admin', 'Merchant', 'Staff'],
     items: [
-      { name: 'Orders', href: '/erp/orders', icon: ShoppingCart, badge: 12, badgeVariant: 'brand', allowedRoles: ['Super Admin', 'Admin', 'Merchant', 'Staff'] },
+      { name: 'Orders', href: '/erp/orders', icon: ShoppingCart, allowedRoles: ['Super Admin', 'Admin', 'Merchant', 'Staff'] },
       { name: 'Customers', href: '/erp/customers', icon: Users, allowedRoles: ['Super Admin', 'Admin', 'Merchant', 'Staff'] },
       { 
         name: 'Referrals', 
@@ -214,6 +214,7 @@ const NAV_STRUCTURE: NavGroup[] = [
     title: 'Storefront',
     allowedRoles: ['Super Admin', 'Admin', 'Merchant'],
     items: [
+      { name: 'Profile', href: '/erp/storefront/profile', icon: Store, allowedRoles: ['Merchant'] },
       { name: 'Brand & Pages', href: '/erp/storefront/pages', icon: LayoutDashboard, allowedRoles: ['Super Admin', 'Admin'] },
       { name: 'Spotlight', href: '/erp/storefront/spotlight', icon: Tags, allowedRoles: ['Super Admin', 'Admin'] },
       { 

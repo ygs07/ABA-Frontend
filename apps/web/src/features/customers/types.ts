@@ -36,4 +36,25 @@ export interface Customer {
   totalSpent: number;
   walletBalance: number;
   referralsCount: number;
+  orders?: CustomerOrder[];
+}
+
+export interface CustomerPayment {
+  id: string;
+  reference: string;
+  amount: number;
+  status: string;
+  method: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+export interface CustomerOrder {
+  id: string;
+  orderNumber: string;
+  total: number;
+  status: string | number;
+  createdAt: string;
+  itemCount: number;
+  payments: CustomerPayment[];
 }

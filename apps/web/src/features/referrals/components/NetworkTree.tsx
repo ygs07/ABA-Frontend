@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { brand } from '@/config/brand';
 import { Maximize, ZoomIn, ZoomOut, List } from 'lucide-react';
 import { format } from 'date-fns';
+import Link from 'next/link';
 
 interface NetworkTreeProps {
   data: NetworkNodeData;
@@ -254,6 +255,9 @@ export function NetworkTree({ data, anonymize = false }: NetworkTreeProps) {
                 <div className="font-medium text-brand-600">Top {100 - selectedNode.performancePercentile}% of peers</div>
               </div>
             )}
+            <Link href={`/erp/referrals/network/${encodeURIComponent(selectedNode.id)}`}>
+              <Button className="w-full" variant="outline" size="sm">Use as network root</Button>
+            </Link>
           </div>
         </div>
       )}

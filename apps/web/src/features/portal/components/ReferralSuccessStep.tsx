@@ -16,9 +16,9 @@ export function ReferralSuccessStep({ onClose }: ReferralSuccessStepProps) {
       </div>
 
       <div className="space-y-2">
-        <h3 className="text-xl font-bold text-text">Referral Account Activated!</h3>
+        <h3 className="text-xl font-bold text-text">Activation Payment Received</h3>
         <p className="text-sm text-text-muted max-w-sm mx-auto leading-relaxed">
-          You can now earn commissions when people register or shop with your referral code.
+          Your KYC application has been submitted for review. Commission earning starts once an administrator approves it.
         </p>
       </div>
 
@@ -29,7 +29,7 @@ export function ReferralSuccessStep({ onClose }: ReferralSuccessStepProps) {
 
       <div className="pt-4 border-t border-border">
         <Button onClick={onClose} className="w-full font-bold">
-          Start Sharing & Earning
+          Continue
         </Button>
       </div>
     </div>

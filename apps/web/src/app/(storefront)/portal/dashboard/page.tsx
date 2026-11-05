@@ -9,8 +9,10 @@ import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/features/auth/store';
 
 export default function PortalDashboard() {
+  const user = useAuthStore((state) => state.user);
   const queryClient = useQueryClient();
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
   const [fundingAmount, setFundingAmount] = useState('');
@@ -91,7 +93,7 @@ export default function PortalDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-text">Welcome back, Jane!</h1>
+      <h1 className="text-2xl font-bold text-text">Welcome back, {user?.firstName ?? 'there'}!</h1>
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -110,7 +112,7 @@ export default function PortalDashboard() {
           </div>
           <div className="flex gap-2 relative z-10">
             <Button size="sm" onClick={() => setIsFundModalOpen(true)} className="bg-white text-brand-700 hover:bg-brand-50 rounded-full h-8 px-4 text-xs font-semibold">Fund</Button>
-            <Button size="sm" variant="outline" className="border-white text-white hover:bg-white/10 rounded-full h-8 px-4 text-xs font-semibold">Withdraw</Button>
+            <Link href="/portal/wallet"><Button size="sm" variant="outline" className="border-white text-white hover:bg-white/10 rounded-full h-8 px-4 text-xs font-semibold">Withdraw</Button></Link>
           </div>
         </div>
 

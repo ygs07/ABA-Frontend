@@ -1,6 +1,5 @@
 import { Customer } from '../types';
-import { Button } from '@/components/ui/button';
-import { MapPin, Pencil, Trash } from 'lucide-react';
+import { MapPin } from 'lucide-react';
 
 interface Props {
   customer: Customer;
@@ -9,10 +8,7 @@ interface Props {
 export function CustomerAddressesTab({ customer }: Props) {
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="font-medium text-lg">Saved Addresses</h3>
-        <Button size="sm">Add Address</Button>
-      </div>
+      <h3 className="font-medium text-lg">Saved Addresses</h3>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {customer.addresses.length === 0 ? (
@@ -38,17 +34,9 @@ export function CustomerAddressesTab({ customer }: Props) {
                   <p className="text-text font-medium">{customer.firstName} {customer.lastName}</p>
                   <p>{address.street}</p>
                   <p>{address.city}, {address.state}</p>
-                  <p>{address.lga}</p>
+                  {address.lga && <p>{address.lga}</p>}
                   {address.landmark && <p>Landmark: {address.landmark}</p>}
                 </div>
-              </div>
-              <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
-                <Button variant="outline" size="sm" className="flex-1 text-xs">
-                  <Pencil className="w-3 h-3 mr-2" /> Edit
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1 text-xs text-error hover:text-error hover:bg-error/10 border-error/20">
-                  <Trash className="w-3 h-3 mr-2" /> Delete
-                </Button>
               </div>
             </div>
           ))

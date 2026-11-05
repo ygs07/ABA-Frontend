@@ -38,6 +38,8 @@ type BackendProduct = {
   updatedAt?: string;
   updated_at?: string;
   total_stock?: number;
+  ratings?: string | number;
+  reviewCount?: string | number;
 };
 
 type PaginatedProducts = { data: BackendProduct[] };
@@ -114,8 +116,8 @@ export function toProduct(product: BackendProduct): Product {
     isCommissionable: false,
     totalStock: product.total_stock ?? variants.reduce((total, variant) => total + variant.stockCount, 0),
     updatedAt: product.updatedAt ?? product.updated_at ?? new Date().toISOString(),
-    rating: 0,
-    reviewCount: 0,
+    rating: numberValue(product.ratings),
+    reviewCount: Number(product.reviewCount ?? 0),
     merchant: product.merchant
       ? ({
           id: String(product.merchant.id),
@@ -170,6 +172,76 @@ export const getProductById = async (id: string): Promise<Product> => {
   if (!product) throw new Error('Product not found');
   return product;
 };
+
+export type UpdateProductInput = {
+  name: string;
+  description?: string;
+  baseCostPrice: number;
+  baseSellingPrice: number;
+  baseUnitOfMeasurement: string;
+  type: Product['type'];
+  reorderLevel: number;
+  reorderQuantity: number;
+  isActive: boolean;
+};
+
+export const updateProduct = async (id: string, input: UpdateProductInput): Promise<Product> => {
+  const productTypeMap: Record<Product['type'], number> = {
+    'Finished good': 1,
+    'Raw material': 2,
+    Service: 3,
+    Bundle: 4,
+  };
+  const product = await fetchApi<BackendProduct>(`/api/v1/products/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      name: input.name,
+      description: input.description || undefined,
+      baseCostPrice: String(input.baseCostPrice),
+      baseSellingPrice: String(input.baseSellingPrice),
+      baseUnitOfMeasurement: input.baseUnitOfMeasurement,
+      type: productTypeMap[input.type],
+      reorderLevel: input.reorderLevel,
+      reorderQuantity: input.reorderQuantity,
+      isActive: input.isActive,
+    }),
+  });
+  return toProduct(product);
+};
+
+export type CreateProductVariantInput = {
+  name: string;
+  sku?: string;
+  barcode?: string;
+  price: number;
+  costPrice?: number;
+  isActive?: boolean;
+};
+
+export async function createProductVariant(
+  productId: string,
+  input: CreateProductVariantInput,
+): Promise<ProductVariant> {
+  const variant = await fetchApi<BackendVariant>(
+    `/api/v1/products/${encodeURIComponent(productId)}/variants`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: input.name,
+        sku: input.sku || undefined,
+        barcode: input.barcode || undefined,
+        price: String(input.price),
+        costPrice: input.costPrice === undefined ? undefined : String(input.costPrice),
+        variantCostPrice: input.costPrice === undefined ? undefined : String(input.costPrice),
+        variantSellingPrice: String(input.price),
+        isActive: input.isActive ?? true,
+      }),
+    },
+  );
+  return toVariant(variant);
+}
 
 export const createProduct = async (data: CreateProductInput): Promise<Product> => {
   if (API_MODE !== 'mock') {

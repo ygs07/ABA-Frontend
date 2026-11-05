@@ -70,6 +70,7 @@ type BackendCommission = {
   createdAt: string;
   user?: { first_name?: string; last_name?: string } | null;
   commission_rule_id: number | null;
+  commissionRule?: { id: number; title: string; merchantId: number | null } | null;
   sourceOrderNumber?: string | null;
   sourceCustomerName?: string | null;
 };
@@ -95,7 +96,7 @@ function toCommissionRecord(commission: BackendCommission): CommissionRecord {
     rate: Number(commission.applied_rate ?? 0),
     amount: Math.round(Number(commission.amount ?? 0) * 100),
     planId: String(commission.commission_rule_id ?? ''),
-    planName: 'Commission rule',
+    planName: commission.commissionRule?.title ?? 'Commission rule',
     status: statusByCode[commission.status] ?? 'Pending',
   };
 }
@@ -109,14 +110,60 @@ export async function getCommissionPlans(): Promise<{ data: CommissionPlan[] }> 
   return { data: [...mockCommissionPlans] };
 }
 
-type BackendCommissionRule = {
+export type CommissionRuleInput = {
+  title: string;
+  description?: string;
+  isActive?: boolean;
+  commissionType: 1 | 2;
+  percentageAmount?: number;
+  fixedAmount?: number;
+  merchantId?: number;
+  effectiveFrom?: string;
+  effectiveTo?: string;
+  qualificationTrigger?: 'order_paid' | 'order_delivered' | 'first_order_only';
+  minimumOrderValue?: number;
+  networkLevels?: number;
+  levelRates?: Array<{ level: number; percentageAmount: number }>;
+  baseAmountNet?: boolean;
+  approvalMode?: 'automatic' | 'manual';
+  holdingPeriodDays?: number;
+};
+
+export async function getCommissionPlan(id: string): Promise<BackendCommissionRule> {
+  return fetchApi<BackendCommissionRule>(`/api/v1/commission-rules/${encodeURIComponent(id)}`);
+}
+
+export async function updateCommissionPlan(id: string, input: Partial<CommissionRuleInput>): Promise<BackendCommissionRule> {
+  return fetchApi<BackendCommissionRule>(`/api/v1/commission-rules/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+export async function setCommissionPlanStatus(id: string, isActive: boolean): Promise<void> {
+  await fetchApi(`/api/v1/commission-rules/${encodeURIComponent(id)}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ isActive }),
+  });
+}
+
+export type BackendCommissionRule = {
   id: number;
   title: string;
+  description?: string | null;
+  commission_type?: 1 | 2;
+  fixed_amount?: string | number | null;
   qualification_trigger: 'order_paid' | 'order_delivered' | 'first_order_only';
   network_levels: number;
   level_rates: Array<{ level: number; percentageAmount: number }>;
   percentage_amount?: string | number | null;
   is_active: boolean;
+  effective_from?: string | null;
+  effective_to?: string | null;
+  minimum_order_value?: string | number;
+  holding_period_days?: number;
 };
 
 function toCommissionPlan(rule: BackendCommissionRule): CommissionPlan {

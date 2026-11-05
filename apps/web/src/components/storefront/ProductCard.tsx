@@ -1,7 +1,4 @@
 'use client';
-import { brand } from '@/config/brand';
-
-
 import React from 'react';
 import Link from 'next/link';
 import { Star } from 'lucide-react';
@@ -12,10 +9,9 @@ import { Product } from '@/features/products/types';
 interface ProductCardProps {
   product: Product;
   onQuickView?: (product: Product) => void;
-  isSponsored?: boolean;
 }
 
-export function ProductCard({ product, onQuickView, isSponsored = false }: ProductCardProps) {
+export function ProductCard({ product, onQuickView }: ProductCardProps) {
   const merchantName = product.merchant?.name || 'Nigerian Merchant';
   const price = product.price ?? 0;
 
@@ -26,11 +22,6 @@ export function ProductCard({ product, onQuickView, isSponsored = false }: Produ
           <img src={product.images[0]} alt={product.name} className="object-cover w-full h-full group-hover:scale-105 transition-transform" />
         ) : (
           <span className="text-brand-600 font-bold opacity-30">Image</span>
-        )}
-        {isSponsored && (
-          <div className="absolute top-2 left-2 px-2 py-1 bg-gray-900 text-white text-[10px] font-bold rounded shadow-sm z-10 uppercase tracking-wide">
-            Sponsored
-          </div>
         )}
         {product.originalPrice && product.originalPrice > price && (
           <div className="absolute top-2 right-2 px-2 py-1 bg-error text-white text-[10px] font-bold rounded shadow-sm z-10">
@@ -57,11 +48,7 @@ export function ProductCard({ product, onQuickView, isSponsored = false }: Produ
       <div className="p-4 flex flex-col flex-1">
         <p className="text-xs text-text-muted mb-1">{merchantName}</p>
         <h3 className="font-medium text-text mb-2 line-clamp-2 group-hover:text-brand-600 transition-colors">{product.name}</h3>
-        <div className="flex items-center gap-1 mb-3">
-          <Star className="w-4 h-4 text-warning-main fill-warning-main" />
-          <span className="text-sm font-medium">{product.rating || '4.0'}</span>
-          <span className="text-xs text-text-muted">({product.reviewCount || '0'})</span>
-        </div>
+        {product.reviewCount > 0 ? <div className="flex items-center gap-1 mb-3"><Star className="w-4 h-4 text-warning-main fill-warning-main" /><span className="text-sm font-medium">{product.rating.toFixed(1)}</span><span className="text-xs text-text-muted">({product.reviewCount})</span></div> : <p className="mb-3 text-xs text-text-muted">No reviews yet</p>}
         <div className="mt-auto flex justify-between items-end">
           <div>
             {product.originalPrice && product.originalPrice > price ? (

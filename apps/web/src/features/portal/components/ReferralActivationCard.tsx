@@ -10,14 +10,18 @@ import { getOwnKycProfile, getShoppingCreditStatus } from '../api';
 export function ReferralActivationCard({ referralCode: providedReferralCode }: { referralCode?: string }) {
   const [modalOpen, setModalOpen] = useState(false);
   const [isKycApproved, setIsKycApproved] = useState(false);
+  const [kycStatus, setKycStatus] = useState<number | null>(null);
   const [isActivationPaid, setIsActivationPaid] = useState(false);
-  const { status, referralCode: storedReferralCode } = useReferralActivationStore();
+  const storedReferralCode = useReferralActivationStore((state) => state.referralCode);
   const referralCode = providedReferralCode || storedReferralCode;
-  const isActive = (isKycApproved && isActivationPaid) || status === 'active';
+  // Only the persisted KYC and payment records decide whether commissions are active.
+  // Local modal state is deliberately not authoritative after a reload or failed review.
+  const isActive = isKycApproved && isActivationPaid;
 
   useEffect(() => {
     void Promise.all([getOwnKycProfile(), getShoppingCreditStatus()])
       .then(([profile, credit]) => {
+        setKycStatus(profile?.status ?? null);
         setIsKycApproved(profile?.status === 3);
         setIsActivationPaid(credit.isActivated);
       })
@@ -52,6 +56,9 @@ export function ReferralActivationCard({ referralCode: providedReferralCode }: {
     );
   }
 
+  const isKycUnderReview = kycStatus === 2;
+  const isKycRejected = kycStatus === 4;
+
   return (
     <>
       <div className="rounded-2xl border border-amber-300/80 bg-linear-to-br from-amber-50/70 via-amber-50/30 to-white p-5 sm:p-6 shadow-sm">
@@ -60,13 +67,13 @@ export function ReferralActivationCard({ referralCode: providedReferralCode }: {
             <span className="px-2.5 py-1 rounded bg-amber-600 text-white font-extrabold text-[10px] tracking-wider uppercase">
               Commission Inactive
             </span>
-            <span className="text-xs text-amber-800 font-semibold">
+            {!isKycUnderReview && !isKycRejected && <span className="text-xs text-amber-800 font-semibold">
               Code: <span className="font-mono font-bold">{referralCode}</span>
-            </span>
+            </span>}
           </div>
           <span className="text-xs text-text-muted flex items-center gap-1.5">
             <ShieldCheck className="w-4 h-4 text-amber-700" />
-            Requirement: {isKycApproved ? 'Pay ₦5,000 Activation Fee' : 'Complete KYC & ₦5,000 Fee'}
+            Requirement: {isKycUnderReview ? 'KYC review in progress' : isKycRejected ? 'KYC resubmission required' : isKycApproved ? 'Pay ₦5,000 Activation Fee' : 'Complete KYC & ₦5,000 Fee'}
           </span>
         </div>
 
@@ -75,7 +82,7 @@ export function ReferralActivationCard({ referralCode: providedReferralCode }: {
             Activate Your Referral Earning Account
           </h3>
           <p className="text-sm text-text-muted leading-relaxed max-w-2xl">
-            {isKycApproved ? 'Your KYC is already approved. Complete the one-time ₦5,000 membership fee to activate commission earning.' : 'Every user receives a referral code upon registration, but earning commissions requires completing KYC verification and the one-time ₦5,000 membership fee.'}
+            {isKycUnderReview ? 'Your KYC application is being reviewed. You cannot submit another application until a decision is made.' : isKycRejected ? 'Your KYC application was rejected. Update your details and submit a new application from your KYC profile.' : isKycApproved ? 'Your KYC is already approved. Complete the one-time ₦5,000 membership fee to activate commission earning.' : 'Every user receives a referral code upon registration, but earning commissions requires completing KYC verification and the one-time ₦5,000 membership fee.'}
           </p>
 
           <div className="flex items-start gap-3 p-3.5 rounded-xl bg-white/90 border border-amber-200 shadow-2xs">
@@ -95,7 +102,7 @@ export function ReferralActivationCard({ referralCode: providedReferralCode }: {
           </p>
         </div>
 
-        <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+        {!isKycUnderReview && !isKycRejected && <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
           <Button
             onClick={() => setModalOpen(true)}
             className="font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm flex items-center justify-center gap-2 rounded-xl h-11 px-6"
@@ -104,7 +111,7 @@ export function ReferralActivationCard({ referralCode: providedReferralCode }: {
             Activate Earning (KYC & ₦5,000 Fee)
             <ArrowRight className="w-4 h-4" />
           </Button>
-        </div>
+        </div>}
       </div>
 
       <ReferralActivationModal

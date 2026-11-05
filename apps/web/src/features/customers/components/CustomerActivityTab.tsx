@@ -5,18 +5,29 @@ interface Props {
 }
 
 export function CustomerActivityTab({ customer }: Props) {
-  const mockActivity = [
-    { id: 1, action: 'Order Placed', details: 'Placed order ORD-893 for ₦1,200,000', date: '2023-11-15T14:30:00Z', user: customer.firstName },
-    { id: 2, action: 'Wallet Topup', details: 'Added ₦5,000,000 to wallet', date: '2023-11-10T09:15:00Z', user: customer.firstName },
-    { id: 3, action: 'Customer Registered', details: 'Account created via Web', date: customer.registeredAt, user: 'System' },
-  ];
+  const activity = [
+    ...(customer.orders ?? []).map((order) => ({
+      id: `order-${order.id}`,
+      action: 'Order placed',
+      details: `Placed order ${order.orderNumber}`,
+      date: order.createdAt,
+      user: `${customer.firstName} ${customer.lastName}`,
+    })),
+    {
+      id: 'registered',
+      action: 'Customer registered',
+      details: 'Customer account was created.',
+      date: customer.registeredAt,
+      user: 'System',
+    },
+  ].sort((first, second) => new Date(second.date).getTime() - new Date(first.date).getTime());
 
   return (
     <div className="bg-surface rounded-xl border border-border p-6">
       <h3 className="font-medium mb-6">Activity Timeline</h3>
       
       <div className="relative border-l border-border ml-3 space-y-8">
-        {mockActivity.map((activity) => (
+        {activity.map((activity) => (
           <div key={activity.id} className="relative pl-6">
             <div className="absolute -left-1.5 top-1.5 w-3 h-3 rounded-full bg-border border-2 border-surface" />
             <div className="mb-1">

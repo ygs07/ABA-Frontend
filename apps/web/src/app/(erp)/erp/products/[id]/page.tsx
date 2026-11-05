@@ -100,7 +100,7 @@ export default function ProductDetailsPage() {
           >
             Adjust Stock
           </Button>
-          <Button>Edit</Button>
+          <Button onClick={() => router.push(`/erp/products/${encodeURIComponent(product.id)}/edit`)}>Edit</Button>
         </div>
       </div>
 

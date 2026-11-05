@@ -37,15 +37,33 @@ export async function getNetworkTree(rootId: string = `${brand.referralCodePrefi
   return { data: prunedTree };
 }
 
-export async function getReferralRecords(): Promise<{ data: ReferralRecord[] }> {
+export type ReferralRecordFilters = {
+  search?: string;
+  referralCode?: string;
+  referrerUsername?: string;
+  referredUsername?: string;
+  page?: number;
+  limit?: number;
+};
+
+export async function getReferralRecords(filters: ReferralRecordFilters = {}): Promise<{ data: ReferralRecord[]; meta?: { totalItems: number; totalPages: number; currentPage: number } }> {
   if (API_MODE !== 'mock') {
+    const search = new URLSearchParams({
+      page: String(filters.page ?? 1),
+      limit: String(filters.limit ?? 100),
+      orderBy: 'createdAt:DESC',
+    });
+    if (filters.search?.trim()) search.set('search', filters.search.trim());
+    if (filters.referralCode?.trim()) search.set('referralCode', filters.referralCode.trim());
+    if (filters.referrerUsername?.trim()) search.set('referrerUsername', filters.referrerUsername.trim());
+    if (filters.referredUsername?.trim()) search.set('referredUsername', filters.referredUsername.trim());
     const response = await fetchApi<{ data: Array<{
       id: number;
       referralCode: { code: string };
       referrer: { id: number; username?: string; firstName?: string; lastName?: string };
       referred: { id: number; username?: string; firstName?: string; lastName?: string };
       createdAt: string;
-    }> }>('/api/v1/referrals?limit=100');
+    }>; meta?: { totalItems: number; totalPages: number; currentPage: number } }>(`/api/v1/referrals?${search.toString()}`);
     return {
       data: response.data.map((referral) => ({
         id: String(referral.id),
@@ -64,10 +82,11 @@ export async function getReferralRecords(): Promise<{ data: ReferralRecord[] }> 
         status: 'Registered' as const,
         flags: 0,
       })),
+      meta: response.meta,
     };
   }
   await delay(300);
-  return { data: [...mockReferralRecords] };
+  return { data: [...mockReferralRecords], meta: { totalItems: mockReferralRecords.length, totalPages: 1, currentPage: 1 } };
 }
 
 export async function getReferralCodes(): Promise<{ data: ReferralCode[] }> {

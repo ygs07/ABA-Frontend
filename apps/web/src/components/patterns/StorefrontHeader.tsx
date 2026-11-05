@@ -1,10 +1,10 @@
 'use client';
 
-import React, { FormEvent, useState, useEffect } from 'react';
+import React, { FormEvent, useEffect, useState, useSyncExternalStore } from 'react';
 import { brand } from '@/config/brand';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Search, ShoppingCart, Menu, X, User, ArrowRight, Store, TrendingUp, FolderTree, Tag, Loader2 } from 'lucide-react';
+import { Search, ShoppingCart, Menu, X, User, Store, FolderTree, Tag, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useCartStore } from '@/features/cart/store';
@@ -35,9 +35,11 @@ export function StorefrontHeader() {
 
   // Get cart item count from store
   const totalItems = useCartStore(state => state.getTotalItems());
-  // Hydration safety for Zustand persist
-  const [mounted, setMounted] = useState(false);
-  useEffect(() => setMounted(true), []);
+  const mounted = useSyncExternalStore(
+    () => () => undefined,
+    () => true,
+    () => false,
+  );
 
   const isLoggedIn = mounted && isAuthenticated;
 
@@ -91,11 +93,7 @@ export function StorefrontHeader() {
 
   useEffect(() => {
     const normalizedQuery = searchQuery.trim();
-    if (normalizedQuery.length < 2) {
-      setSearchResults(null);
-      setIsSearching(false);
-      return;
-    }
+    if (normalizedQuery.length < 2) return;
 
     let isCurrentRequest = true;
     const timeout = window.setTimeout(async () => {
@@ -119,6 +117,14 @@ export function StorefrontHeader() {
   const closeSearch = () => {
     setSearchResults(null);
     setSearchQuery('');
+  };
+
+  const handleSearchQueryChange = (value: string) => {
+    setSearchQuery(value);
+    if (value.trim().length < 2) {
+      setSearchResults(null);
+      setIsSearching(false);
+    }
   };
 
   const submitSearch = (event: FormEvent<HTMLFormElement>) => {
@@ -150,7 +156,7 @@ export function StorefrontHeader() {
               type="text"
               placeholder="Search for anything"
               value={searchQuery}
-              onChange={(event) => setSearchQuery(event.target.value)}
+              onChange={(event) => handleSearchQueryChange(event.target.value)}
               onBlur={() => window.setTimeout(() => setSearchResults(null), 150)}
               className="w-full h-9 pl-[120px] pr-10 rounded-full border border-border bg-white text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder:text-text-muted/70"
             />

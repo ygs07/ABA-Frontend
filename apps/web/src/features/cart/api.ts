@@ -91,14 +91,15 @@ export async function getCartAvailability(): Promise<CartAvailability> {
 
 export async function addToCart(item: Omit<CartItem, 'id'>): Promise<{ data: Cart }> {
   if (API_MODE !== 'mock') {
-    const productVariantId = Number(item.productVariantId ?? item.productId);
-    if (!Number.isInteger(productVariantId) || productVariantId < 1) {
-      throw new ApiError(400, 'A valid product variant is required', 'BAD_REQUEST');
+    const productVariantId = item.productVariantId ? Number(item.productVariantId) : undefined;
+    const productId = Number(item.productId);
+    if ((!productVariantId || !Number.isInteger(productVariantId)) && (!productId || !Number.isInteger(productId))) {
+      throw new ApiError(400, 'A valid product is required', 'BAD_REQUEST');
     }
     const cart = await fetchApi<BackendCart>('/api/v1/cart/items', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ productVariantId, quantity: item.quantity }),
+      body: JSON.stringify({ ...(productVariantId ? { productVariantId } : { productId }), quantity: item.quantity }),
     });
     return { data: toCart(cart) };
   }

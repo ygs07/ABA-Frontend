@@ -8,7 +8,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCustomerWalletBalance, getShoppingCreditBalance, getUserBankAccounts, getWalletTransactions, initializeWalletFunding, requestWalletWithdrawal, verifyWalletFunding } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
-import { useReferralActivationStore } from '@/features/portal/referralActivationStore';
 import { toast } from 'sonner';
 
 export default function PortalWalletPage() {
@@ -72,10 +71,6 @@ export default function PortalWalletPage() {
       toast.error('Enter a valid amount to fund your wallet.');
       return;
     }
-    if (amount * 100 > availableBalance) {
-      toast.error('Withdrawal amount cannot exceed your available wallet balance.');
-      return;
-    }
     setIsStartingFunding(true);
     try {
       const checkout = await initializeWalletFunding(amount.toFixed(2));
@@ -114,6 +109,10 @@ export default function PortalWalletPage() {
     const amount = Number(withdrawalAmount);
     if (!Number.isFinite(amount) || amount <= 0) {
       toast.error('Enter a valid withdrawal amount.');
+      return;
+    }
+    if (amount * 100 > availableBalance) {
+      toast.error('Withdrawal amount cannot exceed your available wallet balance.');
       return;
     }
     const bankAccountId = selectedBankAccountId ?? primaryBankAccount?.id;

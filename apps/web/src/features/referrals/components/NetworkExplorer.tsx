@@ -5,10 +5,8 @@ import { useQuery } from '@tanstack/react-query';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { AmountText } from '@/components/patterns/AmountText';
 import { ErrorState } from '@/components/patterns/ErrorState';
 import { Loader2 } from 'lucide-react';
-import { NetworkNodeData } from '../types';
 import { getNetworkTree } from '../api';
 import { NetworkTree } from './NetworkTree';
 
@@ -16,12 +14,12 @@ import { NetworkTree } from './NetworkTree';
 
 export function NetworkExplorer({ initialRootId = '' }: { initialRootId?: string }) {
   const router = useRouter();
-  const rootId = initialRootId;
-  const [searchInput, setSearchInput] = useState('');
-  const [maxLevels, setMaxLevels] = useState(999);
+  const rootId = initialRootId.trim();
+  const [searchInput, setSearchInput] = useState(initialRootId);
+  const [maxLevels, setMaxLevels] = useState(3);
 
   const { data: treeNode, isLoading, error, refetch } = useQuery({
-    queryKey: ['referral_network', rootId, maxLevels],
+    queryKey: ['referral-network', rootId, maxLevels],
     queryFn: async () => {
       const res = await getNetworkTree(rootId, maxLevels);
       return res.data;
@@ -30,9 +28,9 @@ export function NetworkExplorer({ initialRootId = '' }: { initialRootId?: string
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchInput.trim()) {
-      router.push(`/erp/referrals/network/${searchInput.trim()}`);
-    }
+    router.push(searchInput.trim()
+      ? `/erp/referrals/network/${encodeURIComponent(searchInput.trim())}`
+      : '/erp/referrals/network');
   };
 
   const handleLevelChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -72,6 +70,10 @@ export function NetworkExplorer({ initialRootId = '' }: { initialRootId?: string
         </select>
         <Button type="submit">Search</Button>
       </form>
+
+      {!rootId && !isLoading && !error && (
+        <p className="rounded-lg border border-brand-200 bg-brand-50 p-3 text-sm text-brand-800">Showing your own network. Administrators can search for any user ID, username, or referral code.</p>
+      )}
 
       {/* Tree Visualization */}
       <div className="bg-surface-2 rounded-xl border border-border p-6 overflow-x-auto min-h-[400px]">

@@ -14,9 +14,11 @@ import {
   getCustomers,
 } from '@/features/customers/api/customers.api';
 import { Customer } from '@/features/customers/types';
+import { useAuthStore } from '@/features/auth/store';
 import { toast } from 'sonner';
 
 export default function CustomersListPage() {
+  const isMerchant = useAuthStore((state) => state.user?.userType === 'Merchant');
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -92,11 +94,11 @@ export default function CustomersListPage() {
       header: 'Total Spent',
       cell: (info: any) => <AmountText amountInKobo={info.getValue()} className="font-medium" />
     },
-    { 
-      accessorKey: 'walletBalance', 
+    ...(isMerchant ? [] : [{
+      accessorKey: 'walletBalance',
       header: 'Wallet',
-      cell: (info: any) => <AmountText amountInKobo={info.getValue()} className="font-medium text-success" />
-    },
+      cell: (info: any) => <AmountText amountInKobo={info.getValue()} className="font-medium text-success" />,
+    }]),
     { 
       accessorKey: 'status', 
       header: 'Status',

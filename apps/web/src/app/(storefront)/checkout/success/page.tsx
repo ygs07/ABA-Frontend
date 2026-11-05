@@ -6,6 +6,9 @@ import { useSearchParams } from 'next/navigation';
 import { AlertCircle, CheckCircle2, ChevronRight, Loader2, Package, Calendar, MapPin } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { fetchApi } from '@/lib/api';
+import { AmountText } from '@/components/patterns/AmountText';
+
+type OrderSummary = { id: number; order_number: string; total_amount: string | number };
 
 function OrderSuccessContent() {
   const searchParams = useSearchParams();
@@ -13,6 +16,8 @@ function OrderSuccessContent() {
   const [orderId, setOrderId] = useState(searchParams.get('orderId'));
   const [verificationError, setVerificationError] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(Boolean(reference));
+  const [order, setOrder] = useState<OrderSummary | null>(null);
+  const [isLoadingOrder, setIsLoadingOrder] = useState(Boolean(orderId));
 
   useEffect(() => {
     if (!reference) return;
@@ -41,7 +46,16 @@ function OrderSuccessContent() {
     void verifyPayment();
   }, [reference]);
 
-  if (isVerifying) {
+  useEffect(() => {
+    if (!orderId) return;
+    setIsLoadingOrder(true);
+    fetchApi<OrderSummary>(`/api/v1/orders/id/${encodeURIComponent(orderId)}`)
+      .then(setOrder)
+      .catch((error) => setVerificationError(error instanceof Error ? error.message : 'Unable to load your order.'))
+      .finally(() => setIsLoadingOrder(false));
+  }, [orderId]);
+
+  if (isVerifying || isLoadingOrder) {
     return (
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-32 mt-20 text-center">
         <Loader2 className="w-10 h-10 animate-spin text-brand-600 mx-auto mb-4" />
@@ -64,7 +78,7 @@ function OrderSuccessContent() {
     );
   }
 
-  const orderNumber = orderId ? `Order #${orderId}` : 'Your order';
+  const orderNumber = order?.order_number ?? (orderId ? `Order #${orderId}` : 'Your order');
   
   return (
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 mt-20">
@@ -86,7 +100,7 @@ function OrderSuccessContent() {
            </div>
            <div className="sm:text-right">
              <p className="text-sm text-text-muted mb-1">Total Amount</p>
-             <p className="font-bold text-text text-lg">₦46,700</p>
+             <p className="font-bold text-text text-lg">{order ? <AmountText amountInKobo={Math.round(Number(order.total_amount) * 100)} /> : '—'}</p>
            </div>
         </div>
 

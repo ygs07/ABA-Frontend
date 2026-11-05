@@ -6,10 +6,9 @@ interface Props {
 }
 
 export function CustomerPaymentsTab({ customer }: Props) {
-  const mockPayments = [
-    { id: 'PAY-1001', date: '2023-11-01', method: 'Bank Transfer', amount: 4500000, status: 'Success', orderId: 'ORD-892' },
-    { id: 'PAY-1002', date: '2023-11-15', method: 'Card', amount: 600000, status: 'Success', orderId: 'ORD-893' },
-  ];
+  const payments = (customer.orders ?? []).flatMap((order) =>
+    order.payments.map((payment) => ({ ...payment, orderNumber: order.orderNumber })),
+  );
 
   return (
     <div className="bg-surface rounded-xl border border-border overflow-hidden">
@@ -17,7 +16,11 @@ export function CustomerPaymentsTab({ customer }: Props) {
         <h3 className="font-medium">Payment History</h3>
       </div>
       
-      <div className="overflow-x-auto">
+      {payments.length === 0 ? (
+        <div className="p-12 text-center text-sm text-text-muted">
+          No payments found for this customer.
+        </div>
+      ) : <div className="overflow-x-auto">
         <table className="w-full text-sm text-left whitespace-nowrap">
           <thead className="bg-surface-2 text-text-muted">
             <tr>
@@ -30,15 +33,15 @@ export function CustomerPaymentsTab({ customer }: Props) {
             </tr>
           </thead>
           <tbody className="divide-y divide-border">
-            {mockPayments.map(payment => (
+            {payments.map(payment => (
               <tr key={payment.id} className="hover:bg-surface-2/50 cursor-pointer">
-                <td className="px-6 py-4 font-mono text-text-muted">{payment.id}</td>
-                <td className="px-6 py-4">{new Date(payment.date).toLocaleDateString()}</td>
-                <td className="px-6 py-4">{payment.method}</td>
+                <td className="px-6 py-4 font-mono text-text-muted">{payment.reference}</td>
+                <td className="px-6 py-4">{new Date(payment.paidAt ?? payment.createdAt).toLocaleDateString()}</td>
+                <td className="px-6 py-4 capitalize">{payment.method?.replaceAll('_', ' ') ?? '—'}</td>
                 <td className="px-6 py-4 font-medium"><AmountText amountInKobo={payment.amount} /></td>
-                <td className="px-6 py-4 font-mono text-primary">{payment.orderId}</td>
+                <td className="px-6 py-4 font-mono text-primary">{payment.orderNumber}</td>
                 <td className="px-6 py-4">
-                  <span className="px-2 py-1 rounded text-xs border border-success-border bg-success-bg text-success">
+                  <span className="px-2 py-1 rounded text-xs border border-border bg-surface-2 capitalize">
                     {payment.status}
                   </span>
                 </td>
@@ -46,7 +49,7 @@ export function CustomerPaymentsTab({ customer }: Props) {
             ))}
           </tbody>
         </table>
-      </div>
+      </div>}
     </div>
   );
 }

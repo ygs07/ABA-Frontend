@@ -38,18 +38,18 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
       router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
       return;
     }
-    if (!selectedVariant || selectedVariant.stockCount < quantity) {
+    if ((selectedVariant && selectedVariant.stockCount < quantity) || (!selectedVariant && product.variants.length > 0) || (!selectedVariant && product.totalStock < quantity)) {
       toast.error('The selected variant is unavailable in the requested quantity.');
       return;
     }
     await addToCart({
       productId: product.id,
-      productVariantId: selectedVariant.id,
+      productVariantId: selectedVariant?.id,
       productName: product.name,
       productImage: product.images[0] ?? '',
       merchantId: product.merchant?.id ?? '',
       merchantName: product.merchant?.name ?? 'Merchant',
-      price: selectedVariant.price,
+      price: selectedVariant?.price ?? product.price,
       quantity,
     });
     router.push('/checkout');

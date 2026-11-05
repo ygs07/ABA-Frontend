@@ -4,21 +4,16 @@ import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { getCustomerById } from '@/features/customers/api/customers.api';
 import { Customer } from '@/features/customers/types';
-import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/patterns/KpiCard';
 import { AmountText } from '@/components/patterns/AmountText';
 import { toast } from 'sonner';
 
 import { CustomerOrdersTab } from '@/features/customers/components/CustomerOrdersTab';
 import { CustomerPaymentsTab } from '@/features/customers/components/CustomerPaymentsTab';
-import { CustomerWalletTab } from '@/features/customers/components/CustomerWalletTab';
-import { CustomerReferralsTab } from '@/features/customers/components/CustomerReferralsTab';
-import { CustomerCommissionsTab } from '@/features/customers/components/CustomerCommissionsTab';
 import { CustomerAddressesTab } from '@/features/customers/components/CustomerAddressesTab';
-import { CustomerDocumentsTab } from '@/features/customers/components/CustomerDocumentsTab';
 import { CustomerActivityTab } from '@/features/customers/components/CustomerActivityTab';
 
-const TABS = ['Overview', 'Orders', 'Payments', 'Wallet', 'Referrals', 'Commissions', 'Addresses', 'Documents', 'Activity'];
+const TABS = ['Overview', 'Orders', 'Payments', 'Addresses', 'Activity'];
 
 export default function CustomerDetailsPage() {
   const params = useParams();
@@ -34,7 +29,7 @@ export default function CustomerDetailsPage() {
       .then(setCustomer)
       .catch(() => {
         toast.error('Customer not found');
-        router.push('/customers');
+        router.push('/erp/customers');
       })
       .finally(() => setIsLoading(false));
   }, [id, router]);
@@ -84,22 +79,13 @@ export default function CustomerDetailsPage() {
           </div>
         </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline">More</Button>
-          <Button variant="outline">Edit</Button>
-          <Button variant="outline">Record Payment</Button>
-          <Button>New Order</Button>
-        </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <KpiCard title="Total Spent" value={<AmountText amountInKobo={customer.totalSpent} />} />
         <KpiCard title="Orders" value={customer.ordersCount} />
         <KpiCard title="Avg Order Value" value={<AmountText amountInKobo={avgOrderValue} />} />
-        <KpiCard title="Outstanding" value={<AmountText amountInKobo={0} />} />
-        <KpiCard title="Wallet Balance" value={<AmountText amountInKobo={customer.walletBalance} className="text-success" />} />
-        <KpiCard title="Referrals" value={customer.referralsCount} />
       </div>
 
       {/* Tabs Navigation */}
@@ -160,13 +146,28 @@ export default function CustomerDetailsPage() {
             </div>
 
             <div className="md:col-span-2 space-y-6">
-              <div className="bg-surface p-12 text-center rounded-xl border border-border">
-                <div className="w-12 h-12 rounded-full bg-surface-2 flex items-center justify-center mx-auto mb-3">
-                  <svg className="w-6 h-6 text-text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+              <div className="bg-surface rounded-xl border border-border overflow-hidden">
+                <div className="px-6 py-4 border-b border-border">
+                  <h3 className="font-medium text-lg">Recent Orders</h3>
                 </div>
-                <h3 className="font-medium text-lg mb-1">Recent Orders</h3>
-                <p className="text-text-muted text-sm mb-4">No recent orders found for this customer.</p>
-                <Button variant="outline">Create New Order</Button>
+                {(customer.orders ?? []).length === 0 ? (
+                  <p className="p-8 text-center text-sm text-text-muted">No recent orders found for this customer.</p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {customer.orders?.slice(0, 3).map((order) => (
+                      <div key={order.id} className="flex items-center justify-between gap-4 px-6 py-4 text-sm">
+                        <div>
+                          <p className="font-mono font-medium text-primary">{order.orderNumber}</p>
+                          <p className="text-text-muted">{new Date(order.createdAt).toLocaleDateString()} · {order.itemCount} item{order.itemCount === 1 ? '' : 's'}</p>
+                        </div>
+                        <div className="text-right">
+                          <AmountText amountInKobo={order.total} />
+                          <p className="mt-1 text-xs text-text-muted">{String(order.status)}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -174,11 +175,7 @@ export default function CustomerDetailsPage() {
 
         {activeTab === 'Orders' && <CustomerOrdersTab customer={customer} />}
         {activeTab === 'Payments' && <CustomerPaymentsTab customer={customer} />}
-        {activeTab === 'Wallet' && <CustomerWalletTab customer={customer} />}
-        {activeTab === 'Referrals' && <CustomerReferralsTab customer={customer} />}
-        {activeTab === 'Commissions' && <CustomerCommissionsTab customer={customer} />}
         {activeTab === 'Addresses' && <CustomerAddressesTab customer={customer} />}
-        {activeTab === 'Documents' && <CustomerDocumentsTab customer={customer} />}
         {activeTab === 'Activity' && <CustomerActivityTab customer={customer} />}
       </div>
 

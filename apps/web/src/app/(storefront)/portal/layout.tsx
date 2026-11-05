@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { LayoutDashboard, ShoppingBag, Wallet, Users, Settings, Bell, LogOut, Medal, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store';
-import { logout as logoutRequest } from '@/features/auth/api/auth.api';
+import { getUserHome, logout as logoutRequest } from '@/features/auth/api/auth.api';
 import { removeAuthCookie } from '@/features/auth/actions';
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
@@ -17,6 +17,12 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const isCustomer = Boolean(
     user && (user.userType === 'Customer' || user.roles.includes('Customer')),
   );
+
+  React.useEffect(() => {
+    if (user && !isCustomer) {
+      router.replace(getUserHome(user));
+    }
+  }, [isCustomer, router, user]);
 
   const handleSignOut = async () => {
     try {

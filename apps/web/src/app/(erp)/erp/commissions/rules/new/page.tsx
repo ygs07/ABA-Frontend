@@ -75,10 +75,6 @@ export default function CreateCommissionPlanPage() {
   }, [getValues, levels, setValue]);
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (canSelectMerchant && !values.merchantId) {
-      toast.error('Select the merchant this commission rule applies to.');
-      return;
-    }
     try {
       await fetchApi('/api/v1/commission-rules', {
         method: 'POST',
@@ -158,7 +154,7 @@ export default function CreateCommissionPlanPage() {
 
             {canSelectMerchant && (
               <div className="space-y-2">
-                <label className="text-sm font-medium">Merchant <span className="text-error">*</span></label>
+                <label className="text-sm font-medium">Merchant</label>
                 <select {...register('merchantId')} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm">
                   <option value="">Select a merchant</option>
                   {merchantsData?.data.map((merchant) => (
@@ -166,7 +162,7 @@ export default function CreateCommissionPlanPage() {
                   ))}
                 </select>
                 {isLoadingMerchants && <p className="text-xs text-text-muted">Loading merchants…</p>}
-                <p className="text-xs text-text-muted">Administrators choose the merchant this rule applies to. Merchants are automatically assigned to their own store.</p>
+                <p className="text-xs text-text-muted">Leave blank for a platform-wide rule. Merchant-created rules are automatically assigned to that merchant.</p>
               </div>
             )}
 

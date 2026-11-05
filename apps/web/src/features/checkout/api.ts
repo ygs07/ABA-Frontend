@@ -21,6 +21,7 @@ export async function processCheckout(
   address: CheckoutAddressInput,
   payment: CheckoutPaymentInput,
   selectedDeliveryAddressId?: number,
+  deliveryMethod: 1 | 2 | 3 = 1,
   referralCode?: string,
   useShoppingCredits?: boolean,
 ): Promise<{ data: { orderId: string, status: string, authorizationUrl?: string } }> {
@@ -62,7 +63,7 @@ export async function processCheckout(
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         deliveryAddressId: deliveryAddress.id,
-        deliveryMethod: 1,
+        deliveryMethod,
         paymentMethod: payment.method === 'wallet' ? 2 : 1,
         ...(referralCode?.trim() ? { referralCode: referralCode.trim() } : {}),
         useShoppingCredits,

@@ -9,5 +9,9 @@ export default async function ErpDashboardPage() {
     redirect('/auth/login?next=/erp/dashboard');
   }
 
+  if (cookieStore.get('aba_auth_role')?.value === 'Customer') {
+    redirect('/portal/dashboard');
+  }
+
   return <DashboardView />;
 }

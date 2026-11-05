@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Users, Copy, Share2, Check, DollarSign, Target, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useQuery } from '@tanstack/react-query';
-import { getReferralStats } from '@/features/portal/api';
+import { getOwnKycProfile, getReferralStats } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
 import { ReferralActivationCard } from '@/features/portal/components/ReferralActivationCard';
@@ -19,8 +19,13 @@ export default function PortalReferralsPage() {
       return res.data;
     },
   });
+  const { data: kycProfile, isLoading: isKycProfileLoading } = useQuery({
+    queryKey: ['portal_referral_kyc_profile'],
+    queryFn: getOwnKycProfile,
+  });
 
   const referralCode = referralData?.referralCode ?? '';
+  const canShowReferralCode = !isKycProfileLoading && kycProfile?.status !== 2 && kycProfile?.status !== 4;
   const referralLink = referralCode
     ? `${typeof window === 'undefined' ? '' : window.location.origin}/auth/register?ref=${encodeURIComponent(referralCode)}`
     : '';
@@ -52,11 +57,11 @@ export default function PortalReferralsPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-text">Referral Network</h1>
-        <div className="flex items-center gap-3">
+        {canShowReferralCode && <div className="flex items-center gap-3">
           <Button onClick={copyToClipboard} className="flex items-center gap-2">
             <Share2 className="w-4 h-4" /> Share Link
           </Button>
-        </div>
+        </div>}
       </div>
 
       {/* Referral Activation Notice & KYC/Fee Payment Card */}
@@ -72,7 +77,6 @@ export default function PortalReferralsPage() {
             <p className="text-text-muted font-medium text-sm">Total Network</p>
           </div>
           <h2 className="text-3xl font-bold text-text">{referralData.metrics.totalNetwork}</h2>
-          <p className="text-xs text-success-main font-medium mt-1">+3 this month</p>
         </div>
 
         <div className="bg-white rounded-xl border border-border p-6 shadow-xs">
@@ -83,7 +87,6 @@ export default function PortalReferralsPage() {
             <p className="text-text-muted font-medium text-sm">Active Buyers</p>
           </div>
           <h2 className="text-3xl font-bold text-text">{referralData.metrics.activeBuyers}</h2>
-          <p className="text-xs text-text-muted mt-1">75% conversion rate</p>
         </div>
 
         <div className="bg-white rounded-xl border border-border p-6 shadow-xs">
@@ -96,13 +99,12 @@ export default function PortalReferralsPage() {
           <h2 className="text-3xl font-bold text-text">
             <AmountText amountInKobo={referralData.metrics.totalEarned} />
           </h2>
-          <p className="text-xs text-text-muted mt-1">Lifetime commissions</p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Share Card */}
-        <div className="lg:col-span-1 space-y-6">
+        {canShowReferralCode && <div className="lg:col-span-1 space-y-6">
           <div className="bg-white rounded-xl border border-border shadow-xs p-6 text-center">
             <div className="w-16 h-16 bg-brand-50 rounded-full flex items-center justify-center mx-auto mb-4">
               <Share2 className="w-8 h-8 text-brand-600" />
@@ -140,10 +142,10 @@ export default function PortalReferralsPage() {
               </div>
             </div>
           </div>
-        </div>
+        </div>}
 
         {/* Network List */}
-        <div className="lg:col-span-2">
+        <div className={canShowReferralCode ? 'lg:col-span-2' : 'lg:col-span-3'}>
           <div className="bg-white rounded-xl border border-border shadow-xs">
             <div className="p-5 border-b border-border flex justify-between items-center">
               <h3 className="font-bold text-text">Your Network</h3>
