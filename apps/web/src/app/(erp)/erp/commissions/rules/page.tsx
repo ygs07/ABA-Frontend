@@ -1,3 +1,5 @@
+'use client';
+
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { CommissionRulesTable } from '@/features/commissions/components/CommissionRulesTable';
 import { Button } from '@/components/ui/button';
@@ -23,5 +25,4 @@ export default function CommissionRulesPage() {
     </div>
   );
 }
-'use client';
 
