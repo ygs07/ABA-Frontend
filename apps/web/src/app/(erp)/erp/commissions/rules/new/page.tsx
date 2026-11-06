@@ -12,9 +12,6 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { fetchApi } from '@/lib/api';
-import { useAuthStore } from '@/features/auth/store';
-import { getMerchants } from '@/features/merchant/api';
-import { useQuery } from '@tanstack/react-query';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -32,18 +29,10 @@ const formSchema = z.object({
     level: z.number(),
     percentageAmount: z.number().min(0).max(100),
   })),
-  merchantId: z.string().optional(),
 });
 
 export default function CreateCommissionPlanPage() {
   const router = useRouter();
-  const userType = useAuthStore((state) => state.user?.userType ?? state.activeRole);
-  const canSelectMerchant = userType === 'Admin' || userType === 'Super Admin';
-  const { data: merchantsData, isLoading: isLoadingMerchants } = useQuery({
-    queryKey: ['commission-rule-merchants'],
-    queryFn: getMerchants,
-    enabled: canSelectMerchant,
-  });
   const { register, control, handleSubmit, formState: { errors }, watch, getValues, setValue } = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -99,7 +88,6 @@ export default function CreateCommissionPlanPage() {
           approvalMode:
             values.approvalMode === 'Manual approval' ? 'manual' : 'automatic',
           holdingPeriodDays: values.holdingPeriod,
-          ...(canSelectMerchant && values.merchantId ? { merchantId: Number(values.merchantId) } : {}),
         }),
       });
       toast.success('Commission plan created');
@@ -113,7 +101,7 @@ export default function CreateCommissionPlanPage() {
     <div className="space-y-6 pb-20 mx-auto max-w-4xl">
       <PageHeader 
         title="Create Commission Plan" 
-        description="Define a new multi-level earning rule."
+        description="Define the single platform-wide multi-level earning rule."
         backHref="/erp/commissions/rules"
         action={<Button onClick={handleSubmit(onSubmit)}>Save Plan</Button>}
       />
@@ -152,19 +140,7 @@ export default function CreateCommissionPlanPage() {
               <Input placeholder="Describe the purpose of this plan..." {...register('description')} />
             </div>
 
-            {canSelectMerchant && (
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Merchant</label>
-                <select {...register('merchantId')} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm">
-                  <option value="">Select a merchant</option>
-                  {merchantsData?.data.map((merchant) => (
-                    <option key={merchant.id} value={merchant.id}>{merchant.name}</option>
-                  ))}
-                </select>
-                {isLoadingMerchants && <p className="text-xs text-text-muted">Loading merchants…</p>}
-                <p className="text-xs text-text-muted">Leave blank for a platform-wide rule. Merchant-created rules are automatically assigned to that merchant.</p>
-              </div>
-            )}
+            <p className="rounded-lg bg-surface-2 p-3 text-sm text-text-muted">This rule applies to qualifying purchases across the entire platform.</p>
 
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">

@@ -14,7 +14,8 @@ import { OrderPaymentsTab } from '@/features/sales/components/OrderPaymentsTab';
 import { OrderFulfilmentTab } from '@/features/sales/components/OrderFulfilmentTab';
 import { OrderReturnsTab } from '@/features/sales/components/OrderReturnsTab';
 import { OrderTimelineTab } from '@/features/sales/components/OrderTimelineTab';
-const TABS = ['Overview', 'Items', 'Payments', 'Fulfilment', 'Returns', 'Timeline'];
+import { OrderCommissionsTab } from '@/features/sales/components/OrderCommissionsTab';
+const TABS = ['Overview', 'Items', 'Payments', 'Commissions', 'Fulfilment', 'Returns', 'Timeline'];
 
 export default function OrderDetailPage() {
   const params = useParams();
@@ -186,6 +187,7 @@ export default function OrderDetailPage() {
         {activeTab === 'Overview' && <OrderOverviewTab order={order} />}
         {activeTab === 'Items' && <OrderItemsTab order={order} onUpdateItem={updateItem} />}
         {activeTab === 'Payments' && <OrderPaymentsTab order={order} />}
+        {activeTab === 'Commissions' && <OrderCommissionsTab orderId={order.id} />}
         {activeTab === 'Fulfilment' && <OrderFulfilmentTab order={order} />}
         {activeTab === 'Returns' && <OrderReturnsTab order={order} />}
         {activeTab === 'Timeline' && <OrderTimelineTab order={order} />}

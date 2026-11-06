@@ -1,10 +1,10 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Wallet, Users, ChevronRight, Package, ArrowUpRight, ArrowDownRight, Loader2 } from 'lucide-react';
+import { ShoppingBag, Wallet, Users, ChevronRight, Package, ArrowUpRight, ArrowDownRight, Loader2, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { getCustomerOrders, getCustomerWalletBalance, getWalletTransactions, getReferralStats, initializeWalletFunding, verifyWalletFunding } from '@/features/portal/api';
+import { getCustomerOrders, getCustomerWalletBalance, getShoppingCreditBalance, getWalletTransactions, getReferralStats, initializeWalletFunding, verifyWalletFunding } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
 import { useState } from 'react';
@@ -66,13 +66,17 @@ export default function PortalDashboard() {
     queryKey: ['portal_wallet_balance'],
     queryFn: getCustomerWalletBalance,
   });
+  const { data: shoppingCreditBalance, isLoading: isLoadingShoppingCredits } = useQuery({
+    queryKey: ['shopping_credit_balance'],
+    queryFn: getShoppingCreditBalance,
+  });
 
   const { data: referralData, isLoading: isLoadingReferral } = useQuery({
     queryKey: ['portal_referrals'],
     queryFn: async () => (await getReferralStats()).data
   });
 
-  if (isLoadingOrders || isLoadingWallet || isLoadingWalletBalance || isLoadingReferral) {
+  if (isLoadingOrders || isLoadingWallet || isLoadingWalletBalance || isLoadingShoppingCredits || isLoadingReferral) {
     return (
       <div className="flex justify-center items-center h-64">
         <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
@@ -80,7 +84,7 @@ export default function PortalDashboard() {
     );
   }
 
-  if (!ordersData || !walletData || walletBalance === undefined || !referralData) {
+  if (!ordersData || !walletData || walletBalance === undefined || shoppingCreditBalance === undefined || !referralData) {
     return (
       <Alert variant="destructive">
         Failed to load dashboard data. Please try again.
@@ -96,7 +100,7 @@ export default function PortalDashboard() {
       <h1 className="text-2xl font-bold text-text">Welcome back, {user?.firstName ?? 'there'}!</h1>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
         {/* Wallet Card */}
         <div className="bg-brand-600 rounded-xl p-6 text-white shadow-sm relative overflow-hidden">
@@ -114,6 +118,22 @@ export default function PortalDashboard() {
             <Button size="sm" onClick={() => setIsFundModalOpen(true)} className="bg-white text-brand-700 hover:bg-brand-50 rounded-full h-8 px-4 text-xs font-semibold">Fund</Button>
             <Link href="/portal/wallet"><Button size="sm" variant="outline" className="border-white text-white hover:bg-white/10 rounded-full h-8 px-4 text-xs font-semibold">Withdraw</Button></Link>
           </div>
+        </div>
+
+        <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
+          <div className="flex items-start justify-between">
+            <div>
+              <p className="mb-1 text-sm font-medium text-text-muted">Shopping Credits</p>
+              <h2 className="text-2xl font-bold text-text"><AmountText amountInKobo={shoppingCreditBalance} /></h2>
+              <p className="mt-2 text-xs text-text-muted">Available for marketplace purchases.</p>
+            </div>
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
+              <Gift className="h-5 w-5 text-brand-600" />
+            </div>
+          </div>
+          <Link href="/portal/wallet" className="mt-4 inline-flex items-center text-sm font-medium text-brand-600 hover:underline">
+            View credits <ChevronRight className="ml-1 h-4 w-4" />
+          </Link>
         </div>
 
         {/* Orders Card */}

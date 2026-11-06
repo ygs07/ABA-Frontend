@@ -8,9 +8,12 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { toast } from 'sonner';
+import { useAuthStore } from '@/features/auth/store';
 
 export function CommissionRulesTable() {
   const queryClient = useQueryClient();
+  const userType = useAuthStore((state) => state.user?.userType ?? state.activeRole);
+  const canManageRules = userType === 'Admin' || userType === 'Super Admin';
   const { data, isLoading } = useQuery({
     queryKey: ['commission-plans'],
     queryFn: () => getCommissionPlans()
@@ -54,7 +57,7 @@ export function CommissionRulesTable() {
         </Badge>
       )
     },
-    {
+    ...(canManageRules ? [{
       id: 'actions',
       cell: (info: any) => (
         <div className="flex gap-2">
@@ -62,7 +65,7 @@ export function CommissionRulesTable() {
           <Button variant="ghost" size="sm" loading={statusMutation.isPending} onClick={() => statusMutation.mutate({ id: info.row.original.id, isActive: !info.row.original.active })}>{info.row.original.active ? 'Deactivate' : 'Activate'}</Button>
         </div>
       )
-    }
+    }] : [])
   ];
 
   return (

@@ -27,13 +27,19 @@ export async function getCommissionKPIs(): Promise<CommissionKPIs> {
   return mockCommissionKPIs;
 }
 
-export async function getCommissionRecords(): Promise<{ data: CommissionRecord[] }> {
+export async function getCommissionRecords(orderId?: string): Promise<{ data: CommissionRecord[] }> {
   if (API_MODE !== 'mock') {
-    const response = await fetchApi<{ data: BackendCommission[] }>('/api/v1/commissions?limit=100');
+    const query = new URLSearchParams({ limit: '100' });
+    if (orderId) query.set('search', orderId);
+    const response = await fetchApi<{ data: BackendCommission[] }>(`/api/v1/commissions?${query.toString()}`);
     return { data: response.data.map(toCommissionRecord) };
   }
   await delay(300);
-  return { data: [...mockCommissionRecords] };
+  return {
+    data: orderId
+      ? mockCommissionRecords.filter((record) => record.sourceOrderId === orderId)
+      : [...mockCommissionRecords],
+  };
 }
 
 export async function approveCommission(commissionId: string): Promise<void> {
@@ -117,7 +123,6 @@ export type CommissionRuleInput = {
   commissionType: 1 | 2;
   percentageAmount?: number;
   fixedAmount?: number;
-  merchantId?: number;
   effectiveFrom?: string;
   effectiveTo?: string;
   qualificationTrigger?: 'order_paid' | 'order_delivered' | 'first_order_only';
