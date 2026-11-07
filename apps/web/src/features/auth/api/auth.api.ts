@@ -20,6 +20,7 @@ type BackendUser = {
   phone?: string | null;
   user_type?: { name?: string } | null;
   roles?: BackendRole[];
+  merchantOnboarding?: { status: number; rejectionReason?: string | null } | null;
   createdAt?: string;
   created_at?: string;
 };
@@ -61,6 +62,8 @@ function toUser(user: BackendUser): User {
     status: "Active",
     twoFactorEnabled: false,
     createdAt: user.createdAt ?? user.created_at ?? new Date().toISOString(),
+    merchantOnboardingStatus: user.merchantOnboarding?.status,
+    merchantOnboardingRejectionReason: user.merchantOnboarding?.rejectionReason,
   };
 }
 
@@ -109,6 +112,13 @@ export const login = async (data: LoginInput): Promise<LoginResponse> => {
 };
 
 export function getUserHome(user: User): string {
+  if (
+    user.userType === 'Merchant' &&
+    user.merchantOnboardingStatus !== undefined &&
+    user.merchantOnboardingStatus !== 3
+  ) {
+    return '/erp/onboarding';
+  }
   switch (user.userType) {
     case "Customer":
       return "/portal/dashboard";

@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Loader2, Store } from 'lucide-react';
@@ -13,8 +14,13 @@ import { OnboardingStepProducts } from './components/OnboardingStepProducts';
 import { OnboardingStepCertifications } from './components/OnboardingStepCertifications';
 import { OnboardingSuccess } from './components/OnboardingSuccess';
 import { API_MODE, ApiError, fetchApi } from '@/lib/api';
+import { useAuthStore } from '@/features/auth/store';
 
 export default function MerchantOnboardingPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const user = useAuthStore((state) => state.user);
+  const isEditingApplication = searchParams.get('edit') === 'true' && user?.userType === 'Merchant';
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -57,6 +63,22 @@ export default function MerchantOnboardingPage() {
     },
   });
 
+  useEffect(() => {
+    if (!isEditingApplication || API_MODE === 'mock') return;
+    void fetchApi<any>('/api/v1/merchant-onboarding/applications/me').then((application) => {
+      form.reset({
+        businessName: application.business_name, businessType: application.business_type, isProvisional: application.is_provisional,
+        rcNumber: application.rc_number ?? '', ownerName: application.owner_name, phone: application.phone, email: application.email,
+        idType: application.id_type, ninNumber: application.nin_number, address: application.address, marketCluster: application.market_cluster,
+        city: application.city, state: application.state, bankName: application.bank_name, accountNumber: application.account_number,
+        productDescription: application.product_description, capacity: application.capacity, samplePhotosCount: application.sample_photos_count,
+        certificationType: application.certification_type, certificationNumber: application.certification_number ?? '',
+        confirmSupplyCapacity: application.confirm_supply_capacity, agreeToFulfillmentSla: application.agree_to_fulfillment_sla,
+      });
+      setPhotosCount(application.sample_photos_count);
+    }).catch((error) => setSubmissionError(error instanceof Error ? error.message : 'Unable to load your application.'));
+  }, [form, isEditingApplication]);
+
   const onSubmit = async (values: MerchantOnboardingData) => {
     setIsSubmitting(true);
     setSubmissionError(null);
@@ -70,8 +92,8 @@ export default function MerchantOnboardingPage() {
         if (identityDocument) payload.append('identityDocument', identityDocument);
         if (certificationDocument) payload.append('certificationDocument', certificationDocument);
         samplePhotos.forEach((photo) => payload.append('samplePhotos', photo));
-        await fetchApi('/api/v1/merchant-onboarding/applications', {
-          method: 'POST',
+        await fetchApi(isEditingApplication ? '/api/v1/merchant-onboarding/applications/me' : '/api/v1/merchant-onboarding/applications', {
+          method: isEditingApplication ? 'PATCH' : 'POST',
           body: payload,
         });
       }
@@ -116,6 +138,9 @@ export default function MerchantOnboardingPage() {
   };
 
   if (isSuccess) {
+    if (isEditingApplication) {
+      return <div className="mx-auto mt-28 max-w-lg rounded-xl border border-success-border bg-success-bg p-8 text-center"><h1 className="text-xl font-bold text-success-dark">Application updated</h1><p className="mt-2 text-sm text-text-muted">Your details have been submitted for review.</p><Button className="mt-6" onClick={() => router.push('/erp/onboarding')}>Back to application status</Button></div>;
+    }
     return <OnboardingSuccess isProvisional={form.getValues('isProvisional')} />;
   }
 
@@ -128,7 +153,7 @@ export default function MerchantOnboardingPage() {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-brand-50 text-brand-700 mb-3">
             <Store className="w-6 h-6" />
           </div>
-          <h1 className="text-3xl font-extrabold text-text tracking-tight">Merchant Verification</h1>
+          <h1 className="text-3xl font-extrabold text-text tracking-tight">{isEditingApplication ? 'Update Merchant Application' : 'Merchant Verification'}</h1>
           <p className="text-xs text-text-muted mt-1 max-w-md mx-auto">
             Complete the 5-step verification process to become an approved seller on BuyNaija.
           </p>

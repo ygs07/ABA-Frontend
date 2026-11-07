@@ -23,6 +23,8 @@ export interface User {
   status: UserStatus;
   merchantId?: string;
   referralCode?: string;
+  merchantOnboardingStatus?: number;
+  merchantOnboardingRejectionReason?: string | null;
   twoFactorEnabled: boolean;
   lastActive?: string;
   createdAt: string;
