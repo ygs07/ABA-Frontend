@@ -9,6 +9,13 @@ export type StockAdjustmentRecord = {
   productVariant?: { id: number; name: string; product?: { id: number; name: string } | null } | null;
 };
 
+export type ProductVariantOption = {
+  id: number;
+  name: string;
+  sku: string;
+  is_active: boolean;
+};
+
 type BackendProductStock = {
   id: number;
   name: string;
@@ -149,6 +156,18 @@ export const getStockRecords = async (): Promise<StockAdjustmentRecord[]> => {
   }));
 };
 
+export const getProductVariants = async (
+  productId: number,
+): Promise<ProductVariantOption[]> => {
+  if (API_MODE !== 'mock') {
+    const response = await fetchApi<{ data: ProductVariantOption[] }>(
+      `/api/v1/products/${encodeURIComponent(productId)}/variants?limit=100&isActive=true`,
+    );
+    return response.data.filter((variant) => variant.sku !== `BASE-${productId}`);
+  }
+  return [];
+};
+
 export const adjustStock = async (stockId: number, quantityChange: number): Promise<StockAdjustmentRecord> => {
   if (API_MODE !== 'mock') {
     return fetchApi<StockAdjustmentRecord>(`/api/v1/stocks/${encodeURIComponent(stockId)}/adjust`, {
@@ -166,12 +185,16 @@ export const adjustStock = async (stockId: number, quantityChange: number): Prom
   return { ...stockRecord, quantity: stockRecord.quantity + quantityChange };
 };
 
-export const adjustProductStock = async (productId: number, quantityChange: number): Promise<StockAdjustmentRecord> => {
+export const adjustProductStock = async (
+  productId: number,
+  quantityChange: number,
+  productVariantId?: number,
+): Promise<StockAdjustmentRecord> => {
   if (API_MODE !== 'mock') {
     return fetchApi<StockAdjustmentRecord>(`/api/v1/stocks/products/${encodeURIComponent(productId)}/adjust`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ quantityChange }),
+      body: JSON.stringify({ quantityChange, ...(productVariantId ? { productVariantId } : {}) }),
     });
   }
 

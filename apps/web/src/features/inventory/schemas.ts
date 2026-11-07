@@ -19,6 +19,7 @@ export type CreateTransferInput = z.infer<typeof createTransferSchema>;
 
 export const createAdjustmentSchema = z.object({
   stockId: z.string().optional(),
+  productVariantId: z.string().optional(),
   quantityChange: z.coerce.number().int().refine((value) => value !== 0, 'Adjustment quantity cannot be zero'),
   reason: z.enum(['Damaged', 'Found', 'Expired', 'Written off', 'Stock count correction', 'Other']),
   notes: z.string().optional(),

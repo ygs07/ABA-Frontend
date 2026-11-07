@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -16,7 +16,7 @@ import { OnboardingSuccess } from './components/OnboardingSuccess';
 import { API_MODE, ApiError, fetchApi } from '@/lib/api';
 import { useAuthStore } from '@/features/auth/store';
 
-export default function MerchantOnboardingPage() {
+function MerchantOnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const user = useAuthStore((state) => state.user);
@@ -261,5 +261,13 @@ export default function MerchantOnboardingPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function MerchantOnboardingPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-surface-1 py-12" />}>
+      <MerchantOnboardingContent />
+    </Suspense>
   );
 }

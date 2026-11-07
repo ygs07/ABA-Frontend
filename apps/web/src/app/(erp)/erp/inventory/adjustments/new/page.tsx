@@ -13,7 +13,9 @@ import {
 import {
   adjustProductStock,
   adjustStock,
+  getProductVariants,
   getStockRecords,
+  ProductVariantOption,
   StockAdjustmentRecord,
 } from '@/features/inventory/api/inventory.api';
 
@@ -43,6 +45,7 @@ function NewAdjustmentForm() {
   const [stockRecords, setStockRecords] = useState<
     StockAdjustmentRecord[]
   >([]);
+  const [productVariants, setProductVariants] = useState<ProductVariantOption[]>([]);
 
   const [isLoadingStocks, setIsLoadingStocks] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,6 +60,7 @@ function NewAdjustmentForm() {
     resolver: zodResolver(createAdjustmentSchema) as any,
     defaultValues: {
       stockId: '',
+      productVariantId: '',
       quantityChange: 1,
       reason: 'Damaged',
       notes: '',
@@ -64,6 +68,7 @@ function NewAdjustmentForm() {
   });
 
   const selectedStockId = watch('stockId');
+  const selectedProductVariantId = watch('productVariantId');
   const quantityChange = watch('quantityChange');
 
   const selectedStock = stockRecords.find(
@@ -83,15 +88,19 @@ function NewAdjustmentForm() {
     : stockRecords;
 
   useEffect(() => {
-    getStockRecords()
-      .then((loadedStockRecords) => {
+    Promise.all([
+      getStockRecords(),
+      productId ? getProductVariants(Number(productId)) : Promise.resolve([]),
+    ])
+      .then(([loadedStockRecords, loadedProductVariants]) => {
         setStockRecords(loadedStockRecords);
+        setProductVariants(loadedProductVariants);
 
         const matchingStockRecord = stockId
           ? loadedStockRecords.find(
               (stockRecord) => String(stockRecord.id) === stockId,
             )
-          : productId
+          : productId && !loadedProductVariants.length
             ? loadedStockRecords.find(
                 (stockRecord) =>
                   String(stockRecord.product?.id) === productId ||
@@ -125,6 +134,7 @@ function NewAdjustmentForm() {
           ? await adjustProductStock(
               selectedProductId,
               data.quantityChange,
+              data.productVariantId ? Number(data.productVariantId) : undefined,
             )
           : null;
 
@@ -239,6 +249,31 @@ function NewAdjustmentForm() {
               </div>
             )}
 
+            {selectedProductId && productVariants.length > 0 && !selectedStock && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Product variant <span className="text-error">*</span>
+                </label>
+                <select
+                  {...register('productVariantId')}
+                  disabled={isLoadingStocks || isSubmitting}
+                  className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm"
+                >
+                  <option value="">Select a variant to adjust</option>
+                  {productVariants.map((productVariant) => (
+                    <option key={productVariant.id} value={productVariant.id}>
+                      {productVariant.name} ({productVariant.sku})
+                    </option>
+                  ))}
+                </select>
+                {!selectedProductVariantId && (
+                  <p className="text-xs text-text-muted">
+                    Stock is tracked separately for each variant.
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Quantity change */}
               <div className="space-y-2">
@@ -322,7 +357,11 @@ function NewAdjustmentForm() {
 
           <Button
             type="submit"
-            disabled={isSubmitting || isLoadingStocks}
+            disabled={
+              isSubmitting ||
+              isLoadingStocks ||
+              (!!selectedProductId && productVariants.length > 0 && !selectedStock && !selectedProductVariantId)
+            }
           >
             Apply adjustment
           </Button>
