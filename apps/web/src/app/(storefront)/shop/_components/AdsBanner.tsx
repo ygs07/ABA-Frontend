@@ -5,15 +5,18 @@ import { BannerCarousel } from '@/components/patterns/BannerCarousel';
 
 export function AdsBanner() {
   const banners = [
-    { id: 1, src: '/banners/Aba Online_ Shop Local, Shop Aba.png', alt: brand.tagline },
-    { id: 2, src: '/banners/AbaOnline_ Shop Local, Grow Together.png', alt: `Shop Local, Grow Together` },
-    { id: 3, src: '/banners/Shop Local, Support Aba.png', alt: `Shop Local, Support Nigeria` },
+    { id: 1, src: '/banners/Buy Naija Banner - 1.png', alt: brand.tagline },
+    { id: 2, src: '/banners/Buy Naija Banner - 2.png', alt: `Shop Local, Grow Together` },
+    { id: 3, src: '/banners/Buy Naija Banner - 3.png', alt: `Shop Local, Support Nigeria` },
+    { id: 4, src: '/banners/Buy Naija Banner - 4.png', alt: `Shop Local, Support Nigeria` },
+    { id: 5, src: '/banners/Buy Naija Banner - 5.png', alt: `Shop Local, Support Nigeria` },
+    { id: 6, src: '/banners/Buy Naija Banner - 6.png', alt: `Shop Local, Support Nigeria` },
   ];
 
   return (
-   <div className="pb-8">
-     <BannerCarousel banners={banners} />
-   </div>
+    <div className="pb-8">
+      <BannerCarousel banners={banners} />
+    </div>
   );
 }
 
