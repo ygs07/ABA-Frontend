@@ -178,12 +178,12 @@ export default function PortalWalletPage() {
       )}
 
       {/* Balance Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
         {/* Available Balance (Withdrawable) */}
         <div className="bg-brand-600 rounded-xl p-6 text-white shadow-sm relative overflow-hidden flex flex-col justify-between">
           <div className="relative z-10">
             <p className="text-brand-100 font-medium mb-1 text-sm">Available Cash Balance</p>
-            <h2 className="text-3xl font-bold tracking-tight">
+            <h2 className="break-all text-2xl font-bold tracking-tight sm:text-3xl">
               <AmountText amountInKobo={availableBalance} />
             </h2>
             <p className="text-xs text-brand-200 mt-2">Withdrawable to bank or spendable</p>
@@ -205,7 +205,7 @@ export default function PortalWalletPage() {
                 Non-Withdrawable
               </span>
             </div>
-            <h2 className="text-3xl font-black text-amber-900 tracking-tight">
+            <h2 className="break-all text-2xl font-black text-amber-900 tracking-tight sm:text-3xl">
               <AmountText amountInKobo={shoppingCreditsKobo} />
             </h2>
             <p className="text-xs text-amber-800/80 mt-2 leading-relaxed">

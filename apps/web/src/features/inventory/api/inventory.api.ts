@@ -206,6 +206,18 @@ export const adjustProductStock = async (
   return { id: Date.now(), sku: `PRODUCT-${productId}`, quantity: quantityChange, product: { id: productId, name: 'Product' } };
 };
 
+export const adjustProductVariantsStock = async (
+  productId: number,
+  adjustments: Array<{ productVariantId: number; quantityChange: number }>,
+): Promise<StockAdjustmentRecord[]> => fetchApi<StockAdjustmentRecord[]>(
+  `/api/v1/stocks/products/${encodeURIComponent(productId)}/variants/adjust`,
+  {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ adjustments }),
+  },
+);
+
 export const getWarehouses = async (): Promise<Warehouse[]> => {
   await delay(500);
   return MOCK_WAREHOUSES;

@@ -1,139 +1,59 @@
 'use client';
 
-import { PageHeader } from '@/components/patterns/PageHeader';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { useForm, Controller } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { PageHeader } from '@/components/patterns/PageHeader';
+import { Button } from '@/components/ui/button';
 import { AmountText } from '@/components/patterns/AmountText';
-
-const simulatorSchema = z.object({
-  customer: z.string().min(1, 'Select a customer'),
-  product: z.string().min(1, 'Select a product'),
-  quantity: z.number().min(1),
-  price: z.number().min(1),
-});
+import { getCommissionPlans, simulateCommissionPlan, type CommissionSimulation } from '@/features/commissions/api';
+import { toast } from 'sonner';
 
 export default function CommissionSimulatorPage() {
-  const { register, control, handleSubmit, formState: { errors }, watch } = useForm<z.infer<typeof simulatorSchema>>({
-    resolver: zodResolver(simulatorSchema),
-    defaultValues: {
-      customer: '',
-      product: '',
-      quantity: 1,
-      price: 0,
+  const { data: plans = [], isLoading } = useQuery({ queryKey: ['commission-plans'], queryFn: async () => (await getCommissionPlans()).data });
+  const [ruleId, setRuleId] = useState('');
+  const [orderValue, setOrderValue] = useState('');
+  const [deductions, setDeductions] = useState('0');
+  const [availableLevels, setAvailableLevels] = useState('');
+  const [result, setResult] = useState<CommissionSimulation | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
+
+  const run = async () => {
+    const numericOrderValue = Number(orderValue);
+    if (!ruleId || !Number.isFinite(numericOrderValue) || numericOrderValue < 0) {
+      toast.error('Select a rule and enter a valid order value.');
+      return;
     }
-  });
+    setIsRunning(true);
+    try {
+      setResult(await simulateCommissionPlan(ruleId, {
+        orderValue: numericOrderValue,
+        deductions: Number(deductions) || 0,
+        ...(availableLevels ? { availableLevels: Number(availableLevels) } : {}),
+      }));
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to run the simulation.');
+    } finally {
+      setIsRunning(false);
+    }
+  };
 
-  const [simulationResult, setSimulationResult] = useState<any[] | null>(null);
-
-  function onSubmit(values: z.infer<typeof simulatorSchema>) {
-    // Mock simulation logic
-    const totalOrderValue = values.quantity * values.price * 100; // in Kobo
-    const results = [
-      { level: 1, beneficiary: 'Jane Referrer (Direct)', rate: '5%', amount: totalOrderValue * 0.05, rule: 'Default v3', status: 'Would Qualify' },
-      { level: 2, beneficiary: 'Michael Upline', rate: '2%', amount: totalOrderValue * 0.02, rule: 'Default v3', status: 'Would Qualify' },
-      { level: 3, beneficiary: 'Sarah Top', rate: '1%', amount: totalOrderValue * 0.01, rule: 'Default v3', status: 'Cap Reached (Adjusted)' },
-    ];
-    setSimulationResult(results);
-  }
-
-  return (
-    <div className="space-y-6 pb-20 mx-auto max-w-4xl">
-      <PageHeader 
-        title="Rule Simulator" 
-        description="Test how commission plans affect payouts before making them active."
-        backHref="/erp/commissions"
-      />
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-surface rounded-xl border border-border overflow-hidden">
-          <div className="p-6">
-            <h3 className="font-bold text-lg border-b border-border pb-2 mb-4">Input Parameters</h3>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Buyer (Customer) *</label>
-                <Input placeholder="Search customer..." {...register('customer')} />
-                {errors.customer && <p className="text-[10px] text-error">{errors.customer.message}</p>}
-              </div>
-              
-              <div className="border border-border rounded-lg p-4 bg-surface-2 mt-4 space-y-4">
-                <h4 className="font-semibold text-sm">Cart Items</h4>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Product</label>
-                  <Controller
-                    control={control}
-                    name="product"
-                    render={({ field }) => (
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <SelectTrigger><SelectValue placeholder="Select Product" /></SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="prod-1">Basic Plan Subscription</SelectItem>
-                          <SelectItem value="prod-2">Premium Hardware Bundle</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    )}
-                  />
-                  {errors.product && <p className="text-[10px] text-error">{errors.product.message}</p>}
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Quantity</label>
-                    <Input type="number" {...register('quantity', { valueAsNumber: true })} />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Unit Price (₦)</label>
-                    <Input type="number" {...register('price', { valueAsNumber: true })} />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 border-t border-border">
-                <Button type="submit" className="w-full">Run Simulator</Button>
-              </div>
-            </form>
-          </div>
+  return <div className="mx-auto max-w-4xl space-y-6 pb-20">
+    <PageHeader title="Rule Simulator" description="Preview platform commission payouts without creating commission records." backHref="/erp/commissions" />
+    <div className="grid gap-6 lg:grid-cols-2">
+      <section className="rounded-xl border border-border bg-white p-6">
+        <h2 className="mb-5 text-lg font-bold">Simulation inputs</h2>
+        <div className="space-y-4">
+          <label className="block text-sm font-medium">Commission rule<select value={ruleId} onChange={(event) => setRuleId(event.target.value)} disabled={isLoading} className="mt-1 h-11 w-full rounded-lg border border-border bg-white px-3 text-sm"><option value="">Select the active rule</option>{plans.map((plan) => <option key={plan.id} value={plan.id}>{plan.name}{plan.active ? '' : ' (inactive)'}</option>)}</select></label>
+          <label className="block text-sm font-medium">Order value (₦)<input value={orderValue} onChange={(event) => setOrderValue(event.target.value)} inputMode="decimal" placeholder="e.g. 25000" className="mt-1 h-11 w-full rounded-lg border border-border px-3 text-sm" /></label>
+          <label className="block text-sm font-medium">Deductions (₦)<input value={deductions} onChange={(event) => setDeductions(event.target.value)} inputMode="decimal" className="mt-1 h-11 w-full rounded-lg border border-border px-3 text-sm" /></label>
+          <label className="block text-sm font-medium">Available upline levels <span className="font-normal text-text-muted">(optional)</span><input value={availableLevels} onChange={(event) => setAvailableLevels(event.target.value)} inputMode="numeric" placeholder="Use rule maximum" className="mt-1 h-11 w-full rounded-lg border border-border px-3 text-sm" /></label>
+          <Button className="w-full" onClick={() => void run()} disabled={isRunning || isLoading}>{isRunning ? 'Running…' : 'Run simulation'}</Button>
         </div>
-
-        <div className="bg-surface-2 rounded-xl border border-border overflow-hidden">
-          <div className="p-6">
-            <h3 className="font-bold text-lg border-b border-border pb-2 mb-4">Simulation Results</h3>
-            {!simulationResult ? (
-              <div className="text-center text-text-muted py-12">
-                <span className="text-4xl mb-4 block">🧪</span>
-                <p>Run the simulator to see upline payout breakdowns.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <div className="flex justify-between items-center text-sm bg-surface p-3 rounded-lg border border-border">
-                  <span className="text-text-muted">Simulated Order Value</span>
-                  <span className="font-bold"><AmountText amountInKobo={watch('quantity') * watch('price') * 100} /></span>
-                </div>
-                
-                <h4 className="font-semibold text-sm mt-6 mb-2">Upline Chain & Payouts</h4>
-                <div className="space-y-2">
-                  {simulationResult.map((res, i) => (
-                    <div key={i} className="bg-surface border border-border rounded-lg p-3 flex justify-between items-center">
-                      <div>
-                        <div className="font-medium text-sm">{res.beneficiary}</div>
-                        <div className="text-[10px] text-text-muted">Level {res.level} • {res.rule} ({res.rate})</div>
-                      </div>
-                      <div className="text-right flex flex-col items-end">
-                        <span className="font-medium text-success-dark"><AmountText amountInKobo={res.amount} /></span>
-                        <span className="text-[10px] text-text-muted">{res.status}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      </section>
+      <section className="rounded-xl border border-border bg-surface-2 p-6">
+        <h2 className="mb-5 text-lg font-bold">Projected payout</h2>
+        {!result ? <p className="py-16 text-center text-sm text-text-muted">Select a rule and run a simulation to preview the payout split.</p> : <div className="space-y-4"><div className={`rounded-lg border p-3 text-sm ${result.eligible ? 'border-success-200 bg-success-50 text-success-dark' : 'border-amber-300 bg-amber-50 text-amber-900'}`}>{result.eligible ? 'This order qualifies for commission.' : `This order does not meet the ₦${result.minimumOrderValue.toLocaleString()} minimum or the rule is inactive.`}</div><div className="grid grid-cols-2 gap-3 text-sm"><div className="rounded-lg border border-border bg-white p-3"><span className="block text-text-muted">Calculation base</span><strong><AmountText amountInKobo={result.calculationBase * 100} /></strong></div><div className="rounded-lg border border-border bg-white p-3"><span className="block text-text-muted">Total commission</span><strong><AmountText amountInKobo={result.totalCommission * 100} /></strong></div></div><div className="space-y-2">{result.levels.map((level) => <div key={level.level} className="flex items-center justify-between rounded-lg border border-border bg-white p-3 text-sm"><span>Level {level.level}{level.rate !== null ? ` · ${level.rate}%` : ' · Fixed'}</span><strong><AmountText amountInKobo={level.amount * 100} /></strong></div>)}</div></div>}
+      </section>
     </div>
-  );
+  </div>;
 }

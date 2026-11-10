@@ -154,6 +154,29 @@ export async function setCommissionPlanStatus(id: string, isActive: boolean): Pr
   });
 }
 
+export type CommissionSimulation = {
+  ruleId: number;
+  orderValue: number;
+  deductions: number;
+  calculationBase: number;
+  commissionType: number;
+  eligible: boolean;
+  minimumOrderValue: number;
+  levels: Array<{ level: number; rate: number | null; amount: number }>;
+  totalCommission: number;
+};
+
+export async function simulateCommissionPlan(
+  id: string,
+  input: { orderValue: number; deductions?: number; availableLevels?: number },
+): Promise<CommissionSimulation> {
+  return fetchApi<CommissionSimulation>(`/api/v1/commission-rules/${encodeURIComponent(id)}/simulate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
 export type BackendCommissionRule = {
   id: number;
   title: string;

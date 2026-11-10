@@ -12,6 +12,7 @@ import {
 
 import {
   adjustProductStock,
+  adjustProductVariantsStock,
   adjustStock,
   getProductVariants,
   getStockRecords,
@@ -46,6 +47,7 @@ function NewAdjustmentForm() {
     StockAdjustmentRecord[]
   >([]);
   const [productVariants, setProductVariants] = useState<ProductVariantOption[]>([]);
+  const [batchChanges, setBatchChanges] = useState<Record<number, string>>({});
 
   const [isLoadingStocks, setIsLoadingStocks] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -153,6 +155,27 @@ function NewAdjustmentForm() {
           ? error.message
           : 'Failed to adjust stock',
       );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const submitBatchAdjustments = async () => {
+    if (!selectedProductId) return;
+    const adjustments = productVariants
+      .map((productVariant) => ({ productVariantId: productVariant.id, quantityChange: Number(batchChanges[productVariant.id] || 0) }))
+      .filter((adjustment) => Number.isInteger(adjustment.quantityChange) && adjustment.quantityChange !== 0);
+    if (!adjustments.length) {
+      toast.error('Enter a non-zero adjustment for at least one variant.');
+      return;
+    }
+    setIsSubmitting(true);
+    try {
+      await adjustProductVariantsStock(selectedProductId, adjustments);
+      toast.success(`Adjusted stock for ${adjustments.length} variant${adjustments.length === 1 ? '' : 's'}.`);
+      router.push('/erp/inventory/stock');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to adjust variant stock.');
     } finally {
       setIsSubmitting(false);
     }
@@ -271,6 +294,16 @@ function NewAdjustmentForm() {
                     Stock is tracked separately for each variant.
                   </p>
                 )}
+              </div>
+            )}
+
+            {selectedProductId && productVariants.length > 1 && !selectedStock && (
+              <div className="space-y-3 rounded-lg border border-border bg-surface-1 p-4">
+                <div><p className="font-medium">Adjust multiple variants</p><p className="text-xs text-text-muted">Enter positive or negative quantities, then apply them together.</p></div>
+                <div className="space-y-2">
+                  {productVariants.map((productVariant) => <label key={productVariant.id} className="grid grid-cols-[1fr_7rem] items-center gap-3 text-sm"><span>{productVariant.name} <span className="text-text-muted">({productVariant.sku})</span></span><Input type="number" value={batchChanges[productVariant.id] ?? ''} onChange={(event) => setBatchChanges((currentChanges) => ({ ...currentChanges, [productVariant.id]: event.target.value }))} placeholder="± quantity" disabled={isSubmitting} /></label>)}
+                </div>
+                <Button type="button" variant="outline" onClick={() => void submitBatchAdjustments()} disabled={isSubmitting}>Apply all variant adjustments</Button>
               </div>
             )}
 

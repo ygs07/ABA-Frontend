@@ -9,6 +9,8 @@ import { LayoutDashboard, ShoppingBag, Wallet, Users, Settings, Bell, LogOut, Me
 import { useAuthStore } from '@/features/auth/store';
 import { getUserHome, logout as logoutRequest } from '@/features/auth/api/auth.api';
 import { removeAuthCookie } from '@/features/auth/actions';
+import { useQuery } from '@tanstack/react-query';
+import { getOwnKycProfile } from '@/features/portal/api';
 
 export default function PortalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -17,6 +19,12 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
   const isCustomer = Boolean(
     user && (user.userType === 'Customer' || user.roles.includes('Customer')),
   );
+  const { data: kycProfile } = useQuery({
+    queryKey: ['portal_referral_kyc_profile'],
+    queryFn: getOwnKycProfile,
+    enabled: isCustomer,
+  });
+  const needsReferralKyc = isCustomer && kycProfile?.status !== 3;
 
   React.useEffect(() => {
     if (user && !isCustomer) {
@@ -96,6 +104,13 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
 
           {/* Portal Content Area */}
           <main className="flex-1">
+            {needsReferralKyc && pathname !== '/portal/referrals' && (
+              <div className="mb-6 rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-950">
+                <p className="font-semibold">Activate your referral earning account</p>
+                <p className="mt-1 text-amber-900">Complete referral KYC and the one-time activation payment to unlock referral commissions and shopping credits.</p>
+                <Link href="/portal/referrals" className="mt-2 inline-block font-semibold text-brand-700 hover:underline">Complete referral activation →</Link>
+              </div>
+            )}
             {children}
           </main>
         </div>

@@ -27,6 +27,7 @@ import { AmountText } from '@/components/patterns/AmountText';
 import { ErrorState } from '@/components/patterns/ErrorState';
 
 import { getCustomerWalletBalance, getShoppingCreditBalance } from '@/features/portal/api';
+import { useAuthStore } from '@/features/auth/store';
 
 const MOCK_REFERRERS = [
 
@@ -45,6 +46,7 @@ const MOCK_REFERRERS = [
 function CheckoutContent() {
 
   const router = useRouter();
+  const user = useAuthStore((state) => state.user);
 
   const clearCart = useCartStore((state) => state.clearCart);
 
@@ -140,18 +142,27 @@ const res = await getCart();
   const checkoutTotal = Math.max(0, (cartData?.subtotal ?? 0) + deliveryFee - shoppingCreditApplied);
 
   useEffect(() => {
+    if (!user) return;
+    setAddressForm((currentAddress) => ({
+      ...currentAddress,
+      fullName: currentAddress.fullName || [user.firstName, user.lastName].filter(Boolean).join(' ') || user.name,
+      phone: currentAddress.phone || user.phone || '',
+    }));
+  }, [user]);
+
+  useEffect(() => {
     if (selectedDeliveryAddressId || !savedAddresses.length) return;
     const defaultAddress = savedAddresses[0];
     setSelectedDeliveryAddressId(defaultAddress.id);
     setAddressForm({
       fullName: defaultAddress.name,
-      phone: '',
+      phone: user?.phone ?? '',
       street: defaultAddress.street,
       city: defaultAddress.city,
       state: defaultAddress.state,
       zipCode: defaultAddress.zip,
     });
-  }, [savedAddresses, selectedDeliveryAddressId]);
+  }, [savedAddresses, selectedDeliveryAddressId, user?.phone]);
 
 // 2. Initialize Checkout Session
 
@@ -348,7 +359,7 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                       <label className="block text-sm font-medium text-text mb-1">First Name</label>
 
-                      <input type="text" className="w-full h-10 px-3 rounded-md border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500 outline-none" defaultValue="Jane" />
+                      <input type="text" className="w-full h-10 px-3 rounded-md border border-border bg-white text-sm" value={user?.firstName ?? ''} readOnly />
 
                     </div>
 
@@ -356,7 +367,7 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                       <label className="block text-sm font-medium text-text mb-1">Last Name</label>
 
-                      <input type="text" className="w-full h-10 px-3 rounded-md border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500 outline-none" defaultValue="Doe" />
+                      <input type="text" className="w-full h-10 px-3 rounded-md border border-border bg-white text-sm" value={user?.lastName ?? ''} readOnly />
 
                     </div>
 
@@ -366,7 +377,7 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                     <label className="block text-sm font-medium text-text mb-1">Email Address</label>
 
-                    <input type="email" className="w-full h-10 px-3 rounded-md border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500 outline-none" defaultValue="jane.doe@example.com" />
+                    <input type="email" className="w-full h-10 px-3 rounded-md border border-border bg-surface-1 text-sm text-text-muted" value={user?.email ?? ''} readOnly />
 
                   </div>
 
