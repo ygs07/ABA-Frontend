@@ -29,10 +29,18 @@ export default function OrderDetailPage() {
 
   const fulfilOrder = async () => {
     if (!order) return;
+    const nextStatus = order.status === 'Pending'
+      ? 2
+      : order.status === 'Processing'
+        ? 3
+        : order.status === 'Shipped / Ready for pickup'
+          ? 4
+          : null;
+    if (!nextStatus) return;
     try {
-      const updatedOrder = await updateOrderStatus(order.id, 3);
+      const updatedOrder = await updateOrderStatus(order.id, nextStatus);
       setOrder(updatedOrder);
-      toast.success('Order marked as ready for delivery or pickup');
+      toast.success('Order moved to its next fulfilment stage');
     } catch {
       toast.error('Failed to update the order status');
     }
@@ -104,7 +112,7 @@ export default function OrderDetailPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => void printInvoice()}>Print Invoice</Button>
           <Button variant="outline">Record Payment</Button>
-          <Button onClick={fulfilOrder}>Fulfil Order</Button>
+          {!['Completed', 'Cancelled', 'Refunded'].includes(order.status) && <Button onClick={fulfilOrder}>Advance Order</Button>}
         </div>
       </div>
 
@@ -115,8 +123,8 @@ export default function OrderDetailPage() {
           {order.status === 'Pending' && <option value="2">Processing</option>}
           {(order.status === 'Pending' || order.status === 'Processing') && <option value="5">Cancelled</option>}
           {order.status === 'Processing' && <option value="3">Shipped / Ready for pickup</option>}
-          {order.status === 'Ready' ? <option value="4">Order complete</option> : null}
-          {['Pending', 'Processing', 'Ready', 'Completed'].includes(order.status) && <option value="6">Refund requested</option>}
+          {order.status === 'Shipped / Ready for pickup' ? <option value="4">Order complete</option> : null}
+          {['Pending', 'Processing', 'Shipped / Ready for pickup', 'Completed'].includes(order.status) && <option value="6">Refund requested</option>}
         </select>
         <Button onClick={updateStatus} disabled={!selectedStatus}>Update status</Button>
       </div>

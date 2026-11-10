@@ -2,7 +2,8 @@
 
 import { brand } from '@/config/brand';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState, useEffect, useMemo } from 'react';
+import debounce from 'lodash/debounce';
 
 import Link from 'next/link';
 
@@ -18,7 +19,7 @@ import { getCart } from '@/features/cart/api';
 
 import { useCartStore } from '@/features/cart/store';
 
-import { getDeliveryAddresses, initializeCheckout, processCheckout } from '@/features/checkout/api';
+import { getDeliveryAddresses, initializeCheckout, processCheckout, searchReferralCandidates, type ReferralCandidate } from '@/features/checkout/api';
 
 import { CheckoutAddressInput } from '@/features/checkout/schemas';
 
@@ -28,20 +29,6 @@ import { ErrorState } from '@/components/patterns/ErrorState';
 
 import { getCustomerWalletBalance, getShoppingCreditBalance } from '@/features/portal/api';
 import { useAuthStore } from '@/features/auth/store';
-
-const MOCK_REFERRERS = [
-
-{ id: '1', name: 'Chisom Nwokwu', moniker: '@chisomn', code: 'REF-CN2026', image: 'https://i.pravatar.cc/150?u=chisomn' },
-
-{ id: '2', name: 'Aba Merchant Hub', moniker: '@abahub', code: 'REF-ABA8', image: 'https://i.pravatar.cc/150?u=abahub' },
-
-{ id: '3', name: 'Emeka Onyeka', moniker: '@emeka_o', code: 'REF-EMK01', image: 'https://i.pravatar.cc/150?u=emeka_o' },
-
-{ id: '4', name: 'Sarah Chidimma', moniker: '@sarahc', code: 'REF-SC44', image: 'https://i.pravatar.cc/150?u=sarahc' },
-
-{ id: '5', name: 'David Okafor', moniker: '@davido', code: 'REF-DO99', image: 'https://i.pravatar.cc/150?u=davido' },
-
-];
 
 function CheckoutContent() {
 
@@ -61,35 +48,31 @@ function CheckoutContent() {
 
   const [referralInput, setReferralInput] = useState('');
 
-  const [searchResults, setSearchResults] = useState<typeof MOCK_REFERRERS>([]);
+  const [searchResults, setSearchResults] = useState<ReferralCandidate[]>([]);
+  const [selectedReferral, setSelectedReferral] = useState<ReferralCandidate | null>(null);
 
   const [appliedReferral, setAppliedReferral] = useState<{ code: string, name: string } | null>(null);
 
-useEffect(() => {
+  const debouncedReferralSearch = useMemo(
+    () => debounce(async (value: string) => {
+      try {
+        setSearchResults(await searchReferralCandidates(value));
+      } catch {
+        setSearchResults([]);
+      }
+    }, 350),
+    [],
+  );
 
-if (referralInput.trim().length > 1) {
-
-      const query = referralInput.toLowerCase();
-
-      const results = MOCK_REFERRERS.filter(r =>
-
-r.name.toLowerCase().includes(query) ||
-
-r.moniker.toLowerCase().includes(query) ||
-
-r.code.toLowerCase().includes(query)
-
-);
-
-setSearchResults(results);
-
+  useEffect(() => {
+    if (referralInput.trim().length >= 2) {
+      debouncedReferralSearch(referralInput);
     } else {
-
-setSearchResults([]);
-
+      debouncedReferralSearch.cancel();
+      setSearchResults([]);
     }
-
-  }, [referralInput]);
+    return () => debouncedReferralSearch.cancel();
+  }, [debouncedReferralSearch, referralInput]);
 
   const [addressForm, setAddressForm] = useState<CheckoutAddressInput>({
 
@@ -198,7 +181,7 @@ const res = await processCheckout(
         { method: paymentMethod },
         selectedDeliveryAddressId,
         deliveryMethod,
-        (appliedReferral?.code ?? referralInput.trim()) || undefined,
+        appliedReferral?.code,
         useShoppingCredits,
 );
 
@@ -773,7 +756,7 @@ placeholder='enter Aba, Emeka, Sarah'
 
 value={referralInput}
 
-onChange={(e) => setReferralInput(e.target.value)}
+onChange={(e) => { setReferralInput(e.target.value); setSelectedReferral(null); }}
 
 className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500 outline-none"
 
@@ -787,25 +770,18 @@ className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-white text-s
 
                       {searchResults.map(user => (
 
-                        <div
-
-key={user.id}
+                        <button
+                          type="button"
+key={user.customerId}
 
 className="flex items-center gap-3 p-3 border-b border-border last:border-0 hover:bg-surface-1 cursor-pointer transition-colors"
 
 onClick={() => {
-
-setAppliedReferral({ code: user.code, name: user.moniker });
-
-setReferralInput('');
-
-setSearchResults([]);
-
-                          }}
+  setSelectedReferral(user);
+  setSearchResults([]);
+}}
 
                         >
-
-                          <img src={user.image} alt={user.name} className="w-10 h-10 rounded-full object-cover shrink-0" />
 
                           <div className="flex-1 overflow-hidden">
 
@@ -813,17 +789,17 @@ setSearchResults([]);
 
                             <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5">
 
-                              <span>{user.moniker}</span>
+                              <span>{user.username ? `@${user.username}` : 'Customer'}</span>
 
                               <span>•</span>
 
-                              <span className="font-mono">{user.code}</span>
+                              <span className="font-mono">{user.referralCode}</span>
 
                             </div>
 
                           </div>
 
-                        </div>
+                        </button>
 
                       ))}
 
@@ -831,7 +807,13 @@ setSearchResults([]);
 
                   )}
 
-                  <p className="text-xs text-text-muted">Enter the name or referral code of the person who referred you.</p>
+                  {selectedReferral && (
+                    <div className="flex items-center justify-between rounded border border-brand-200 bg-brand-50 p-3 text-sm">
+                      <span>Use <strong>{selectedReferral.name}</strong>&apos;s referral code?</span>
+                      <div className="flex gap-2"><Button type="button" size="sm" variant="outline" onClick={() => setSelectedReferral(null)}>Cancel</Button><Button type="button" size="sm" onClick={() => { setAppliedReferral({ code: selectedReferral.referralCode, name: selectedReferral.name }); setSelectedReferral(null); setReferralInput(''); }}>Confirm</Button></div>
+                    </div>
+                  )}
+                  <p className="text-xs text-text-muted">Search by referral code or username, then confirm the customer who referred you.</p>
 
                 </div>
 
@@ -848,6 +830,13 @@ setSearchResults([]);
                 <span className="font-medium text-text"><AmountText amountInKobo={cartData.subtotal} /></span>
 
               </div>
+
+              {shoppingCreditApplied > 0 && (
+                <div className="flex justify-between text-success-dark">
+                  <span>Shopping credits</span>
+                  <span className="font-medium">−<AmountText amountInKobo={shoppingCreditApplied} /></span>
+                </div>
+              )}
 
               <div className="flex justify-between">
 

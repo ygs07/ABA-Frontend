@@ -94,6 +94,7 @@ type BackendOrder = {
   updatedAt: string;
   customer?: { user?: { first_name?: string; last_name?: string; phone?: string } };
   deliveryAddress?: { street?: string; city?: string; state?: string };
+  payment_method?: number;
   payments?: Array<{ status?: string; amount?: string | number }>;
   items: Array<{
     id: number;
@@ -141,7 +142,8 @@ function presentOrder(order: BackendOrder): Order {
     merchantName: firstItem?.merchant?.business_name ?? `${brand.name} Merchant`,
     channel: 'Web',
     status: toOrderStatus(status),
-    paymentStatus: amountPaid >= totalAmount && totalAmount > 0 ? 'Paid' : 'Unpaid',
+    paymentStatus: totalAmount === 0 || amountPaid >= totalAmount ? 'Paid' : 'Unpaid',
+    paymentMethod: order.payment_method === 2 ? 'Wallet' : 'Card / Bank',
     fulfilmentStatus,
     lines: order.items.map((item) => ({
       id: String(item.id),
@@ -174,7 +176,7 @@ function presentOrder(order: BackendOrder): Order {
 
 function toOrderStatus(status: string): Order['status'] {
   if (status === 'processing') return 'Processing';
-  if (status.includes('shipped') || status.includes('pickup')) return 'Ready';
+  if (status.includes('shipped') || status.includes('pickup')) return 'Shipped / Ready for pickup';
   if (status === 'complete') return 'Completed';
   if (status === 'cancelled') return 'Cancelled';
   if (status.includes('refund')) return 'Refunded';
@@ -225,7 +227,18 @@ export const updateOrderStatus = async (
 ): Promise<Order> => {
   if (API_MODE === 'mock') {
     const order = await getOrderById(id);
-    return { ...order, status: status === 4 ? 'Completed' : 'Ready' };
+    const nextStatus: Order['status'] = status === 2
+      ? 'Processing'
+      : status === 3
+        ? 'Shipped / Ready for pickup'
+        : status === 4
+          ? 'Completed'
+          : status === 5
+            ? 'Cancelled'
+            : status === 6
+              ? 'Refunded'
+              : 'Pending';
+    return { ...order, status: nextStatus };
   }
   const order = await fetchApi<BackendOrder>(`/api/v1/orders/${encodeURIComponent(id)}`, {
     method: 'PATCH',

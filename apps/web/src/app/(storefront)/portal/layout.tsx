@@ -1,7 +1,4 @@
 'use client';
-import { brand } from '@/config/brand';
-
-
 import React from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
@@ -68,9 +65,11 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
                 </div>
                 <h2 className="text-lg font-bold text-text capitalize">{user?.firstName || 'Jane'} {user?.lastName || 'Doe'}</h2>
                 <p className="text-sm text-text-muted">{user?.email || 'jane.doe@example.com'}</p>
-                <div className="mt-2 text-xs font-semibold px-2 py-1 bg-white text-brand-700 inline-block rounded border border-brand-200">
-                  Referral: {user?.referralCode || `${brand.referralCodePrefix}${user?.firstName?.toUpperCase() || 'JANE'}-123`}
-                </div>
+                {user?.referralCode && (
+                  <div className="mt-2 text-xs font-semibold px-2 py-1 bg-white text-brand-700 inline-block rounded border border-brand-200">
+                    Referral: {user.referralCode}
+                  </div>
+                )}
               </div>
               
               <nav className="flex overflow-x-auto lg:flex-col p-2 gap-2 lg:gap-1 scrollbar-hide">

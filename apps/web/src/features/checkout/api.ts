@@ -4,6 +4,21 @@ import { CheckoutSession } from './types';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
+export type ReferralCandidate = {
+  customerId: number;
+  userId: number;
+  name: string;
+  username: string | null;
+  referralCode: string;
+};
+
+export async function searchReferralCandidates(query: string): Promise<ReferralCandidate[]> {
+  if (API_MODE === 'mock' || query.trim().length < 2) return [];
+  return fetchApi<ReferralCandidate[]>(
+    `/api/v1/checkout/referral-candidates?query=${encodeURIComponent(query.trim())}`,
+  );
+}
+
 export async function initializeCheckout(cartId: string): Promise<{ data: CheckoutSession }> {
   await delay(500);
   return { 

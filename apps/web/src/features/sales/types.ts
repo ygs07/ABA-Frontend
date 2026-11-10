@@ -1,4 +1,4 @@
-export type OrderStatus = 'Draft' | 'Awaiting Approval' | 'Pending' | 'Processing' | 'Ready' | 'Out for Delivery' | 'Completed' | 'Cancelled' | 'Refunded' | 'Partially Refunded';
+export type OrderStatus = 'Draft' | 'Awaiting Approval' | 'Pending' | 'Processing' | 'Shipped / Ready for pickup' | 'Out for Delivery' | 'Completed' | 'Cancelled' | 'Refunded' | 'Partially Refunded';
 export type PaymentStatus = 'Unpaid' | 'Partially Paid' | 'Paid' | 'Overdue' | 'Refunded' | 'Partially Refunded' | 'Failed';
 export type FulfilmentStatus = 'Unfulfilled' | 'Partially Fulfilled' | 'Fulfilled' | 'Returned';
 export type SalesChannel = 'Admin' | 'POS' | 'Web' | 'Portal';
@@ -33,6 +33,7 @@ export interface Order {
   channel: SalesChannel;
   status: OrderStatus;
   paymentStatus: PaymentStatus;
+  paymentMethod?: string;
   fulfilmentStatus: FulfilmentStatus;
   
   lines: OrderLine[];

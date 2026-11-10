@@ -82,6 +82,11 @@ export default function OrdersPage() {
         return <span className={`px-2 py-0.5 rounded text-[11px] font-medium border ${color}`}>{status}</span>;
       }
     },
+    {
+      accessorKey: 'paymentMethod',
+      header: 'Payment Method',
+      cell: (info: any) => <span className="text-sm text-text-muted">{info.getValue() ?? '—'}</span>,
+    },
     { 
       accessorKey: 'fulfilmentStatus', 
       header: 'Fulfilment',
@@ -100,7 +105,7 @@ export default function OrdersPage() {
         const status = info.getValue() as string;
         let color = 'bg-surface-2 text-text-muted border-border';
         if (status === 'Completed') color = 'bg-success-bg text-success border-success-border';
-        if (status === 'Pending' || status === 'Processing' || status === 'Ready') color = 'bg-primary/10 text-primary border-primary/20';
+        if (status === 'Pending' || status === 'Processing' || status === 'Shipped / Ready for pickup') color = 'bg-primary/10 text-primary border-primary/20';
         if (status === 'Cancelled') color = 'bg-error-bg text-error border-error-border';
         
         return <span className={`px-2 py-0.5 rounded text-[11px] font-medium border ${color}`}>{status}</span>;
