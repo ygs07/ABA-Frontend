@@ -57,7 +57,7 @@ function MerchantOnboardingContent() {
       productDescription: '',
       capacity: '',
       samplePhotosCount: 0,
-      certificationType: '',
+      certificationTypes: ['None / Artisanal Guild'],
       confirmSupplyCapacity: false,
       agreeToFulfillmentSla: false,
     },
@@ -72,7 +72,7 @@ function MerchantOnboardingContent() {
         idType: application.id_type, ninNumber: application.nin_number, address: application.address, marketCluster: application.market_cluster,
         city: application.city, state: application.state, bankName: application.bank_name, accountNumber: application.account_number,
         productDescription: application.product_description, capacity: application.capacity, samplePhotosCount: application.sample_photos_count,
-        certificationType: application.certification_type, certificationNumber: application.certification_number ?? '',
+        certificationTypes: application.certifications?.length ? application.certifications : [application.certification_type], certificationNumber: application.certification_number ?? '',
         confirmSupplyCapacity: application.confirm_supply_capacity, agreeToFulfillmentSla: application.agree_to_fulfillment_sla,
       });
       setPhotosCount(application.sample_photos_count);
@@ -88,6 +88,7 @@ function MerchantOnboardingContent() {
         Object.entries(values).forEach(([key, value]) => {
           if (value !== undefined && value !== null) payload.append(key, String(value));
         });
+        payload.set('certificationTypes', JSON.stringify(values.certificationTypes));
         if (cacDocument) payload.append('cacDocument', cacDocument);
         if (identityDocument) payload.append('identityDocument', identityDocument);
         if (certificationDocument) payload.append('certificationDocument', certificationDocument);
@@ -115,7 +116,7 @@ function MerchantOnboardingContent() {
     if (currentStep === 1) fields = ['ownerName', 'phone', 'email', 'idType', 'ninNumber'];
     if (currentStep === 2) fields = ['address', 'marketCluster', 'city', 'state', 'bankName', 'accountNumber'];
     if (currentStep === 3) fields = ['productDescription', 'capacity', 'samplePhotosCount'];
-    if (currentStep === 4) fields = ['certificationType', 'confirmSupplyCapacity', 'agreeToFulfillmentSla'];
+    if (currentStep === 4) fields = ['certificationTypes', 'confirmSupplyCapacity', 'agreeToFulfillmentSla'];
 
     const valid = await form.trigger(fields);
     if (valid) {

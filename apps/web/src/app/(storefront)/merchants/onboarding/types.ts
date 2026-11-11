@@ -30,7 +30,7 @@ export const merchantOnboardingSchema = z.object({
   samplePhotosCount: z.number().min(1, 'Please upload at least 1 sample product photo'),
 
   // Step 5: Certifications & Operational Verification
-  certificationType: z.string().min(1, 'Certification type is required'),
+  certificationTypes: z.array(z.string()).min(1, 'Select at least one certification'),
   certificationNumber: z.string().optional(),
   certificationDocumentName: z.string().optional(),
   confirmSupplyCapacity: z.boolean().refine((val) => val === true, {

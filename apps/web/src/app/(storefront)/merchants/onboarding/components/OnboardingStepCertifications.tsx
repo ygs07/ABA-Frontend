@@ -19,9 +19,27 @@ export function OnboardingStepCertifications({
   onUploadCert,
   onRemoveCert,
 }: OnboardingStepCertificationsProps) {
-  const { register, watch, formState: { errors } } = form;
-  const certType = watch('certificationType');
-  const hasCert = certType && certType !== 'None / Artisanal Guild';
+  const { register, watch, setValue, formState: { errors } } = form;
+  const certificationTypes = watch('certificationTypes') ?? [];
+  const certifications = [
+    'None / Artisanal Guild',
+    'NAFDAC (Regulated Goods)',
+    'SON (Standards Organisation of Nigeria)',
+    'NEPC (Nigerian Export Promotion Council)',
+  ];
+  const hasCert = certificationTypes.some((certification) => certification !== 'None / Artisanal Guild');
+
+  const toggleCertification = (certification: string) => {
+    if (certification === 'None / Artisanal Guild') {
+      setValue('certificationTypes', ['None / Artisanal Guild'], { shouldValidate: true });
+      return;
+    }
+    const selected = certificationTypes.filter((item) => item !== 'None / Artisanal Guild');
+    const next = selected.includes(certification)
+      ? selected.filter((item) => item !== certification)
+      : [...selected, certification];
+    setValue('certificationTypes', next.length ? next : ['None / Artisanal Guild'], { shouldValidate: true });
+  };
 
   return (
     <div className="space-y-6">
@@ -29,16 +47,21 @@ export function OnboardingStepCertifications({
         <label className="block text-sm font-semibold text-text mb-1.5">
           Industry / Product Certification
         </label>
-        <select
-          {...register('certificationType')}
-          className="w-full h-11 px-3 rounded-lg border border-border bg-white text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
-        >
-          <option value="None / Artisanal Guild">None / Artisanal Guild</option>
-          <option value="NAFDAC (Regulated Goods)">NAFDAC (Regulated Goods)</option>
-          <option value="SON (Standards Organisation of Nigeria)">SON (Standards Organisation of Nigeria)</option>
-          <option value="NEPC (Export Promotion)">NEPC (Nigerian Export Promotion Council)</option>
-        </select>
-        {errors.certificationType && <p className="text-error text-xs mt-1">{errors.certificationType.message}</p>}
+        <p className="mb-3 text-xs text-text-muted">Select every certification that applies. “None / Artisanal Guild” is used only when no regulatory certification applies.</p>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {certifications.map((certification) => (
+            <label key={certification} className="flex cursor-pointer items-center gap-2 rounded-lg border border-border bg-white p-3 text-sm hover:border-brand-300">
+              <input
+                type="checkbox"
+                checked={certificationTypes.includes(certification)}
+                onChange={() => toggleCertification(certification)}
+                className="h-4 w-4 rounded border-border text-brand-600 focus:ring-brand-500"
+              />
+              <span>{certification}</span>
+            </label>
+          ))}
+        </div>
+        {errors.certificationTypes && <p className="text-error text-xs mt-1">{errors.certificationTypes.message}</p>}
       </div>
 
       {hasCert && (
