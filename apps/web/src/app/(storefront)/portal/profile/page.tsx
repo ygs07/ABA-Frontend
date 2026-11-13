@@ -7,6 +7,7 @@ import { User, Mail, Phone, Lock, MapPin } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/store';
 import { fetchApi } from '@/lib/api';
 import { DeliveryAddress, getDeliveryAddresses } from '@/features/checkout/api';
+import { NIGERIAN_STATES } from '@/lib/constants/nigeria';
 import { toast } from 'sonner';
 
 const emptyAddress = { name: '', street: '', city: '', state: '', zip: '' };
@@ -129,7 +130,29 @@ export default function PortalProfile() {
             <Button variant="outline" onClick={() => openAddressForm()}>+ Add New Address</Button>
           </div>
           {isAddressFormOpen && <form onSubmit={saveAddress} className="mt-4 grid grid-cols-1 gap-3 rounded-lg border border-border p-4 md:grid-cols-2">
-            {Object.entries({ name: 'Label', street: 'Street address', city: 'City', state: 'State', zip: 'Postal code' }).map(([field, label]) => <label key={field} className="text-sm font-medium text-text">{label}<input required value={addressForm[field as keyof typeof addressForm]} onChange={(event) => setAddressForm((current) => ({ ...current, [field]: event.target.value }))} className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" /></label>)}
+            {Object.entries({ name: 'Label', street: 'Street address', city: 'City', state: 'State', zip: 'Postal code' }).map(([field, label]) => (
+              <label key={field} className="text-sm font-medium text-text">
+                {label}
+                {field === 'state' ? (
+                  <select
+                    required
+                    value={addressForm.state}
+                    onChange={(event) => setAddressForm((current) => ({ ...current, state: event.target.value }))}
+                    aria-label="State"
+                    className="mt-1 h-10 w-full rounded-md border border-border bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                  >
+                    <option value="">Select State</option>
+                    {NIGERIAN_STATES.map((stateName) => (
+                      <option key={stateName} value={stateName}>
+                        {stateName}
+                      </option>
+                    ))}
+                  </select>
+                ) : (
+                  <input required value={addressForm[field as keyof typeof addressForm]} onChange={(event) => setAddressForm((current) => ({ ...current, [field]: event.target.value }))} className="mt-1 h-10 w-full rounded-md border border-border px-3 text-sm" />
+                )}
+              </label>
+            ))}
             <div className="flex items-end gap-2"><Button type="submit" disabled={isSavingAddress}>{isSavingAddress ? 'Saving…' : editingAddressId ? 'Update address' : 'Save address'}</Button><Button type="button" variant="outline" onClick={() => setIsAddressFormOpen(false)}>Cancel</Button></div>
           </form>}
         </div>

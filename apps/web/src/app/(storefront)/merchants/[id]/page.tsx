@@ -23,7 +23,7 @@ import { useAuthStore } from '@/features/auth/store';
 function MerchantProfileContent({ params }: { params: Promise<{ id: string }> }) {
   const unwrappedParams = React.use(params);
   const merchantId = unwrappedParams.id;
-  
+
   const searchParams = useSearchParams();
   const q = searchParams.get('q') || '';
   const sort = (searchParams.get('sort') as any) || 'recommended';
@@ -58,7 +58,7 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
   const { data: products, isLoading: isProductsLoading } = useQuery({
     queryKey: ['merchant_products_filtered', merchantId, q, sort, minRating, inStockOnly, onSaleOnly, categorySlug],
     queryFn: async () => {
-      const res = await getShopProducts({ 
+      const res = await getShopProducts({
         merchantId: merchant?.id || merchantId,
         q,
         sort,
@@ -107,7 +107,7 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
   return (
     <div className="bg-surface-1 min-h-screen pb-16 pt-16 md:pt-24">
       <MerchantHeader merchant={merchant} />
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs defaultValue="shop" className="w-full">
           <TabsList className="mb-6 h-12 bg-white border border-border">
@@ -115,10 +115,10 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
             <TabsTrigger value="about" className="text-base px-6">About</TabsTrigger>
             <TabsTrigger value="feedback" className="text-base px-6">Feedback</TabsTrigger>
           </TabsList>
-          
+
           <TabsContent value="shop" className="mt-0 outline-none">
             <StoreFilterBar products={allProducts} />
-            
+
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
               {/* Sidebar: Categories & Credibility */}
               <div className="hidden lg:block lg:col-span-1 space-y-6">
@@ -133,9 +133,9 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
                 ) : (
                   <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
                     {products?.map(product => (
-                      <ProductCard 
-                        key={product.id} 
-                        product={product} 
+                      <ProductCard
+                        key={product.id}
+                        product={product}
                         onQuickView={setQuickViewProduct}
                       />
                     ))}
@@ -151,7 +151,7 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
               </div>
             </div>
           </TabsContent>
-          
+
           <TabsContent value="about" className="mt-0 outline-none">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="md:col-span-2 space-y-6">
@@ -168,7 +168,7 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
                   <div className="space-y-4 text-sm text-text-muted">
                     <div className="flex items-start gap-3">
                       <MapPin className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
-                      <span>{merchant.address}<br/>{merchant.city}, {merchant.state}</span>
+                      <span>{merchant.address}<br />{merchant.city}, {merchant.state}</span>
                     </div>
                     <div className="flex items-center gap-3">
                       <Phone className="w-5 h-5 text-brand-600 shrink-0" />
@@ -188,11 +188,11 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
                     )}
                   </div>
                 </div>
-                
+
                 <div className="bg-brand-50 rounded-xl border border-brand-100 p-6 shadow-sm">
                   <h3 className="font-semibold text-brand-900 mb-2">Referral Network</h3>
                   <p className="text-sm text-brand-800 mb-4">
-                    This merchant is part of the Aba Online referral network. You can earn commissions by referring their products!
+                    This merchant is part of the BuyNaija referral network. You can earn commissions by referring their products!
                   </p>
                   <Button size="sm" variant="outline" className="w-full bg-white border-brand-200 text-brand-700 hover:bg-brand-100">
                     Join their network
@@ -209,10 +209,10 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
           <TabsContent value="feedback" className="mt-0 outline-none">
             <div className="bg-white rounded-2xl p-6 border border-border shadow-sm">
               <h2 className="text-2xl font-bold text-text mb-2">Seller feedback <span className="text-text-muted font-normal">({merchant.rating || '2,855'})</span></h2>
-              
+
               <div className="mt-8">
-                <ReviewList 
-                  productId={merchantId} 
+                <ReviewList
+                  productId={merchantId}
                   isEligibleToReview={isCustomer}
                 />
               </div>
@@ -221,7 +221,7 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
         </Tabs>
       </div>
 
-      <ProductQuickViewModal 
+      <ProductQuickViewModal
         product={quickViewProduct}
         isOpen={!!quickViewProduct}
         onClose={() => setQuickViewProduct(null)}

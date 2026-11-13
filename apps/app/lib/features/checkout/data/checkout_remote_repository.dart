@@ -85,12 +85,16 @@ class CheckoutRemoteRepository implements CheckoutRepository {
       'deliveryMethodId': deliveryMethod.id,
       'paymentMethod': paymentType.name,
       'referralCode': referral?.code,
-      'items': cart.items.map((i) => {
-        'productId': i.product.id,
-        'quantity': i.quantity,
-        'color': i.selectedColor,
-        'size': i.selectedSize,
-      }).toList(),
+      'items': cart.items
+          .map(
+            (i) => {
+              'productId': i.product.id,
+              'quantity': i.quantity,
+              'color': i.selectedColor,
+              'size': i.selectedSize,
+            },
+          )
+          .toList(),
     };
 
     final response = await _dio.post('/checkout/process', data: payload);

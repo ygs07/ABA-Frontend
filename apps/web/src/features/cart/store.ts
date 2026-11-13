@@ -36,6 +36,34 @@ const setCart = (set: (state: Partial<CartState>) => void, cart: { data: import(
   });
 };
 
+type PendingQuantityUpdate = {
+  timeoutId: ReturnType<typeof setTimeout>;
+  quantity: number;
+  resolvers: Array<() => void>;
+  rejecters: Array<(error: unknown) => void>;
+};
+
+const pendingQuantityUpdates = new Map<string, PendingQuantityUpdate>();
+const QUANTITY_DEBOUNCE_MS = 400;
+
+const applyServerCart = (
+  set: (state: Partial<CartState>) => void,
+  cart: { data: import('./types').Cart }
+) => {
+  if (pendingQuantityUpdates.size === 0) {
+    setCart(set, cart);
+    return;
+  }
+  const mergedItems = cart.data.items.map((item) => {
+    const pending = pendingQuantityUpdates.get(item.id);
+    return pending ? { ...item, quantity: pending.quantity } : item;
+  });
+  set({
+    items: mergedItems,
+    ...calculateTotals(mergedItems),
+  });
+};
+
 export const useCartStore = create<CartState>()(
   persist(
     (set, get) => ({
@@ -59,7 +87,7 @@ export const useCartStore = create<CartState>()(
                  JSON.stringify(i.attributes) === JSON.stringify(newItem.attributes)
           );
           
-          let updatedItems = [...items];
+          const updatedItems = [...items];
           if (existingItemIndex >= 0) {
             updatedItems[existingItemIndex].quantity += newItem.quantity;
           } else {
@@ -73,7 +101,7 @@ export const useCartStore = create<CartState>()(
           set({ items: updatedItems, ...totals });
 
           const cart = await cartApi.addToCart(newItem);
-          setCart(set, cart);
+          applyServerCart(set, cart);
         } catch (error) {
           console.error('Failed to add cart item:', error);
           await get().syncWithServer();
@@ -83,12 +111,19 @@ export const useCartStore = create<CartState>()(
       },
 
       removeFromCart: async (itemId) => {
+        const pending = pendingQuantityUpdates.get(itemId);
+        if (pending) {
+          clearTimeout(pending.timeoutId);
+          pendingQuantityUpdates.delete(itemId);
+          pending.resolvers.forEach(r => r());
+        }
+
         set({ isSyncing: true });
         try {
           const updatedItems = get().items.filter(i => i.id !== itemId);
           set({ items: updatedItems, ...calculateTotals(updatedItems) });
           const cart = await cartApi.removeFromCart(itemId);
-          setCart(set, cart);
+          applyServerCart(set, cart);
         } catch (error) {
           console.error('Failed to remove cart item:', error);
           await get().syncWithServer();
@@ -98,22 +133,56 @@ export const useCartStore = create<CartState>()(
       },
 
       updateQuantity: async (itemId, quantity) => {
-        set({ isSyncing: true });
-        try {
-           const updatedItems = get().items.map(i => i.id === itemId ? { ...i, quantity } : i);
-           set({ items: updatedItems, ...calculateTotals(updatedItems) });
-           const cart = await cartApi.updateCartItemQuantity(itemId, quantity);
-           setCart(set, cart);
-        } catch (error) {
-           console.error('Failed to update cart item:', error);
-           await get().syncWithServer();
-           throw error;
-        } finally {
-           set({ isSyncing: false });
+        const safeQuantity = Math.max(1, quantity);
+
+        // Optimistic local update
+        const updatedItems = get().items.map((i) =>
+          i.id === itemId ? { ...i, quantity: safeQuantity } : i
+        );
+        set({ items: updatedItems, ...calculateTotals(updatedItems) });
+
+        // Cancel previous pending debounced call for this item
+        const existing = pendingQuantityUpdates.get(itemId);
+        if (existing) {
+          clearTimeout(existing.timeoutId);
         }
+
+        return new Promise<void>((resolve, reject) => {
+          const resolvers = existing ? [...existing.resolvers, resolve] : [resolve];
+          const rejecters = existing ? [...existing.rejecters, reject] : [reject];
+
+          const timeoutId = setTimeout(async () => {
+            pendingQuantityUpdates.delete(itemId);
+            set({ isSyncing: true });
+            try {
+              const cart = await cartApi.updateCartItemQuantity(itemId, safeQuantity);
+              applyServerCart(set, cart);
+              resolvers.forEach((r) => r());
+            } catch (error) {
+              console.error('Failed to update cart item:', error);
+              await get().syncWithServer();
+              rejecters.forEach((r) => r(error));
+            } finally {
+              set({ isSyncing: false });
+            }
+          }, QUANTITY_DEBOUNCE_MS);
+
+          pendingQuantityUpdates.set(itemId, {
+            timeoutId,
+            quantity: safeQuantity,
+            resolvers,
+            rejecters,
+          });
+        });
       },
 
       clearCart: async () => {
+        pendingQuantityUpdates.forEach((pending) => {
+          clearTimeout(pending.timeoutId);
+          pending.resolvers.forEach((r) => r());
+        });
+        pendingQuantityUpdates.clear();
+
         set({ isSyncing: true });
         try {
           set({ items: [], subtotal: 0, deliveryFee: 0, total: 0 });
@@ -131,7 +200,7 @@ export const useCartStore = create<CartState>()(
         set({ isSyncing: true });
         try {
           const { data } = await cartApi.getCart();
-          setCart(set, { data });
+          applyServerCart(set, { data });
         } catch (error) {
           console.error('Failed to sync cart:', error);
         } finally {

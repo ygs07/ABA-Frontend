@@ -11,7 +11,7 @@ export const signupSchema = z.object({
   referralCode: z.string().trim().optional(),
   first_name: z.string().trim().min(1, 'First name is required'),
   last_name: z.string().trim().min(1, 'Last name is required'),
-  middle_name: z.string().trim().min(1, 'Middle name is required'),
+  middle_name: z.string().trim().optional(),
   phone: z.string().trim().min(1, 'Phone number is required'),
   email: z.string().email('Enter a valid email address'),
   password: z.string().min(1, 'Password is required'),

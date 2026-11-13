@@ -2,14 +2,15 @@
 
 import { brand } from '@/config/brand';
 
-import { Suspense, useState, useEffect, useMemo } from 'react';
+import { Suspense, useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import debounce from 'lodash/debounce';
 
 import Link from 'next/link';
 
 import { useRouter } from 'next/navigation';
 
-import { Check, ShieldCheck, MapPin, Truck, CreditCard, Wallet, AlertCircle, Loader2, Search } from 'lucide-react';
+import { Check, ShieldCheck, MapPin, Truck, CreditCard, Wallet, AlertCircle, Loader2, Search, ExternalLink } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 
@@ -29,6 +30,20 @@ import { ErrorState } from '@/components/patterns/ErrorState';
 
 import { getCustomerWalletBalance, getShoppingCreditBalance } from '@/features/portal/api';
 import { useAuthStore } from '@/features/auth/store';
+import { NIGERIAN_STATES } from '@/lib/constants/nigeria';
+
+const CHECKOUT_STORAGE_KEY = 'aba_checkout_state';
+
+interface SavedCheckoutState {
+  cartFingerprint?: string;
+  step?: number;
+  paymentMethod?: 'card' | 'wallet';
+  deliveryMethod?: 1 | 2 | 3;
+  useShoppingCredits?: boolean;
+  selectedDeliveryAddressId?: number;
+  addressForm?: CheckoutAddressInput;
+  appliedReferral?: { code: string; name: string } | null;
+}
 
 function CheckoutContent() {
 
@@ -37,7 +52,9 @@ function CheckoutContent() {
 
   const clearCart = useCartStore((state) => state.clearCart);
 
+  const hasRestoredRef = useRef(false);
   const [step, setStep] = useState(1);
+  const [isRestored, setIsRestored] = useState(false);
 
   const [paymentMethod, setPaymentMethod] = useState<'card' | 'wallet'>('card');
   const [deliveryMethod, setDeliveryMethod] = useState<1 | 2 | 3>(1);
@@ -83,27 +100,31 @@ function CheckoutContent() {
     state: '',
     zipCode: ''
 
-});
+  });
 
-  const nextStep = () => setStep(prev => Math.min(prev + 1, 5));
+  const updateUrlStep = (newStep: number) => {
+    if (typeof window === 'undefined') return;
+    const currentUrl = new URL(window.location.href);
+    if (currentUrl.searchParams.get('step') === String(newStep)) return;
+    currentUrl.searchParams.set('step', String(newStep));
+    window.history.replaceState(null, '', currentUrl.pathname + currentUrl.search);
+  };
 
-  const prevStep = () => setStep(prev => Math.max(prev - 1, 1));
-
-// 1. Fetch Cart for Summary
+  // 1. Fetch Cart for Summary
 
   const { data: cartData, isLoading: isCartLoading, error: cartError } = useQuery({
 
     queryKey: ['cart'],
 
-queryFn: async () => {
+    queryFn: async () => {
 
-const res = await getCart();
+      const res = await getCart();
 
       return res.data;
 
-}
+    }
 
-});
+  });
 
   const { data: walletBalance = 0, isLoading: isWalletLoading } = useQuery({
 
@@ -111,7 +132,7 @@ const res = await getCart();
 
     queryFn: getCustomerWalletBalance,
 
-});
+  });
 
   const { data: savedAddressesData, isLoading: isAddressesLoading, error: addressesError } = useQuery({
     queryKey: ['delivery-addresses'],
@@ -123,6 +144,28 @@ const res = await getCart();
   const deliveryFee = deliveryMethod === 2 ? 300000 : deliveryMethod === 1 ? 150000 : 0;
   const shoppingCreditApplied = useShoppingCredits ? Math.min(shoppingCreditBalance, (cartData?.subtotal ?? 0) + deliveryFee) : 0;
   const checkoutTotal = Math.max(0, (cartData?.subtotal ?? 0) + deliveryFee - shoppingCreditApplied);
+  const hasInsufficientWallet = walletBalance < checkoutTotal;
+
+  const hasValidAddress = Boolean(
+    selectedDeliveryAddressId ||
+    (addressForm.fullName?.trim() && addressForm.street?.trim() && addressForm.city?.trim() && addressForm.state?.trim())
+  );
+
+  const goToStep = useCallback((newStep: number) => {
+    let target = Math.max(1, Math.min(newStep, 5));
+    if (target >= 3 && !hasValidAddress) {
+      target = 2;
+    }
+    if (target >= 5 && paymentMethod === 'wallet' && hasInsufficientWallet) {
+      target = 4;
+    }
+    setStep(target);
+    updateUrlStep(target);
+  }, [hasInsufficientWallet, hasValidAddress, paymentMethod]);
+
+  const nextStep = () => goToStep(step + 1);
+
+  const prevStep = () => goToStep(step - 1);
 
   useEffect(() => {
     if (!user) return;
@@ -147,35 +190,166 @@ const res = await getCart();
     });
   }, [savedAddresses, selectedDeliveryAddressId, user?.phone]);
 
-// 2. Initialize Checkout Session
+  useEffect(() => {
+    if (typeof window === 'undefined' || hasRestoredRef.current) return;
+    if (isCartLoading) return;
+    hasRestoredRef.current = true;
+
+    if (!cartData || !cartData.items || cartData.items.length === 0) {
+      try {
+        localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+      } catch { }
+      queueMicrotask(() => {
+        setStep(1);
+        updateUrlStep(1);
+        setIsRestored(true);
+      });
+      return;
+    }
+
+    let savedState: SavedCheckoutState | null = null;
+    try {
+      const raw = localStorage.getItem(CHECKOUT_STORAGE_KEY);
+      if (raw) savedState = JSON.parse(raw);
+    } catch {
+      savedState = null;
+    }
+
+    const currentUrl = new URL(window.location.href);
+    const stepParam = currentUrl.searchParams.get('step');
+    const parsedStep = stepParam ? parseInt(stepParam, 10) : null;
+    let candidateStep = 1;
+
+    if (parsedStep && parsedStep >= 1 && parsedStep <= 5) {
+      candidateStep = parsedStep;
+    } else if (savedState?.step && savedState.step >= 1 && savedState.step <= 5) {
+      candidateStep = savedState.step;
+    }
+
+    const effectiveAddress = savedState?.addressForm ?? addressForm;
+    const hasAddress = Boolean(
+      savedState?.selectedDeliveryAddressId ||
+      (effectiveAddress.fullName?.trim() && effectiveAddress.street?.trim() && effectiveAddress.city?.trim() && effectiveAddress.state?.trim())
+    );
+
+    let validatedStep = candidateStep;
+    if (candidateStep >= 3 && !hasAddress) {
+      validatedStep = 2;
+    }
+    const effectivePayment = savedState?.paymentMethod ?? paymentMethod;
+    if (validatedStep >= 5 && effectivePayment === 'wallet' && hasInsufficientWallet) {
+      validatedStep = 4;
+    }
+
+    queueMicrotask(() => {
+      if (savedState) {
+        if (savedState.paymentMethod === 'card' || savedState.paymentMethod === 'wallet') {
+          setPaymentMethod(savedState.paymentMethod);
+        }
+        if (savedState.deliveryMethod === 1 || savedState.deliveryMethod === 2 || savedState.deliveryMethod === 3) {
+          setDeliveryMethod(savedState.deliveryMethod);
+        }
+        if (typeof savedState.useShoppingCredits === 'boolean') {
+          setUseShoppingCredits(savedState.useShoppingCredits);
+        }
+        if (typeof savedState.selectedDeliveryAddressId === 'number') {
+          setSelectedDeliveryAddressId(savedState.selectedDeliveryAddressId);
+        }
+        if (savedState.addressForm) {
+          setAddressForm((prev) => ({
+            ...prev,
+            ...savedState?.addressForm,
+          }));
+        }
+        if (savedState.appliedReferral) {
+          setAppliedReferral(savedState.appliedReferral);
+        }
+      }
+      setStep(validatedStep);
+      updateUrlStep(validatedStep);
+      setIsRestored(true);
+    });
+  }, [addressForm, cartData, hasInsufficientWallet, isCartLoading, paymentMethod]);
+
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const stepParam = urlParams.get('step');
+      if (stepParam) {
+        const parsed = parseInt(stepParam, 10);
+        if (parsed >= 1 && parsed <= 5) {
+          goToStep(parsed);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, [goToStep]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isRestored) return;
+    if (!cartData || !cartData.items || cartData.items.length === 0) {
+      try {
+        localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+      } catch { }
+      return;
+    }
+
+    const stateToSave: SavedCheckoutState = {
+      cartFingerprint: `${cartData.items.length}_${cartData.subtotal}`,
+      step,
+      paymentMethod,
+      deliveryMethod,
+      useShoppingCredits,
+      selectedDeliveryAddressId,
+      addressForm,
+      appliedReferral,
+    };
+
+    try {
+      localStorage.setItem(CHECKOUT_STORAGE_KEY, JSON.stringify(stateToSave));
+    } catch { }
+  }, [
+    addressForm,
+    appliedReferral,
+    cartData,
+    deliveryMethod,
+    isRestored,
+    paymentMethod,
+    selectedDeliveryAddressId,
+    step,
+    useShoppingCredits,
+  ]);
+
+  // 2. Initialize Checkout Session
 
   const { data: sessionData, isLoading: isSessionLoading } = useQuery({
 
     queryKey: ['checkoutSession', cartData?.id],
 
-queryFn: async () => {
+    queryFn: async () => {
 
       if (!cartData?.id) return null;
 
-const res = await initializeCheckout(cartData.id);
+      const res = await initializeCheckout(cartData.id);
 
       return res.data;
 
-},
+    },
 
     enabled: !!cartData?.id
 
-});
+  });
 
-// 3. Process Checkout Mutation
+  // 3. Process Checkout Mutation
 
   const processMutation = useMutation({
 
-mutationFn: async () => {
+    mutationFn: async () => {
 
       if (!sessionData?.id) throw new Error('No active session');
 
-const res = await processCheckout(
+      const res = await processCheckout(
         sessionData.id,
         addressForm,
         { method: paymentMethod },
@@ -183,53 +357,81 @@ const res = await processCheckout(
         deliveryMethod,
         appliedReferral?.code,
         useShoppingCredits,
-);
+      );
 
       return res.data;
 
-},
+    },
 
-onSuccess: async (data) => {
+    onSuccess: async (data) => {
 
       await clearCart();
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem(CHECKOUT_STORAGE_KEY);
+        } catch { }
+      }
 
       if (data.authorizationUrl) {
 
-window.location.assign(data.authorizationUrl);
+        window.location.assign(data.authorizationUrl);
 
         return;
 
-}
+      }
 
-router.push(`/checkout/success?orderId=${data.orderId}`);
+      router.push(`/checkout/success?orderId=${data.orderId}`);
 
-}
+    }
 
-});
+  });
+
+  const handlePaymentNextStep = () => {
+    if (paymentMethod === 'wallet' && hasInsufficientWallet) {
+      toast.error('Insufficient funds', {
+        description: 'Your wallet balance is lower than the purchase amount. Please fund your wallet to continue.',
+        action: {
+          label: 'Fund Wallet',
+          onClick: () => window.open('/portal/wallet', '_blank'),
+        },
+      });
+      return;
+    }
+    nextStep();
+  };
 
   const handlePlaceOrder = () => {
-
-processMutation.mutate();
-
-};
+    if (paymentMethod === 'wallet' && hasInsufficientWallet) {
+      toast.error('Insufficient funds', {
+        description: 'Your wallet balance is lower than the purchase amount. Please fund your wallet to continue.',
+        action: {
+          label: 'Fund Wallet',
+          onClick: () => window.open('/portal/wallet', '_blank'),
+        },
+      });
+      goToStep(4);
+      return;
+    }
+    processMutation.mutate();
+  };
 
   const steps = [
 
-{ num: 1, title: 'Customer Info' },
+    { num: 1, title: 'Customer Info' },
 
-{ num: 2, title: 'Delivery Address' },
+    { num: 2, title: 'Delivery Address' },
 
-{ num: 3, title: 'Delivery Method' },
+    { num: 3, title: 'Delivery Method' },
 
-{ num: 4, title: 'Payment' },
+    { num: 4, title: 'Payment' },
 
-{ num: 5, title: 'Review' },
+    { num: 5, title: 'Review' },
 
-];
+  ];
 
-if (isCartLoading || isSessionLoading || isWalletLoading || isAddressesLoading) {
+  if (isCartLoading || isSessionLoading || isWalletLoading || isAddressesLoading) {
 
-return (
+    return (
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 flex justify-center items-center h-64">
 
@@ -241,15 +443,15 @@ return (
 
   }
 
-if (cartError || !cartData) {
+  if (cartError || !cartData) {
 
-return (
+    return (
 
       <ErrorState
 
-title="Failed to load checkout"
+        title="Failed to load checkout"
 
-description="Please try again."
+        description="Please try again."
 
       />
 
@@ -257,7 +459,19 @@ description="Please try again."
 
   }
 
-return (
+  if (cartData.items.length === 0) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center mt-20">
+        <h1 className="text-3xl font-bold text-text mb-4">Your cart is empty</h1>
+        <p className="text-text-muted mb-8">You cannot proceed to checkout with an empty cart.</p>
+        <Link href="/shop">
+          <Button size="lg" className="rounded-full px-8">Start Shopping</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  return (
 
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 mt-20">
 
@@ -316,9 +530,9 @@ return (
 
             <ErrorState
 
-title="Failed to process checkout"
+              title="Failed to process checkout"
 
-description={processMutation.error instanceof Error ? processMutation.error.message : 'Checkout failed. Please try again.'}
+              description={processMutation.error instanceof Error ? processMutation.error.message : 'Checkout failed. Please try again.'}
 
             />
 
@@ -427,7 +641,19 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
                     <input value={addressForm.phone} onChange={(event) => setAddressForm({ ...addressForm, phone: event.target.value })} placeholder="Phone number" className="h-10 rounded-md border border-border bg-white px-3 text-sm" />
                     <input value={addressForm.street} onChange={(event) => setAddressForm({ ...addressForm, street: event.target.value })} placeholder="Street address" className="h-10 rounded-md border border-border bg-white px-3 text-sm sm:col-span-2" />
                     <input value={addressForm.city} onChange={(event) => setAddressForm({ ...addressForm, city: event.target.value })} placeholder="City" className="h-10 rounded-md border border-border bg-white px-3 text-sm" />
-                    <input value={addressForm.state} onChange={(event) => setAddressForm({ ...addressForm, state: event.target.value })} placeholder="State" className="h-10 rounded-md border border-border bg-white px-3 text-sm" />
+                    <select
+                      value={addressForm.state}
+                      onChange={(event) => setAddressForm({ ...addressForm, state: event.target.value })}
+                      aria-label="State"
+                      className="h-10 rounded-md border border-border bg-white px-3 text-sm focus:border-brand-500 focus:outline-none focus:ring-1 focus:ring-brand-500"
+                    >
+                      <option value="">Select State</option>
+                      {NIGERIAN_STATES.map((stateName) => (
+                        <option key={stateName} value={stateName}>
+                          {stateName}
+                        </option>
+                      ))}
+                    </select>
                     <input value={addressForm.zipCode} onChange={(event) => setAddressForm({ ...addressForm, zipCode: event.target.value })} placeholder="Postal code (optional)" className="h-10 rounded-md border border-border bg-white px-3 text-sm" />
                   </div>
                 )}
@@ -544,11 +770,24 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                         <p className="font-semibold text-text flex items-center gap-2"><Wallet className="w-4 h-4" /> {brand.shortName} Wallet</p>
 
-                        <p className="text-sm text-text-muted">Balance: <AmountText amountInKobo={walletBalance} /></p>
+                        <p className="text-sm text-text-muted flex items-center gap-2 flex-wrap">
+                          <span>Balance: <AmountText amountInKobo={walletBalance} /></span>
+                          {hasInsufficientWallet && (
+                            <span className="text-xs text-error font-medium">
+                              (Needs <AmountText amountInKobo={checkoutTotal - walletBalance} /> more)
+                            </span>
+                          )}
+                        </p>
 
                       </div>
 
                     </div>
+
+                    {hasInsufficientWallet && (
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-error/10 text-error border border-error/20 shrink-0">
+                        Insufficient funds
+                      </span>
+                    )}
 
                   </label>
 
@@ -564,11 +803,45 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                 )}
 
+                {paymentMethod === 'wallet' && (
+
+                  <div className={`mt-6 p-4 rounded-lg border ${hasInsufficientWallet ? 'bg-error/5 border-error/30' : 'bg-surface-1 border-border'}`}>
+
+                    {hasInsufficientWallet ? (
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                        <div className="flex items-start gap-3">
+                          <AlertCircle className="w-5 h-5 text-error shrink-0 mt-0.5" />
+                          <div>
+                            <p className="text-sm font-semibold text-error">Insufficient funds</p>
+                            <p className="text-xs text-text-muted mt-0.5">
+                              Your wallet balance (<AmountText amountInKobo={walletBalance} />) is lower than the order total (<AmountText amountInKobo={checkoutTotal} />). Please fund your wallet to continue.
+                            </p>
+                          </div>
+                        </div>
+                        <Link
+                          href="/portal/wallet"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-md bg-brand-600 text-white hover:bg-brand-700 shrink-0 self-start sm:self-auto transition-colors"
+                        >
+                          Fund Wallet <ExternalLink className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-text-muted text-center">
+                        Payment will be deducted directly from your wallet balance.
+                      </p>
+                    )}
+
+                  </div>
+
+                )}
+
                 <div className="mt-8 flex justify-between">
 
                   <Button variant="outline" onClick={prevStep}>Back</Button>
 
-                  <Button onClick={nextStep} size="lg">Review Order</Button>
+                  <Button onClick={handlePaymentNextStep} size="lg">Review Order</Button>
 
                 </div>
 
@@ -600,7 +873,7 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                       <h3 className="font-semibold text-text">Delivery Address</h3>
 
-                      <button onClick={() => setStep(2)} className="text-xs text-brand-600 hover:underline">Edit</button>
+                      <button onClick={() => goToStep(2)} className="text-xs text-brand-600 hover:underline">Edit</button>
 
                     </div>
 
@@ -618,11 +891,11 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                       <h3 className="font-semibold text-text">Payment & Delivery</h3>
 
-                      <button onClick={() => setStep(3)} className="text-xs text-brand-600 hover:underline">Edit</button>
+                      <button onClick={() => goToStep(3)} className="text-xs text-brand-600 hover:underline">Edit</button>
 
                     </div>
 
-                    <p className="text-sm text-text-muted capitalize">Method: {paymentMethod === 'card' ? 'Card Payment (Gateway)' : '{brand.shortName} Wallet'}</p>
+                    <p className="text-sm text-text-muted capitalize">Method: {paymentMethod === 'card' ? 'Card Payment (Gateway)' : `${brand.shortName} Wallet`}</p>
 
                     <p className="text-sm text-text-muted">Shipping: {deliveryMethod === 2 ? 'Express Delivery' : 'Standard Delivery'} (<AmountText amountInKobo={deliveryFee} />)</p>
 
@@ -636,13 +909,13 @@ description={processMutation.error instanceof Error ? processMutation.error.mess
 
                   <Button
 
-onClick={handlePlaceOrder}
+                    onClick={handlePlaceOrder}
 
-size="lg"
+                    size="lg"
 
-className="bg-brand-600 hover:bg-brand-700 disabled:opacity-50"
+                    className="bg-brand-600 hover:bg-brand-700 disabled:opacity-50"
 
-disabled={processMutation.isPending}
+                    disabled={processMutation.isPending}
 
                   >
 
@@ -748,17 +1021,17 @@ disabled={processMutation.isPending}
 
                     <input
 
-type="text"
+                      type="text"
 
-// placeholder="Search name or referral code..."
+                      // placeholder="Search name or referral code..."
 
-placeholder='enter Aba, Emeka, Sarah'
+                      placeholder='enter Aba, Emeka, Sarah'
 
-value={referralInput}
+                      value={referralInput}
 
-onChange={(e) => { setReferralInput(e.target.value); setSelectedReferral(null); }}
+                      onChange={(e) => { setReferralInput(e.target.value); setSelectedReferral(null); }}
 
-className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500 outline-none"
+                      className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500 outline-none"
 
                     />
 
@@ -772,14 +1045,14 @@ className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-white text-s
 
                         <button
                           type="button"
-key={user.customerId}
+                          key={user.customerId}
 
-className="flex items-center gap-3 p-3 border-b border-border last:border-0 hover:bg-surface-1 cursor-pointer transition-colors"
+                          className="flex items-center gap-3 p-3 border-b border-border last:border-0 hover:bg-surface-1 cursor-pointer transition-colors"
 
-onClick={() => {
-  setSelectedReferral(user);
-  setSearchResults([]);
-}}
+                          onClick={() => {
+                            setSelectedReferral(user);
+                            setSearchResults([]);
+                          }}
 
                         >
 

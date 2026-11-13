@@ -67,9 +67,7 @@ class CheckoutSuccessScreen extends StatelessWidget {
             const SizedBox(height: AppSpacing.xs),
             Text(
               'Thank you for your purchase. Your order has been placed successfully.',
-              style: AppTypography.bodySmall.copyWith(
-                color: AppColors.grey,
-              ),
+              style: AppTypography.bodySmall.copyWith(color: AppColors.grey),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: AppSpacing.xl),

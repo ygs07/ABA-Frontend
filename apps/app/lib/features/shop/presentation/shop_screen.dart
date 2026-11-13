@@ -48,7 +48,8 @@ class _ShopBody extends ConsumerWidget {
     final products = paginatedState.items;
     final catalogueAsync = ref.watch(shopCatalogueProvider);
     final categoriesAsync = ref.watch(productCategoriesProvider);
-    final categories = categoriesAsync.valueOrNull ??
+    final categories =
+        categoriesAsync.valueOrNull ??
         catalogueAsync.valueOrNull?.categories ??
         const <ShopCategory>[];
     final cartCount = ref.watch(cartProvider).valueOrNull?.itemCount ?? 0;
@@ -153,11 +154,11 @@ class _ShopBody extends ConsumerWidget {
                     ),
                     gridDelegate:
                         const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: AppSpacing.sm,
-                      mainAxisSpacing: AppSpacing.sm,
-                      childAspectRatio: 0.68,
-                    ),
+                          crossAxisCount: 2,
+                          crossAxisSpacing: AppSpacing.sm,
+                          mainAxisSpacing: AppSpacing.sm,
+                          childAspectRatio: 0.68,
+                        ),
                   ),
                 )
               else
@@ -467,7 +468,7 @@ class _AdsBannerState extends State<_AdsBanner> {
   int _currentPage = 0;
 
   final List<String> _banners = const [
-    'assets/images/banners/Aba Online_ Shop Local, Shop Aba.png',
+    'assets/images/banners/BuyNaija_ Shop Local, Shop Aba.png',
     'assets/images/banners/AbaOnline_ Shop Local, Grow Together.png',
     'assets/images/banners/Shop Local, Support Aba.png',
   ];
@@ -550,7 +551,8 @@ class _PopularBrands extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final brandsAsync = ref.watch(popularBrandsProvider);
-    final brands = brandsAsync.valueOrNull?.map((b) => b.name).toList() ??
+    final brands =
+        brandsAsync.valueOrNull?.map((b) => b.name).toList() ??
         const ['Nike', 'Adidas', 'Gucci', 'Aba Artisans', 'Puma', 'Zara'];
     if (brands.isEmpty) return const SizedBox.shrink();
 

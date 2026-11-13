@@ -22,7 +22,7 @@
 5. Header and footer logo and name, login and register screens, browser tab titles, Open Graph tags, favicon and web manifest.
 6. Hero, About, Community and marketing copy: remove "ABA", "Aba's Marketplace", "Shop Local, Shop Aba" and similar city-specific wording. Replace with Nigeria-wide "made in Nigeria" / "BuyNaija" style copy **[CONFIRM Q4: nationwide or still Aba-focused]**.
 7. Referral code prefix (Doc 04 REQ-04-036 format `ABA-XXXXXX`) becomes `brand.referralCodePrefix`. Codes issued earlier keep working.
-8. POS receipt footer "Powered by ABA Online" (Doc 02 section 7.8), invoice and statement PDFs, email and SMS templates, share message templates, notification text.
+8. POS receipt footer "Powered by BuyNaija" (Doc 02 section 7.8), invoice and statement PDFs, email and SMS templates, share message templates, notification text.
 9. Admin and merchant back-office header, sidebar logo, login, and the browser tab title.
 
 ## 1.3 Acceptance

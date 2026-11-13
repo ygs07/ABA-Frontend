@@ -10,7 +10,9 @@ enum OrderStatus {
 
   factory OrderStatus.fromString(String value) {
     return OrderStatus.values.firstWhere(
-      (e) => e.name.toLowerCase() == value.toLowerCase() || e.label.toLowerCase() == value.toLowerCase(),
+      (e) =>
+          e.name.toLowerCase() == value.toLowerCase() ||
+          e.label.toLowerCase() == value.toLowerCase(),
       orElse: () => OrderStatus.pending,
     );
   }
@@ -94,7 +96,9 @@ class CustomerOrder {
       status: OrderStatus.fromString(json['status'] as String),
       total: json['total'] as int,
       paymentMethod: json['paymentMethod'] as String,
-      shippingAddress: ShippingAddress.fromJson(json['shippingAddress'] as Map<String, dynamic>),
+      shippingAddress: ShippingAddress.fromJson(
+        json['shippingAddress'] as Map<String, dynamic>,
+      ),
       items: (json['items'] as List<dynamic>)
           .map((item) => OrderItem.fromJson(item as Map<String, dynamic>))
           .toList(),

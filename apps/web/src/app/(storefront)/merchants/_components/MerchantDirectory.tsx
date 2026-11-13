@@ -6,7 +6,6 @@ import { useQuery } from '@tanstack/react-query';
 import { Loader2, Search, SlidersHorizontal } from 'lucide-react';
 import { getDirectoryMerchants } from '@/features/shop/api';
 import type { MerchantSort } from '@/features/merchants/types';
-import { CategoryFilter } from '@/components/patterns/CategoryFilter';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { ErrorState } from '@/components/patterns/ErrorState';
 import { MerchantCard } from '@/components/patterns/MerchantCard';
@@ -45,17 +44,18 @@ export function MerchantDirectory() {
     const next = new URLSearchParams(sp.toString());
     Object.entries(patch).forEach(([k, v]) => (v ? next.set(k, v) : next.delete(k)));
     if (!keepPage) next.delete('page');
+    if (next.toString() === sp.toString()) return;
     const qs = next.toString();
     router.push(qs ? `${pathname}?${qs}` : pathname);
   };
 
   // Debounced search.
   useEffect(() => {
-    if (term === q) return;
+    if (term.trim() === q.trim()) return;
     const id = setTimeout(() => setParams({ q: term.trim() || null }), 300);
     return () => clearTimeout(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [term]);
+  }, [term, q]);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['merchant_directory', q, category, state, minRating, verified, sort, page],
@@ -118,7 +118,6 @@ export function MerchantDirectory() {
               <SheetContent side="left" className="w-[300px] sm:w-[340px] overflow-y-auto">
                 <SheetHeader className="mb-4"><SheetTitle>Filters</SheetTitle></SheetHeader>
                 <div className="space-y-6">
-                  <CategoryFilter />
                   {filters}
                 </div>
               </SheetContent>
@@ -137,7 +136,6 @@ export function MerchantDirectory() {
 
         <div className="flex flex-col lg:flex-row gap-8">
           <aside className="hidden lg:block w-[240px] shrink-0 space-y-6 sticky top-4">
-            <CategoryFilter />
             {filters}
           </aside>
 

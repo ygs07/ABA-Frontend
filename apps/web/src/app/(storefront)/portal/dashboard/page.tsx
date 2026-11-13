@@ -10,6 +10,7 @@ import { Alert } from '@/components/ui/alert';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/store';
+import { getAmountFontSize } from '@/lib/format';
 
 export default function PortalDashboard() {
   const user = useAuthStore((state) => state.user);
@@ -32,9 +33,7 @@ export default function PortalDashboard() {
             try {
               await verifyWalletFunding(reference);
               resolve();
-            } catch (error) {
-              reject(error);
-            }
+            } catch (error) { reject(error); }
           },
           onCancel: () => reject(new Error('Wallet funding was cancelled.')),
         });
@@ -52,44 +51,18 @@ export default function PortalDashboard() {
     },
     onError: (error) => toast.error(error instanceof Error ? error.message : 'Unable to fund wallet.'),
   });
-  const { data: ordersData, isLoading: isLoadingOrders } = useQuery({
-    queryKey: ['portal_orders'],
-    queryFn: async () => (await getCustomerOrders()).data
-  });
-
-  const { data: walletData, isLoading: isLoadingWallet } = useQuery({
-    queryKey: ['portal_wallet'],
-    queryFn: async () => (await getWalletTransactions()).data
-  });
-
-  const { data: walletBalance, isLoading: isLoadingWalletBalance } = useQuery({
-    queryKey: ['portal_wallet_balance'],
-    queryFn: getCustomerWalletBalance,
-  });
-  const { data: shoppingCreditBalance, isLoading: isLoadingShoppingCredits } = useQuery({
-    queryKey: ['shopping_credit_balance'],
-    queryFn: getShoppingCreditBalance,
-  });
-
-  const { data: referralData, isLoading: isLoadingReferral } = useQuery({
-    queryKey: ['portal_referrals'],
-    queryFn: async () => (await getReferralStats()).data
-  });
+  const { data: ordersData, isLoading: isLoadingOrders } = useQuery({ queryKey: ['portal_orders'], queryFn: async () => (await getCustomerOrders()).data });
+  const { data: walletData, isLoading: isLoadingWallet } = useQuery({ queryKey: ['portal_wallet'], queryFn: async () => (await getWalletTransactions()).data });
+  const { data: walletBalance, isLoading: isLoadingWalletBalance } = useQuery({ queryKey: ['portal_wallet_balance'], queryFn: getCustomerWalletBalance });
+  const { data: shoppingCreditBalance, isLoading: isLoadingShoppingCredits } = useQuery({ queryKey: ['shopping_credit_balance'], queryFn: getShoppingCreditBalance });
+  const { data: referralData, isLoading: isLoadingReferral } = useQuery({ queryKey: ['portal_referrals'], queryFn: async () => (await getReferralStats()).data });
 
   if (isLoadingOrders || isLoadingWallet || isLoadingWalletBalance || isLoadingShoppingCredits || isLoadingReferral) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
-      </div>
-    );
+    return <div className="flex justify-center items-center h-64"><Loader2 className="w-8 h-8 animate-spin text-brand-600" /></div>;
   }
 
   if (!ordersData || !walletData || walletBalance === undefined || shoppingCreditBalance === undefined || !referralData) {
-    return (
-      <Alert variant="destructive">
-        Failed to load dashboard data. Please try again.
-      </Alert>
-    );
+    return <Alert variant="destructive">Failed to load dashboard data. Please try again.</Alert>;
   }
 
   const pendingOrders = ordersData.filter(o => o.status === 'Pending' || o.status === 'Processing');
@@ -100,17 +73,19 @@ export default function PortalDashboard() {
       <h1 className="text-2xl font-bold text-text">Welcome back, {user?.firstName ?? 'there'}!</h1>
 
       {/* Overview Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">
 
         {/* Wallet Card */}
-        <div className="bg-brand-600 rounded-xl p-6 text-white shadow-sm relative overflow-hidden">
-          <div className="absolute -right-4 -top-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl"></div>
-          <div className="flex items-start justify-between mb-4 relative z-10">
-            <div>
-              <p className="text-brand-100 text-sm font-medium mb-1">Wallet Balance</p>
-              <h2 className="text-3xl font-bold"><AmountText amountInKobo={balance} /></h2>
+        <div className="bg-brand-600 rounded-xl p-6 text-white shadow-sm relative overflow-hidden flex flex-col justify-between min-w-0">
+          <div className="absolute -right-4 -top-4 w-24 h-24 bg-white opacity-10 rounded-full blur-xl pointer-events-none"></div>
+          <div className="flex items-start justify-between gap-3 mb-4 relative z-10 min-w-0">
+            <div className="min-w-0 flex-1">
+              <p className="text-brand-100 text-sm font-medium mb-1 truncate">Wallet Balance</p>
+              <h2 className={`${getAmountFontSize(balance)} font-bold tracking-tight break-words [overflow-wrap:anywhere]`}>
+                <AmountText amountInKobo={balance} className="text-left inline-block max-w-full" />
+              </h2>
             </div>
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shrink-0">
               <Wallet className="w-5 h-5 text-white" />
             </div>
           </div>
@@ -120,14 +95,17 @@ export default function PortalDashboard() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-border bg-white p-6 shadow-sm">
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="mb-1 text-sm font-medium text-text-muted">Shopping Credits</p>
-              <h2 className="text-2xl font-bold text-text"><AmountText amountInKobo={shoppingCreditBalance} /></h2>
+        {/* Shopping Credits Card */}
+        <div className="rounded-xl border border-border bg-white p-6 shadow-sm flex flex-col justify-between overflow-hidden min-w-0">
+          <div className="flex items-start justify-between gap-3 min-w-0">
+            <div className="min-w-0 flex-1">
+              <p className="mb-1 text-sm font-medium text-text-muted truncate">Shopping Credits</p>
+              <h2 className={`${getAmountFontSize(shoppingCreditBalance)} font-bold text-text tracking-tight break-words [overflow-wrap:anywhere]`}>
+                <AmountText amountInKobo={shoppingCreditBalance} className="text-left inline-block max-w-full" />
+              </h2>
               <p className="mt-2 text-xs text-text-muted">Available for marketplace purchases.</p>
             </div>
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-brand-50 shrink-0">
               <Gift className="h-5 w-5 text-brand-600" />
             </div>
           </div>
@@ -137,13 +115,13 @@ export default function PortalDashboard() {
         </div>
 
         {/* Orders Card */}
-        <div className="bg-white rounded-xl border border-border p-6 shadow-sm flex flex-col justify-between">
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <p className="text-text-muted text-sm font-medium mb-1">Pending Orders</p>
-              <h2 className="text-2xl font-bold text-text">{pendingOrders.length} Active</h2>
+        <div className="bg-white rounded-xl border border-border p-6 shadow-sm flex flex-col justify-between overflow-hidden min-w-0">
+          <div className="flex items-start justify-between gap-3 mb-2 min-w-0">
+            <div className="min-w-0 flex-1">
+              <p className="text-text-muted text-sm font-medium mb-1 truncate">Pending Orders</p>
+              <h2 className="text-2xl font-bold text-text tracking-tight truncate">{pendingOrders.length} Active</h2>
             </div>
-            <div className="w-10 h-10 bg-surface-2 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-surface-2 rounded-full flex items-center justify-center shrink-0">
               <ShoppingBag className="w-5 h-5 text-text-muted" />
             </div>
           </div>
@@ -153,18 +131,20 @@ export default function PortalDashboard() {
         </div>
 
         {/* Referrals Card */}
-        <div className="bg-white rounded-xl border border-border p-6 shadow-sm flex flex-col justify-between">
-          <div className="flex items-start justify-between mb-2">
-            <div>
-              <p className="text-text-muted text-sm font-medium mb-1">Referral Earnings</p>
-              <h2 className="text-2xl font-bold text-text"><AmountText amountInKobo={referralData.metrics.totalEarned} /></h2>
+        <div className="bg-white rounded-xl border border-border p-6 shadow-sm flex flex-col justify-between overflow-hidden min-w-0">
+          <div className="flex items-start justify-between gap-3 mb-2 min-w-0">
+            <div className="min-w-0 flex-1">
+              <p className="text-text-muted text-sm font-medium mb-1 truncate">Referral Earnings</p>
+              <h2 className={`${getAmountFontSize(referralData.metrics.totalEarned)} font-bold text-text tracking-tight break-words [overflow-wrap:anywhere]`}>
+                <AmountText amountInKobo={referralData.metrics.totalEarned} className="text-left inline-block max-w-full" />
+              </h2>
             </div>
-            <div className="w-10 h-10 bg-surface-2 rounded-full flex items-center justify-center">
+            <div className="w-10 h-10 bg-surface-2 rounded-full flex items-center justify-center shrink-0">
               <Users className="w-5 h-5 text-text-muted" />
             </div>
           </div>
           <div className="flex items-center gap-1 mt-4">
-            <span className="text-sm font-medium text-success-dark">Network: {referralData.metrics.totalNetwork} members</span>
+            <span className="text-sm font-medium text-success-dark truncate">Network: {referralData.metrics.totalNetwork} members</span>
           </div>
         </div>
 
@@ -200,24 +180,20 @@ export default function PortalDashboard() {
                 <div className="w-12 h-12 bg-surface-2 rounded flex items-center justify-center shrink-0">
                   <Package className="w-6 h-6 text-text-muted" />
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium text-text text-sm">{order.id}</p>
+                <div className="flex-1 min-w-0">
+                  <p className="font-medium text-text text-sm truncate">{order.id}</p>
                   <p className="text-xs text-text-muted">Placed {new Date(order.date).toLocaleDateString()}</p>
                 </div>
-                <div className="text-right">
+                <div className="text-right shrink-0">
                   <p className="font-bold text-sm text-text"><AmountText amountInKobo={order.total} /></p>
-                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${order.status === 'Processing' ? 'bg-warning-light text-warning-dark' :
-                      order.status === 'Delivered' ? 'bg-success-bg text-success-dark' :
-                        'bg-surface-2 text-text-muted'
-                    }`}>
-                    {order.status}
-                  </span>
+                  <span className={`text-[10px] font-semibold px-2 py-0.5 rounded ${
+                    order.status === 'Processing' ? 'bg-warning-light text-warning-dark' :
+                    order.status === 'Delivered' ? 'bg-success-bg text-success-dark' : 'bg-surface-2 text-text-muted'
+                  }`}>{order.status}</span>
                 </div>
               </div>
             ))}
-            {ordersData.length === 0 && (
-              <div className="p-8 text-center text-sm text-text-muted">No recent orders found.</div>
-            )}
+            {ordersData.length === 0 && <div className="p-8 text-center text-sm text-text-muted">No recent orders found.</div>}
           </div>
         </div>
 
@@ -235,11 +211,11 @@ export default function PortalDashboard() {
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${isPositive ? 'bg-success-bg' : 'bg-surface-2'}`}>
                     {isPositive ? <ArrowDownRight className="w-5 h-5 text-success-main" /> : <ArrowUpRight className="w-5 h-5 text-text-muted" />}
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium text-text text-sm">{trx.title}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-text text-sm truncate">{trx.title}</p>
                     <p className="text-xs text-text-muted">{new Date(trx.date).toLocaleDateString()}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <p className={`font-bold text-sm ${isPositive ? 'text-success-dark' : 'text-text'}`}>
                       {isPositive ? '+' : ''}<AmountText amountInKobo={trx.amount} />
                     </p>
@@ -247,9 +223,7 @@ export default function PortalDashboard() {
                 </div>
               );
             })}
-            {walletData.length === 0 && (
-              <div className="p-8 text-center text-sm text-text-muted">No recent transactions.</div>
-            )}
+            {walletData.length === 0 && <div className="p-8 text-center text-sm text-text-muted">No recent transactions.</div>}
           </div>
         </div>
 

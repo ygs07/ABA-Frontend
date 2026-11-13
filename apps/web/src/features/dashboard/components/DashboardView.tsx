@@ -9,6 +9,9 @@ import { KpiCard } from '@/components/patterns/KpiCard';
 import { ShoppingCart, DollarSign, Package, AlertTriangle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DashboardRange, getDashboardData } from '../api/dashboard.api';
+import { useAuthStore } from '@/features/auth/store';
+import { isMerchantUnderReview } from '@/features/auth/utils';
+import { MerchantUnderReviewDashboard } from './MerchantUnderReviewDashboard';
 
 const formatNaira = (amount: number) =>
   new Intl.NumberFormat('en-NG', {
@@ -18,11 +21,18 @@ const formatNaira = (amount: number) =>
   }).format(amount);
 
 export function DashboardView() {
+  const user = useAuthStore((state) => state.user);
+
   const [range, setRange] = useState<DashboardRange>('last_7_days');
   const { data, isLoading, isError } = useQuery({
     queryKey: ['dashboard', range],
     queryFn: () => getDashboardData(range),
+    enabled: !isMerchantUnderReview(user),
   });
+
+  if (isMerchantUnderReview(user)) {
+    return <MerchantUnderReviewDashboard user={user!} />;
+  }
 
   const value = (number?: number) =>
     isLoading || number === undefined ? '—' : number.toLocaleString();

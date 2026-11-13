@@ -2,7 +2,7 @@
 trigger: always_on
 ---
 
-# ABA Online ERP — Agent Build Rules
+# BuyNaija ERP — Agent Build Rules
 
 These rules apply to every session in this repository. Read them first, every time.
 
@@ -10,13 +10,13 @@ These rules apply to every session in this repository. Read them first, every ti
 
 The specification lives in `/docs/spec/`:
 
-| File | Contents |
-|---|---|
-| `ABA-ERP-01-Global-Design-System.md` | Design tokens, app shell, components, tables, forms, responsive, a11y, API architecture |
-| `ABA-ERP-02-Core-Modules.md` | Auth/Users, Customers, Products, Merchants, Suppliers, Sales/Orders, POS |
-| `ABA-ERP-03-Operations-and-Finance.md` | Procurement, Inventory, Production, Payments, Payouts, Commissions, Finance |
-| `ABA-ERP-04-Referrals-Reporting-Admin.md` | Referrals, Reports, Dashboards, Audit, Permission matrix, Settings |
-| `ABA-ERP-05-Cross-Module-Workflows.md` | Event map, status transitions, workflows, build phases, open decisions |
+| File                                      | Contents                                                                                |
+| ----------------------------------------- | --------------------------------------------------------------------------------------- |
+| `ABA-ERP-01-Global-Design-System.md`      | Design tokens, app shell, components, tables, forms, responsive, a11y, API architecture |
+| `ABA-ERP-02-Core-Modules.md`              | Auth/Users, Customers, Products, Merchants, Suppliers, Sales/Orders, POS                |
+| `ABA-ERP-03-Operations-and-Finance.md`    | Procurement, Inventory, Production, Payments, Payouts, Commissions, Finance             |
+| `ABA-ERP-04-Referrals-Reporting-Admin.md` | Referrals, Reports, Dashboards, Audit, Permission matrix, Settings                      |
+| `ABA-ERP-05-Cross-Module-Workflows.md`    | Event map, status transitions, workflows, build phases, open decisions                  |
 
 Requirement checklists live in `/docs/checklist/` (`REQ-<doc>-<nnn>`), and progress is tracked in `/docs/PROGRESS.md`.
 
@@ -74,6 +74,7 @@ Requirement checklists live in `/docs/checklist/` (`REQ-<doc>-<nnn>`), and progr
 ## 7. Verification (required at the end of every task)
 
 Run and fix until clean:
+
 1. `pnpm typecheck` (or the repo's equivalent)
 2. `pnpm lint`
 3. `pnpm build`
@@ -105,6 +106,7 @@ Questions/assumptions: <list>
 ## 10. Stop-and-ask triggers
 
 Stop and ask before proceeding if:
+
 - The spec is ambiguous, contradictory, or missing something needed.
 - A change would break existing working behavior or a URL.
 - You want to add a dependency not implied by the spec.
