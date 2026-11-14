@@ -42,6 +42,7 @@ export default function CreateCommissionPlanPage() {
       networkLevels: [
         {
           level: 1,
+          systemRate: 2,
           rate: 5,
           effectiveFrom: '',
           effectiveTo: '',
@@ -63,6 +64,7 @@ export default function CreateCommissionPlanPage() {
     const nextLevel = fields.length + 1;
     append({
       level: nextLevel,
+      systemRate: 2,
       rate: Math.max(1, 5 - fields.length),
       effectiveFrom: '',
       effectiveTo: '',
@@ -91,6 +93,7 @@ export default function CreateCommissionPlanPage() {
           percentageAmount: values.networkLevels[0]?.rate ?? 0,
           levelRates: values.networkLevels.map((lvl) => ({
             level: lvl.level,
+            systemPercentage: lvl.systemRate,
             percentageAmount: lvl.rate,
           })),
           qualificationTrigger: values.networkLevels[0]?.qualificationTrigger ?? 'order_paid',
@@ -173,6 +176,7 @@ export default function CreateCommissionPlanPage() {
                   register={register}
                   control={control}
                   errors={errors}
+                  watch={watch}
                   canRemove={fields.length > 1}
                   onRemove={() => remove(index)}
                 />

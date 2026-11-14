@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Control, Controller, FieldErrors, UseFormRegister } from 'react-hook-form';
-import { Trash2, Percent, Calendar, ShieldCheck, Clock } from 'lucide-react';
+import { Control, Controller, FieldErrors, UseFormRegister, UseFormWatch } from 'react-hook-form';
+import { Trash2, Percent, Calendar, ShieldCheck, Clock, Building2, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -18,6 +18,7 @@ interface NetworkLevelConfigCardProps {
   register: UseFormRegister<CommissionPlanFormValues>;
   control: Control<CommissionPlanFormValues>;
   errors: FieldErrors<CommissionPlanFormValues>;
+  watch: UseFormWatch<CommissionPlanFormValues>;
   onRemove?: () => void;
   canRemove: boolean;
 }
@@ -28,10 +29,16 @@ export function NetworkLevelConfigCard({
   register,
   control,
   errors,
+  watch,
   onRemove,
   canRemove,
 }: NetworkLevelConfigCardProps) {
   const levelErrors = errors.networkLevels?.[index];
+  const systemRateVal = watch(`networkLevels.${index}.systemRate`);
+  const merchantRateVal = watch(`networkLevels.${index}.rate`);
+  const safeSystemRate = Number.isFinite(systemRateVal) ? systemRateVal : 0;
+  const safeMerchantRate = Number.isFinite(merchantRateVal) ? merchantRateVal : 0;
+  const combinedRate = Number((safeSystemRate + safeMerchantRate).toFixed(2));
 
   return (
     <div className="rounded-xl border border-border bg-surface-1 p-5 space-y-5 shadow-xs transition-all hover:border-brand-300">
@@ -65,52 +72,92 @@ export function NetworkLevelConfigCard({
         )}
       </div>
 
-      {/* Primary configuration: Rate & Trigger */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-text flex items-center gap-1.5">
+      {/* Commission Allocation Split: System (Platform) vs Merchant (Marketer) */}
+      <div className="rounded-lg border border-border bg-surface p-4 space-y-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <p className="text-xs font-semibold text-text uppercase tracking-wider flex items-center gap-1.5">
             <Percent className="w-3.5 h-3.5 text-brand-600" />
-            Commission Rate (%) *
-          </label>
-          <Input
-            type="number"
-            step="0.1"
-            min="0"
-            max="100"
-            placeholder="e.g. 5"
-            {...register(`networkLevels.${index}.rate`, { valueAsNumber: true })}
-          />
-          {levelErrors?.rate && (
-            <p className="text-[11px] text-error font-medium">{levelErrors.rate.message}</p>
-          )}
-          <p className="text-[11px] text-text-muted">Percentage of qualifying base order amount.</p>
+            Level {levelNumber} Commission Split (System Always Earns)
+          </p>
+          <span className="text-xs font-medium text-text-muted">
+            System: <strong className="text-text">{safeSystemRate}%</strong> · Merchant:{' '}
+            <strong className="text-text">{safeMerchantRate}%</strong> · Combined:{' '}
+            <strong className={combinedRate > 100 ? 'text-error' : 'text-brand-700'}>
+              {combinedRate}%
+            </strong>
+          </span>
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-text flex items-center gap-1.5">
-            <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
-            Qualification Trigger *
-          </label>
-          <Controller
-            control={control}
-            name={`networkLevels.${index}.qualificationTrigger`}
-            render={({ field }) => (
-              <Select onValueChange={field.onChange} value={field.value}>
-                <SelectTrigger className="w-full">
-                  <SelectValue placeholder="Select Trigger" />
-                </SelectTrigger>
-                <SelectContent>
-                  {qualificationTriggerOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text flex items-center gap-1.5">
+              <Building2 className="w-3.5 h-3.5 text-brand-600" />
+              System Retained (%) *
+            </label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0.1"
+              max="100"
+              placeholder="e.g. 2"
+              {...register(`networkLevels.${index}.systemRate`, { valueAsNumber: true })}
+            />
+            {levelErrors?.systemRate && (
+              <p className="text-[11px] text-error font-medium">{levelErrors.systemRate.message}</p>
             )}
-          />
-          <p className="text-[11px] text-text-muted">Event required to qualify for this level reward.</p>
+            <p className="text-[11px] text-text-muted">
+              Mandatory platform share retained at Level {levelNumber}.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-brand-600" />
+              Merchant / Marketer (%) *
+            </label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              placeholder="e.g. 5"
+              {...register(`networkLevels.${index}.rate`, { valueAsNumber: true })}
+            />
+            {levelErrors?.rate && (
+              <p className="text-[11px] text-error font-medium">{levelErrors.rate.message}</p>
+            )}
+            <p className="text-[11px] text-text-muted">
+              Percentage allocated to the merchant/marketer at Level {levelNumber}.
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Qualification Trigger */}
+      <div className="space-y-1.5">
+        <label className="text-sm font-medium text-text flex items-center gap-1.5">
+          <ShieldCheck className="w-3.5 h-3.5 text-brand-600" />
+          Qualification Trigger *
+        </label>
+        <Controller
+          control={control}
+          name={`networkLevels.${index}.qualificationTrigger`}
+          render={({ field }) => (
+            <Select onValueChange={field.onChange} value={field.value}>
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="Select Trigger" />
+              </SelectTrigger>
+              <SelectContent>
+                {qualificationTriggerOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+        <p className="text-[11px] text-text-muted">Event required to qualify for this level reward.</p>
       </div>
 
       {/* Date constraints */}

@@ -59,7 +59,7 @@ export function MerchantDirectory() {
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
     queryKey: ['merchant_directory', q, category, state, minRating, verified, sort, page],
-    queryFn: () => getDirectoryMerchants({ q, category, state, minRating: Number(minRating) || undefined, verifiedOnly: verified, sort, page }),
+    queryFn: () => getDirectoryMerchants({ q, category, state, minRating: Number(minRating) || undefined, verifiedOnly: verified, sort, page, hasProducts: true }),
     placeholderData: prev => prev,
     retry: false,
   });

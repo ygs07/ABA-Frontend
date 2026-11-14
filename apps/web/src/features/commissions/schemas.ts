@@ -11,27 +11,36 @@ export const approvalModeOptions = [
   { value: 'manual', label: 'Manual Approval' },
 ] as const;
 
-export const networkLevelSchema = z.object({
-  level: z.number().min(1),
-  rate: z
-    .number()
-    .min(0, 'Rate must be 0 or higher')
-    .max(100, 'Rate cannot exceed 100%'),
-  effectiveFrom: z.string().optional(),
-  effectiveTo: z.string().optional(),
-  qualificationTrigger: z.enum(['order_paid', 'order_delivered', 'first_order_only']),
-  minOrderValue: z
-    .number()
-    .min(0, 'Minimum order value cannot be negative')
-    .optional()
-    .nullable(),
-  approvalMode: z.enum(['auto', 'manual']).optional(),
-  payoutDelay: z
-    .number()
-    .min(0, 'Payout delay cannot be negative')
-    .optional()
-    .nullable(),
-});
+export const networkLevelSchema = z
+  .object({
+    level: z.number().min(1),
+    systemRate: z
+      .number({ message: 'System commission rate is required' })
+      .min(0.1, 'System commission rate must be greater than 0%')
+      .max(100, 'System rate cannot exceed 100%'),
+    rate: z
+      .number({ message: 'Merchant/marketer rate is required' })
+      .min(0, 'Merchant/marketer rate must be 0 or higher')
+      .max(100, 'Rate cannot exceed 100%'),
+    effectiveFrom: z.string().optional(),
+    effectiveTo: z.string().optional(),
+    qualificationTrigger: z.enum(['order_paid', 'order_delivered', 'first_order_only']),
+    minOrderValue: z
+      .number()
+      .min(0, 'Minimum order value cannot be negative')
+      .optional()
+      .nullable(),
+    approvalMode: z.enum(['auto', 'manual']).optional(),
+    payoutDelay: z
+      .number()
+      .min(0, 'Payout delay cannot be negative')
+      .optional()
+      .nullable(),
+  })
+  .refine((lvl) => lvl.systemRate + lvl.rate <= 100, {
+    message: 'System % + Merchant % cannot exceed 100%',
+    path: ['rate'],
+  });
 
 export type NetworkLevelConfig = z.infer<typeof networkLevelSchema>;
 

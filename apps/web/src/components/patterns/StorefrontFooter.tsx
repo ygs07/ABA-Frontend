@@ -28,9 +28,8 @@ export function StorefrontFooter() {
             <h3 className="text-sm font-semibold text-text uppercase tracking-wider mb-4">Community</h3>
             <ul className="space-y-3 text-sm text-text-muted">
               <li><Link href="/about" className="hover:text-brand-600 transition-colors">About Us</Link></li>
-              <li><Link href="/referrals" className="hover:text-brand-600 transition-colors">Refer & Earn</Link></li>
-              <li><Link href="/wallet" className="hover:text-brand-600 transition-colors">ABA Wallet</Link></li>
-              <li><Link href="/blog" className="hover:text-brand-600 transition-colors">Blog & News</Link></li>
+              <li><Link href="/community" className="hover:text-brand-600 transition-colors">Refer & Earn</Link></li>
+              <li><Link href="/portal/wallet" className="hover:text-brand-600 transition-colors">Digital Wallet</Link></li>
             </ul>
           </div>
 

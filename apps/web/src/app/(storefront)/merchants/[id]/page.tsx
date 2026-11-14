@@ -208,7 +208,7 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
 
           <TabsContent value="feedback" className="mt-0 outline-none">
             <div className="bg-white rounded-2xl p-6 border border-border shadow-sm">
-              <h2 className="text-2xl font-bold text-text mb-2">Seller feedback <span className="text-text-muted font-normal">({merchant.rating || '2,855'})</span></h2>
+              <h2 className="text-2xl font-bold text-text mb-2">Seller feedback <span className="text-text-muted font-normal">({merchant.rating || '0'})</span></h2>
 
               <div className="mt-8">
                 <ReviewList

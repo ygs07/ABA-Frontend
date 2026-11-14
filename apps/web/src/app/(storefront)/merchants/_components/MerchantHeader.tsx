@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Store, Star, MapPin, Loader2 } from 'lucide-react';
+import { Store, Star, MapPin, Loader2, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MerchantProfile } from '@/features/merchant/types';
 import { ShareMenu } from '@/components/patterns/ShareMenu';
@@ -9,6 +9,7 @@ import { MessageSellerDialog } from './MessageSellerDialog';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { saveSeller, unsaveSeller } from '@/features/merchant/api';
 import { toast } from 'sonner';
+import { getWhatsAppLink } from '@/lib/utils';
 // Optionally, if auth is required for saveSeller, check user status.
 
 interface MerchantHeaderProps {
@@ -18,23 +19,6 @@ interface MerchantHeaderProps {
 export function MerchantHeader({ merchant }: MerchantHeaderProps) {
   const queryClient = useQueryClient();
 
-  const { mutate: toggleSave, isPending: isSaving } = useMutation({
-    mutationFn: async () => {
-      if (merchant.isSaved) {
-        return unsaveSeller(merchant.id);
-      }
-      return saveSeller(merchant.id);
-    },
-    onSuccess: () => {
-      toast.success(merchant.isSaved ? 'Removed from saved sellers' : 'Added to saved sellers');
-      queryClient.invalidateQueries({ queryKey: ['merchant', merchant.id] });
-      queryClient.invalidateQueries({ queryKey: ['saved_sellers'] });
-    },
-    onError: () => {
-      toast.error('Could not update saved seller status');
-    }
-  });
-
   return (
     <div className="bg-brand-700 min-h-[320px] md:min-h-[256px] relative flex flex-col justify-end">
       {merchant.bannerImage ? (
@@ -42,7 +26,7 @@ export function MerchantHeader({ merchant }: MerchantHeaderProps) {
       ) : (
         <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent"></div>
       )}
-      
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-16 pb-8 relative z-10 mt-auto">
         <div className="flex flex-col md:flex-row md:items-end gap-4 md:gap-6 w-full">
           <div className="w-24 h-24 md:w-32 md:h-32 bg-white rounded-xl border-4 border-white shadow-lg flex items-center justify-center shrink-0 overflow-hidden">
@@ -64,27 +48,22 @@ export function MerchantHeader({ merchant }: MerchantHeaderProps) {
               ) : merchant.isProvisional ? (
                 <span className="bg-amber-500/90 text-white px-2 py-0.5 rounded font-medium text-xs uppercase tracking-wide">Provisional Seller (60d)</span>
               ) : null}
-              <span className="text-sm opacity-90">{merchant.followerCount} Followers</span>
             </div>
           </div>
           <div className="flex flex-wrap gap-3 pb-2 sm:flex">
-            <Button 
-              onClick={() => toggleSave()}
-              disabled={isSaving}
-              className="bg-white text-brand-700 hover:bg-brand-50"
-            >
-              {isSaving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
-              {merchant.isSaved ? 'Following' : 'Follow Store'}
-            </Button>
-            <MessageSellerDialog merchantId={merchant.id} merchantName={merchant.name} />
-            <ShareMenu 
-              title={merchant.name} 
+            <a target='_blank' href={getWhatsAppLink(merchant.whatsappNumber || merchant.phone, merchant.name)} >
+              <Button variant="outline" className="text-white border-white hover:bg-white/10">
+                <MessageSquare className="w-4 h-4 mr-2" /> Message
+              </Button>
+            </a>
+            <ShareMenu
+              title={merchant.name}
               text={`Check out ${merchant.name} on ABA ERP`}
               url={`/merchants/${merchant.id}`}
             />
           </div>
         </div>
       </div>
-    </div>
+    </div >
   );
 }

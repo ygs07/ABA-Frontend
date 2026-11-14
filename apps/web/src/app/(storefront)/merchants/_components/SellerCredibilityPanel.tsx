@@ -20,7 +20,7 @@ export function SellerCredibilityPanel({ merchant }: SellerCredibilityPanelProps
         <h3 className="font-semibold text-text">Seller Credibility</h3>
       </div>
       
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+      {/* <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="flex flex-col">
           <span className="text-xs text-text-muted">Joined</span>
           <span className="font-medium">{new Date(merchant.joinedDate).getFullYear()}</span>
@@ -49,7 +49,7 @@ export function SellerCredibilityPanel({ merchant }: SellerCredibilityPanelProps
             )}
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Certifications Section */}
       {merchant.certifications && merchant.certifications.length > 0 && (
@@ -94,7 +94,7 @@ export function SellerCredibilityPanel({ merchant }: SellerCredibilityPanelProps
         </div>
       </div>
 
-      {merchant.monthlyOrderCounts && merchant.monthlyOrderCounts.length > 0 && (
+      {/* {merchant.monthlyOrderCounts && merchant.monthlyOrderCounts.length > 0 && (
         <div className="mt-6 pt-4 border-t border-border">
           <span className="text-xs text-text-muted block mb-3">Sales History (Last 4 Months)</span>
           <div className="flex items-end gap-2 h-16">
@@ -105,7 +105,6 @@ export function SellerCredibilityPanel({ merchant }: SellerCredibilityPanelProps
                     className="absolute bottom-0 w-full bg-brand-500 rounded-t-sm transition-all duration-300"
                     style={{ height: `${(monthData.count / maxOrderCount) * 100}%` }}
                   />
-                  {/* Tooltip */}
                   <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-gray-900 text-white text-xs py-1 px-2 rounded pointer-events-none whitespace-nowrap z-10 shadow-lg">
                     {monthData.count} orders
                     <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
@@ -116,7 +115,7 @@ export function SellerCredibilityPanel({ merchant }: SellerCredibilityPanelProps
             ))}
           </div>
         </div>
-      )}
+      )} */}
     </div>
   );
 }

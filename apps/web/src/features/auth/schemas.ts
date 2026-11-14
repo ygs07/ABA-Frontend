@@ -1,3 +1,4 @@
+import { NIGERIAN_PHONE_REGEX, normalizeNigerianPhone } from '@/app/(storefront)/merchants/onboarding/types';
 import { z } from 'zod';
 
 export const loginSchema = z.object({
@@ -12,7 +13,11 @@ export const signupSchema = z.object({
   first_name: z.string().trim().min(1, 'First name is required'),
   last_name: z.string().trim().min(1, 'Last name is required'),
   middle_name: z.string().trim().optional(),
-  phone: z.string().trim().min(1, 'Phone number is required'),
+  phone: z
+    .string()
+    .refine((val) => NIGERIAN_PHONE_REGEX.test(normalizeNigerianPhone(val)), {
+      message: 'Enter a valid Nigerian phone number (e.g. 08031234567 or +2348031234567)',
+    }),
   email: z.string().email('Enter a valid email address'),
   password: z.string().min(1, 'Password is required'),
   confirm_password: z.string().min(1, 'Please confirm your password'),
@@ -43,7 +48,11 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 
 export const updateProfileSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
-  phone: z.string().min(10, 'Enter a valid phone number').optional(),
+  phone: z
+    .string()
+    .refine((val) => NIGERIAN_PHONE_REGEX.test(normalizeNigerianPhone(val)), {
+      message: 'Enter a valid Nigerian phone number (e.g. 08031234567 or +2348031234567)',
+    }),
   email: z.string().email('Enter a valid email address'),
   language: z.string().default('English'),
   timezone: z.string().default('Africa/Lagos'),

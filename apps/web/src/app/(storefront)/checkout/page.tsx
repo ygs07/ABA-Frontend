@@ -2,8 +2,7 @@
 
 import { brand } from '@/config/brand';
 
-import { Suspense, useState, useEffect, useMemo, useCallback, useRef } from 'react';
-import debounce from 'lodash/debounce';
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 
 import Link from 'next/link';
 
@@ -31,6 +30,7 @@ import { ErrorState } from '@/components/patterns/ErrorState';
 import { getCustomerWalletBalance, getShoppingCreditBalance } from '@/features/portal/api';
 import { useAuthStore } from '@/features/auth/store';
 import { NIGERIAN_STATES } from '@/lib/constants/nigeria';
+import { useDebouncedValue } from '@/lib/useDebouncedValue';
 
 const CHECKOUT_STORAGE_KEY = 'aba_checkout_state';
 
@@ -53,6 +53,7 @@ function CheckoutContent() {
   const clearCart = useCartStore((state) => state.clearCart);
 
   const hasRestoredRef = useRef(false);
+  const hasRedirectedEmptyCartRef = useRef(false);
   const [step, setStep] = useState(1);
   const [isRestored, setIsRestored] = useState(false);
 
@@ -69,27 +70,30 @@ function CheckoutContent() {
   const [selectedReferral, setSelectedReferral] = useState<ReferralCandidate | null>(null);
 
   const [appliedReferral, setAppliedReferral] = useState<{ code: string, name: string } | null>(null);
-
-  const debouncedReferralSearch = useMemo(
-    () => debounce(async (value: string) => {
-      try {
-        setSearchResults(await searchReferralCandidates(value));
-      } catch {
-        setSearchResults([]);
-      }
-    }, 350),
-    [],
-  );
+  const debouncedReferralInput = useDebouncedValue(referralInput, 350);
 
   useEffect(() => {
-    if (referralInput.trim().length >= 2) {
-      debouncedReferralSearch(referralInput);
-    } else {
-      debouncedReferralSearch.cancel();
-      setSearchResults([]);
-    }
-    return () => debouncedReferralSearch.cancel();
-  }, [debouncedReferralSearch, referralInput]);
+    const query = debouncedReferralInput.trim();
+    if (query.length < 2) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const results = await searchReferralCandidates(query);
+        if (!cancelled) {
+          setSearchResults(results);
+        }
+      } catch {
+        if (!cancelled) {
+          setSearchResults([]);
+        }
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedReferralInput]);
 
   const [addressForm, setAddressForm] = useState<CheckoutAddressInput>({
 
@@ -337,7 +341,7 @@ function CheckoutContent() {
 
     },
 
-    enabled: !!cartData?.id
+    enabled: Boolean(cartData?.id && cartData.items.length > 0)
 
   });
 
@@ -429,7 +433,17 @@ function CheckoutContent() {
 
   ];
 
-  if (isCartLoading || isSessionLoading || isWalletLoading || isAddressesLoading) {
+  const isCartEmpty = !isCartLoading && !cartError && (!cartData || cartData.items.length === 0);
+
+  useEffect(() => {
+    if (!isCartEmpty || processMutation.isPending || processMutation.isSuccess) return;
+    if (hasRedirectedEmptyCartRef.current) return;
+    hasRedirectedEmptyCartRef.current = true;
+    toast.info('Your cart is empty. Add items before proceeding to checkout.');
+    router.replace('/cart');
+  }, [isCartEmpty, processMutation.isPending, processMutation.isSuccess, router]);
+
+  if (isCartLoading || isSessionLoading || isWalletLoading || isAddressesLoading || isCartEmpty) {
 
     return (
 
@@ -1029,7 +1043,14 @@ function CheckoutContent() {
 
                       value={referralInput}
 
-                      onChange={(e) => { setReferralInput(e.target.value); setSelectedReferral(null); }}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        setReferralInput(value);
+                        setSelectedReferral(null);
+                        if (value.trim().length < 2) {
+                          setSearchResults([]);
+                        }
+                      }}
 
                       className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500 outline-none"
 
@@ -1083,7 +1104,7 @@ function CheckoutContent() {
                   {selectedReferral && (
                     <div className="flex items-center justify-between rounded border border-brand-200 bg-brand-50 p-3 text-sm">
                       <span>Use <strong>{selectedReferral.name}</strong>&apos;s referral code?</span>
-                      <div className="flex gap-2"><Button type="button" size="sm" variant="outline" onClick={() => setSelectedReferral(null)}>Cancel</Button><Button type="button" size="sm" onClick={() => { setAppliedReferral({ code: selectedReferral.referralCode, name: selectedReferral.name }); setSelectedReferral(null); setReferralInput(''); }}>Confirm</Button></div>
+                      <div className="flex gap-2"><Button type="button" size="sm" variant="outline" onClick={() => setSelectedReferral(null)}>Cancel</Button><Button type="button" size="sm" onClick={() => { setAppliedReferral({ code: selectedReferral.referralCode, name: selectedReferral.name }); setSelectedReferral(null); setReferralInput(''); setSearchResults([]); }}>Confirm</Button></div>
                     </div>
                   )}
                   <p className="text-xs text-text-muted">Search by referral code or username, then confirm the customer who referred you.</p>

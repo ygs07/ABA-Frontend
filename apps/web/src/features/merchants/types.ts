@@ -35,31 +35,34 @@ export interface Merchant {
   certifications?: MerchantCertification[];
   /** Full category slug paths (root/sub/leaf) the merchant sells in. Used by CategoryFilter. */
   categoryPaths?: string[];
-  
+
   // Contact
   ownerName: string;
   phone: string;
+  whatsappNumber?: string;
   email: string;
   website?: string;
-  
+
   // Location
   address: string;
   city: string;
   state: string;
   lga?: string;
-  
+  location?: string;
+  business_address?: string;
+
   // Settlement
   settlementBank: BankDetails;
   settlementFrequency: 'Daily' | 'Weekly' | 'On request';
-  
+
   // Commercial
   priceList: 'Default' | 'Wholesale';
   discountLimit: number;
   creditLimit: number;
-  
+
   status: MerchantStatus;
   onboardedAt: string;
-  
+
   // KPIs
   salesPeriod: number; // 30d sales in Kobo
   ordersCount: number;
@@ -95,6 +98,7 @@ export interface DirectoryParams {
   sort?: MerchantSort;
   page?: number;
   pageSize?: number;
+  hasProducts?: boolean;
 }
 
 export interface DirectoryResult {

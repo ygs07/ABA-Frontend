@@ -7,7 +7,7 @@ export interface MerchantProfile extends Merchant {
   joinedDate: string;
   isVerified: boolean;
   totalProducts: number;
-  location: string;
+  // location: string;
   followerCount: number;
   onTimeDispatch: number; // percentage
   returnRate: number; // percentage

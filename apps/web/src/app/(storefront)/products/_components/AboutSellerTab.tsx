@@ -1,9 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Calendar, Store, MessageCircle, Heart, Star, CheckCircle2 } from 'lucide-react';
+import { Calendar, Store, MessageCircle, Heart, Star, CheckCircle2, Phone } from 'lucide-react';
 import { Merchant } from '@/features/merchants/types';
 import { ReviewList } from '@/features/reviews';
+import { getWhatsAppLink } from '@/lib/utils';
 
 interface AboutSellerTabProps {
   merchant: Merchant;
@@ -12,19 +13,6 @@ interface AboutSellerTabProps {
 }
 
 export function AboutSellerTab({ merchant, productId, isEligibleToReview }: AboutSellerTabProps) {
-
-  const getWhatsAppLink = (phoneNumber: string | number, name: string) => {
-    const cleanedNumber = String(phoneNumber).replace(/\D/g, "");
-
-    // Convert Nigerian local numbers to international format
-    const formattedNumber = cleanedNumber.startsWith("0")
-      ? `234${cleanedNumber.slice(1)}`
-      : cleanedNumber;
-
-    const message = `Hello ${name}, I'm interested in your products`;
-
-    return `https://wa.me/${formattedNumber}?text=${encodeURIComponent(message)}`;
-  };
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-12 py-8 animate-in fade-in">
@@ -43,7 +31,7 @@ export function AboutSellerTab({ merchant, productId, isEligibleToReview }: Abou
             </div>
             <div>
               <h3 className="text-xl font-bold text-text">{merchant.name}</h3>
-              <p className="text-sm text-text-muted mt-1">99.9% positive feedback &middot; 5.7K items sold</p>
+              <p className="text-sm text-text-muted mt-1">99.9% positive feedback &middot; {(merchant?.ordersCount || 0).toLocaleString('en-NG')} items sold</p>
             </div>
           </div>
 
@@ -58,18 +46,21 @@ export function AboutSellerTab({ merchant, productId, isEligibleToReview }: Abou
                 Visit store
               </Button>
             </Link>
-            <Link href={getWhatsAppLink(merchant.phone, merchant.name)} target='_blank' className="w-full">
+            <Link href={getWhatsAppLink(merchant.whatsappNumber || merchant.phone, merchant.name)} target='_blank' className="w-full">
               <Button variant="outline" className="w-full rounded-full h-10 font-medium text-brand-600 border-brand-200 hover:bg-brand-50">
                 <MessageCircle className="w-4 h-4 mr-2" /> Message seller
               </Button>
             </Link>
-            {/* <Button variant="outline" className="w-full rounded-full h-10 font-medium text-brand-600 border-brand-200 hover:bg-brand-50">
-              <Heart className="w-4 h-4 mr-2" /> Save seller
-            </Button> */}
+            <Link href={`tel:${merchant.phone}`} target='_blank' className="w-full">
+              <Button variant="outline" className="w-full rounded-full h-10 font-medium text-brand-600 border-brand-200 hover:bg-brand-50">
+                <Phone className="w-4 h-4 mr-2" /> Call seller
+              </Button>
+            </Link>
           </div>
         </div>
 
-        <div className="border-t border-border pt-8">
+        {/* Leave commented for now */}
+        {/* <div className="border-t border-border pt-8">
           <h3 className="text-lg font-bold text-text mb-6">Detailed seller ratings</h3>
           <div className="space-y-4">
             <div className="flex justify-between items-center text-sm">
@@ -110,7 +101,7 @@ export function AboutSellerTab({ merchant, productId, isEligibleToReview }: Abou
             </div>
           </div>
           <p className="text-xs text-text-muted mt-4">Average for the last 12 months</p>
-        </div>
+        </div> */}
 
         {/* When the endpoints for Popular categories is already  */}
         {/* <div className="border-t border-border pt-8">
