@@ -1,86 +1,97 @@
 'use client';
-import { brand } from '@/config/brand';
 
-
-import React, { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useForm } from 'react-hook-form'; // Wait, it's react-hook-form
-import { useForm as useReactHookForm } from 'react-hook-form';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { CategoryFormValues, categorySchema } from '../schemas';
-import { createCategory } from '../api';
+import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import { createCategory, createSubcategory, getCategoryHierarchy, ProductCategory } from '../api';
+
+const schema = z.object({
+  kind: z.enum(['category', 'subcategory']),
+  categoryId: z.string().optional(),
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(150),
+  slug: z.string().trim().max(180).regex(/^[a-z0-9-]*$/, 'Use lowercase letters, numbers, and hyphens only').optional(),
+  description: z.string().trim().max(5000).optional(),
+  isActive: z.boolean(),
+}).superRefine((value, context) => {
+  if (value.kind === 'subcategory' && (!value.categoryId || Number(value.categoryId) <= 0)) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['categoryId'], message: 'Select the parent category' });
+  }
+});
+
+type FormValues = z.infer<typeof schema>;
 
 export function CategoryForm() {
   const router = useRouter();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors },
-  } = useReactHookForm<CategoryFormValues>({
-    resolver: zodResolver(categorySchema),
-    defaultValues: {
-      name: '',
-      slug: '',
-      image: '',
-      sortOrder: 0,
-      status: 'active',
-      showInMenu: true,
-      featuredMerchantIds: [],
-    },
+  const searchParams = useSearchParams();
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [loadingCategories, setLoadingCategories] = useState(true);
+  const defaultKind = searchParams.get('type') === 'subcategory' ? 'subcategory' : 'category';
+  const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<FormValues>({
+    resolver: zodResolver(schema),
+    defaultValues: { kind: defaultKind, name: '', slug: '', description: '', isActive: true },
   });
+  const kind = watch('kind');
 
-  const onSubmit = async (data: CategoryFormValues) => {
-    setIsSubmitting(true);
+  useEffect(() => {
+    void getCategoryHierarchy()
+      .then((result) => setCategories(result.data))
+      .catch(() => toast.error('Unable to load parent categories'))
+      .finally(() => setLoadingCategories(false));
+  }, []);
+
+  const onSubmit = async (values: FormValues) => {
+    const payload = {
+      name: values.name,
+      ...(values.slug ? { slug: values.slug } : {}),
+      ...(values.description ? { description: values.description } : {}),
+      isActive: values.isActive,
+    };
     try {
-      await createCategory(data);
-      toast.success('Category created successfully');
+      if (values.kind === 'subcategory') {
+        await createSubcategory({ ...payload, categoryId: Number(values.categoryId) });
+        toast.success('Subcategory created successfully');
+      } else {
+        await createCategory(payload);
+        toast.success('Category created successfully');
+      }
       router.push('/erp/categories');
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : 'Failed to create category');
-    } finally {
-      setIsSubmitting(false);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : `Unable to create ${values.kind}`);
     }
   };
 
   return (
-    <div className="max-w-2xl">
-      <div className="bg-surface border border-border rounded-xl p-6 shadow-sm">
-        <h3 className="text-lg font-semibold mb-6">Category Details</h3>
-        
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Category Name <span className="text-error">*</span></label>
-            <Input {...register('name')} placeholder="e.g., Electronics" className={errors.name ? "border-error" : ""} />
-            {errors.name && <p className="text-xs text-error">{errors.name.message}</p>}
-          </div>
+    <div className="max-w-2xl rounded-xl border border-border bg-surface p-6 shadow-sm">
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Record type <span className="text-error">*</span></label>
+          <select {...register('kind')} className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm">
+            <option value="category">Top-level category</option>
+            <option value="subcategory">Subcategory</option>
+          </select>
+          <p className="text-xs text-text-muted">Categories are top-level catalogue groups. Subcategories must belong to one category.</p>
+        </div>
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">URL Slug <span className="text-error">*</span></label>
-            <Input {...register('slug')} placeholder="e.g., electronics" className={errors.slug ? "border-error" : ""} />
-            {errors.slug && <p className="text-xs text-error">{errors.slug.message}</p>}
-            <p className="text-xs text-text-muted">Unique identifier used in URLs (e.g. ${brand.domain}/categories/electronics)</p>
-          </div>
+        {kind === 'subcategory' && <div className="space-y-2">
+          <label className="text-sm font-medium">Parent category <span className="text-error">*</span></label>
+          <select {...register('categoryId')} disabled={loadingCategories} className="h-10 w-full rounded-md border border-border bg-surface px-3 text-sm disabled:opacity-60">
+            <option value="">{loadingCategories ? 'Loading categories…' : 'Select a category'}</option>
+            {categories.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
+          </select>
+          {errors.categoryId && <p className="text-xs text-error">{errors.categoryId.message}</p>}
+        </div>}
 
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Image URL</label>
-            <Input {...register('image')} placeholder="https://..." className={errors.image ? "border-error" : ""} />
-            {errors.image && <p className="text-xs text-error">{errors.image.message}</p>}
-            <p className="text-xs text-text-muted">Direct link to an image for this category</p>
-          </div>
-
-          <div className="flex gap-4 pt-4 border-t border-border">
-            <Button type="button" variant="outline" onClick={() => router.back()}>Cancel</Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? 'Saving...' : 'Save Category'}
-            </Button>
-          </div>
-        </form>
-      </div>
+        <div className="space-y-2"><label className="text-sm font-medium">Name <span className="text-error">*</span></label><Input {...register('name')} placeholder={kind === 'subcategory' ? 'e.g. Mobile Phones' : 'e.g. Electronics'} error={errors.name?.message} /></div>
+        <div className="space-y-2"><label className="text-sm font-medium">Slug <span className="text-xs font-normal text-text-muted">(optional)</span></label><Input {...register('slug')} placeholder="Generated from the name when left blank" error={errors.slug?.message} /><p className="text-xs text-text-muted">A unique URL-safe slug is generated by the API if omitted.</p></div>
+        <div className="space-y-2"><label className="text-sm font-medium">Description <span className="text-xs font-normal text-text-muted">(optional)</span></label><textarea {...register('description')} rows={4} className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm" placeholder="Briefly describe the products in this category." />{errors.description && <p className="text-xs text-error">{errors.description.message}</p>}</div>
+        <label className="flex items-center gap-2 text-sm font-medium"><input type="checkbox" {...register('isActive')} />Active in the catalogue</label>
+        <div className="flex gap-4 border-t border-border pt-4"><Button type="button" variant="outline" onClick={() => router.push('/erp/categories')}>Cancel</Button><Button type="submit" loading={isSubmitting}>{isSubmitting ? 'Saving…' : `Create ${kind === 'subcategory' ? 'Subcategory' : 'Category'}`}</Button></div>
+      </form>
     </div>
   );
 }
