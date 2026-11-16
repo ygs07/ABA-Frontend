@@ -109,11 +109,15 @@ function toCommissionRecord(commission: BackendCommission): CommissionRecord {
 
 export async function getCommissionPlans(): Promise<{ data: CommissionPlan[] }> {
   if (API_MODE !== 'mock') {
-    const response = await fetchApi<{ data: BackendCommissionRule[] }>('/api/v1/commission-rules?limit=100');
+    const response = await getCommissionRules();
     return { data: response.data.map(toCommissionPlan) };
   }
   await delay(300);
   return { data: [...mockCommissionPlans] };
+}
+
+export async function getCommissionRules(): Promise<{ data: BackendCommissionRule[] }> {
+  return fetchApi<{ data: BackendCommissionRule[] }>('/api/v1/commission-rules?limit=100');
 }
 
 export type CommissionRuleInput = {
