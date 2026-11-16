@@ -7,11 +7,11 @@ import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/patterns/DataTable';
 import { useQuery } from '@tanstack/react-query';
 import { getReferralRecords } from '@/features/referrals/api';
-import { useState } from 'react';
+import { useDeferredValue, useState } from 'react';
 
 export default function ReferralsDashboardPage() {
   const [search, setSearch] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState('');
+  const appliedSearch = useDeferredValue(search.trim());
   const { data, isLoading } = useQuery({
     queryKey: ['referral-records', appliedSearch],
     queryFn: () => getReferralRecords({ search: appliedSearch }),
@@ -75,11 +75,10 @@ export default function ReferralsDashboardPage() {
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
         <div className="p-4 border-b border-border flex justify-between items-center bg-surface-2">
           <h3 className="font-medium">Recent Referrals</h3>
-          <form className="flex gap-2" onSubmit={(event) => { event.preventDefault(); setAppliedSearch(search); }}>
+          <div className="flex gap-2">
             <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search code, referrer, or referred user..." className="h-9 w-72 text-sm" />
-            <Button type="submit" variant="outline" size="sm">Search</Button>
-            {appliedSearch && <Button type="button" variant="ghost" size="sm" onClick={() => { setSearch(''); setAppliedSearch(''); }}>Clear</Button>}
-          </form>
+            {search && <Button type="button" variant="ghost" size="sm" onClick={() => setSearch('')}>Clear</Button>}
+          </div>
         </div>
         <DataTable data={referrals} columns={columns} isLoading={isLoading} emptyMessage="No referrals match the selected search." />
       </div>
