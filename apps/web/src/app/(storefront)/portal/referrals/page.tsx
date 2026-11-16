@@ -7,7 +7,6 @@ import { useQuery } from '@tanstack/react-query';
 import { getOwnKycProfile, getReferralStats } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
-import { ReferralActivationCard } from '@/features/portal/components/ReferralActivationCard';
 
 export default function PortalReferralsPage() {
   const [copied, setCopied] = useState(false);
@@ -63,9 +62,6 @@ export default function PortalReferralsPage() {
           </Button>
         </div>}
       </div>
-
-      {/* Referral Activation Notice & KYC/Fee Payment Card */}
-      <ReferralActivationCard referralCode={referralCode} />
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
