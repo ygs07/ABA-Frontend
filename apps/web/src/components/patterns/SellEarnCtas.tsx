@@ -36,7 +36,7 @@ export function SellEarnCtas() {
           </div>
 
           <Link href="/merchants/onboarding" className="flex items-center justify-center w-full bg-brand-500 text-white py-2 font-bold text-base hover:bg-brand-500/90 transition-colors mb-1 rounded-md">
-            List an item
+            Start selling
           </Link>
           <Link href="#" className="flex items-center justify-center w-full bg-white text-brand-950 py-2 font-bold text-base border border-border hover:bg-gray-50 transition-colors rounded-md">
             Download the app

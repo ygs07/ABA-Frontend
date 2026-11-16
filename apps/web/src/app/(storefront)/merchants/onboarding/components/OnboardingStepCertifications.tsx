@@ -78,6 +78,9 @@ export function OnboardingStepCertifications({
                 className="w-full h-11 pl-10 pr-4 rounded-lg border border-border text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
               />
             </div>
+            {errors.certificationNumber && (
+              <p className="text-error text-xs mt-1">{errors.certificationNumber.message}</p>
+            )}
           </div>
 
           <OnboardingFileUpload
@@ -87,14 +90,17 @@ export function OnboardingStepCertifications({
             isUploaded={certUploaded || Boolean(form.watch('certificationDocumentName'))}
             accept=".pdf,.jpg,.jpeg,.png"
             onFileSelect={(file) => {
-              form.setValue('certificationDocumentName', file.name);
+              form.setValue('certificationDocumentName', file.name, { shouldValidate: true });
               onUploadCert(file);
             }}
             onRemove={() => {
-              form.setValue('certificationDocumentName', undefined);
+              form.setValue('certificationDocumentName', undefined, { shouldValidate: true });
               onRemoveCert();
             }}
           />
+          {errors.certificationDocumentName && (
+            <p className="text-error text-xs -mt-2">{errors.certificationDocumentName.message}</p>
+          )}
         </div>
       )}
 

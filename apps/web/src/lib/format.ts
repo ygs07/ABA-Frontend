@@ -5,7 +5,7 @@
 export function formatDate(isoDate: string | Date): string {
   if (!isoDate) return '';
   const date = typeof isoDate === 'string' ? new Date(isoDate) : isoDate;
-  
+
   return new Intl.DateTimeFormat('en-NG', {
     timeZone: 'Africa/Lagos',
     day: '2-digit',
@@ -21,7 +21,7 @@ export function formatDate(isoDate: string | Date): string {
 export function formatDateTime(isoDate: string | Date): string {
   if (!isoDate) return '';
   const date = typeof isoDate === 'string' ? new Date(isoDate) : isoDate;
-  
+
   return new Intl.DateTimeFormat('en-NG', {
     timeZone: 'Africa/Lagos',
     day: '2-digit',
@@ -42,7 +42,7 @@ export function formatDateTime(isoDate: string | Date): string {
 export function normalizePhone(phone: string): string {
   if (!phone) return '';
   const digits = phone.replace(/\D/g, '');
-  
+
   if (digits.startsWith('234')) {
     return '+' + digits;
   }
@@ -75,4 +75,12 @@ export function formatMoney(amountInKobo: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
+}
+
+export function getAmountFontSize(amountInKobo: number): string {
+  const absNaira = Math.abs(amountInKobo) / 100;
+  if (absNaira >= 100_000_000) return 'text-base sm:text-lg xl:text-xl';
+  if (absNaira >= 10_000_000) return 'text-lg sm:text-xl xl:text-2xl';
+  if (absNaira >= 1_000_000) return 'text-xl sm:text-2xl xl:text-2xl';
+  return 'text-2xl sm:text-3xl';
 }

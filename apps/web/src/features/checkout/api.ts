@@ -1,6 +1,7 @@
 import { API_MODE, ApiError, fetchApi } from '@/lib/api';
 import { CheckoutAddressInput, CheckoutPaymentInput } from './schemas';
-import { CheckoutSession } from './types';
+import { CheckoutSession, OrderDetail } from './types';
+import { sampleOrderData } from './mocks';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -19,7 +20,7 @@ export async function searchReferralCandidates(query: string): Promise<ReferralC
   );
 }
 
-export async function initializeCheckout(cartId: string): Promise<{ data: CheckoutSession }> {
+export async function initializeCheckout(_cartId: string): Promise<{ data: CheckoutSession }> {
   await delay(500);
   return { 
     data: {
@@ -122,4 +123,14 @@ export type DeliveryAddress = {
 
 export async function getDeliveryAddresses(): Promise<{ data: DeliveryAddress[] }> {
   return fetchApi<{ data: DeliveryAddress[] }>('/api/v1/delivery-address?limit=100');
+}
+
+export async function getOrderDetail(id: string | number): Promise<OrderDetail> {
+  if (API_MODE === 'mock') {
+    return sampleOrderData;
+  }
+  const endpoint = /^\d+$/.test(String(id))
+    ? `/api/v1/orders/id/${encodeURIComponent(id)}`
+    : `/api/v1/orders/${encodeURIComponent(id)}`;
+  return fetchApi<OrderDetail>(endpoint);
 }

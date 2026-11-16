@@ -23,7 +23,7 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
 
   static const List<_BannerItem> _banners = [
     _BannerItem(
-      assetPath: 'assets/images/banners/Aba Online_ Shop Local, Shop Aba.png',
+      assetPath: 'assets/images/banners/BuyNaija_ Shop Local, Shop Aba.png',
       tag: 'SHOP LOCAL',
       title: 'Shop Local, BuyNaija',
       subtitle: 'Direct from authentic makers & manufacturers',
@@ -107,9 +107,8 @@ class _HomeHeroBannerState extends State<HomeHeroBanner> {
                             imageUrl: widget.imageUrl,
                             fit: BoxFit.cover,
                             fallbackType: AppImageFallbackType.banner,
-                            errorWidget: (_, __, ___) => Container(
-                              color: AppColors.primary,
-                            ),
+                            errorWidget: (_, __, ___) =>
+                                Container(color: AppColors.primary),
                           ),
                         ),
 

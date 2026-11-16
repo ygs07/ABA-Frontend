@@ -1,9 +1,10 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Calendar, Store, MessageCircle, Heart, Star, CheckCircle2 } from 'lucide-react';
+import { Calendar, Store, MessageCircle, Heart, Star, CheckCircle2, Phone } from 'lucide-react';
 import { Merchant } from '@/features/merchants/types';
 import { ReviewList } from '@/features/reviews';
+import { getWhatsAppLink } from '@/lib/utils';
 
 interface AboutSellerTabProps {
   merchant: Merchant;
@@ -12,13 +13,14 @@ interface AboutSellerTabProps {
 }
 
 export function AboutSellerTab({ merchant, productId, isEligibleToReview }: AboutSellerTabProps) {
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-12 gap-12 py-8 animate-in fade-in">
       {/* Left Column: About Seller */}
       <div className="md:col-span-4 space-y-8">
         <div>
           <h2 className="text-2xl font-bold text-text mb-6">About this seller</h2>
-          
+
           <div className="flex items-center gap-4 mb-6">
             <div className="w-16 h-16 rounded-full bg-surface-2 border border-border flex items-center justify-center overflow-hidden shrink-0">
               {merchant.logoUrl ? (
@@ -29,7 +31,7 @@ export function AboutSellerTab({ merchant, productId, isEligibleToReview }: Abou
             </div>
             <div>
               <h3 className="text-xl font-bold text-text">{merchant.name}</h3>
-              <p className="text-sm text-text-muted mt-1">99.9% positive feedback &middot; 5.7K items sold</p>
+              <p className="text-sm text-text-muted mt-1">99.9% positive feedback &middot; {(merchant?.ordersCount || 0).toLocaleString('en-NG')} items sold</p>
             </div>
           </div>
 
@@ -39,21 +41,26 @@ export function AboutSellerTab({ merchant, productId, isEligibleToReview }: Abou
           </div>
 
           <div className="flex flex-col gap-3">
-            <Link href={`/merchants/${merchant.id}`} className="w-full">
+            <Link href={`/ merchants / ${merchant.id} `} className="w-full">
               <Button className="w-full rounded-full h-10 font-medium" variant="primary">
                 Visit store
               </Button>
             </Link>
-            <Button variant="outline" className="w-full rounded-full h-10 font-medium text-brand-600 border-brand-200 hover:bg-brand-50">
-              <MessageCircle className="w-4 h-4 mr-2" /> Message seller
-            </Button>
-            <Button variant="outline" className="w-full rounded-full h-10 font-medium text-brand-600 border-brand-200 hover:bg-brand-50">
-              <Heart className="w-4 h-4 mr-2" /> Save seller
-            </Button>
+            <Link href={getWhatsAppLink(merchant.whatsappNumber || merchant.phone, merchant.name)} target='_blank' className="w-full">
+              <Button variant="outline" className="w-full rounded-full h-10 font-medium text-brand-600 border-brand-200 hover:bg-brand-50">
+                <MessageCircle className="w-4 h-4 mr-2" /> Message seller
+              </Button>
+            </Link>
+            <Link href={`tel:${merchant.phone}`} target='_blank' className="w-full">
+              <Button variant="outline" className="w-full rounded-full h-10 font-medium text-brand-600 border-brand-200 hover:bg-brand-50">
+                <Phone className="w-4 h-4 mr-2" /> Call seller
+              </Button>
+            </Link>
           </div>
         </div>
 
-        <div className="border-t border-border pt-8">
+        {/* Leave commented for now */}
+        {/* <div className="border-t border-border pt-8">
           <h3 className="text-lg font-bold text-text mb-6">Detailed seller ratings</h3>
           <div className="space-y-4">
             <div className="flex justify-between items-center text-sm">
@@ -94,40 +101,43 @@ export function AboutSellerTab({ merchant, productId, isEligibleToReview }: Abou
             </div>
           </div>
           <p className="text-xs text-text-muted mt-4">Average for the last 12 months</p>
-        </div>
+        </div> */}
 
-        <div className="border-t border-border pt-8">
+        {/* When the endpoints for Popular categories is already  */}
+        {/* <div className="border-t border-border pt-8">
           <div className="flex justify-between items-end mb-4">
             <h3 className="text-lg font-bold text-text">Popular categories</h3>
-            <Link href={`/merchants/${merchant.id}`} className="text-sm font-medium text-text underline hover:text-brand-600">See all</Link>
+            <Link href={`/ merchants / ${merchant.id} `} className="text-sm font-medium text-text underline hover:text-brand-600">See all</Link>
           </div>
           <div className="flex flex-wrap gap-2">
             <span className="px-3 py-1.5 bg-surface-1 rounded-full text-sm text-text border border-border">Consumer Electronics</span>
             <span className="px-3 py-1.5 bg-surface-1 rounded-full text-sm text-text border border-border">Fashion & Apparel</span>
           </div>
-        </div>
+        </div> */}
 
         {/* Network / Referral placeholder as requested by user */}
         <div className="border-t border-border pt-8">
           <h3 className="text-lg font-bold text-text mb-4">Referral Network</h3>
           <div className="bg-brand-50 border border-brand-100 rounded-xl p-4">
             <p className="text-sm text-brand-800 mb-3">
-              This merchant is part of the Aba Online referral network. You can earn commissions by referring their products!
+              This merchant is part of the BuyNaija referral network. You can earn commissions by referring their products!
             </p>
-            <Button size="sm" variant="outline" className="w-full bg-white border-brand-200 text-brand-700 hover:bg-brand-100">
-              Join their network
-            </Button>
+            <Link href={`/auth/register/?ref=${merchant.id}`}>
+              <Button size="sm" variant="outline" className="w-full bg-white border-brand-200 text-brand-700 hover:bg-brand-100">
+                Join their network
+              </Button>
+            </Link>
           </div>
         </div>
       </div>
 
       {/* Right Column: Seller Feedback / Reviews */}
       <div className="md:col-span-8 bg-surface rounded-2xl p-6 border border-border">
-        <h2 className="text-2xl font-bold text-text mb-2">Seller feedback <span className="text-text-muted font-normal">(2,855)</span></h2>
-        
+        <h2 className="text-2xl font-bold text-text mb-2">Seller feedback <span className="text-text-muted font-normal">(0)</span></h2>
+
         <div className="mt-8">
-          <ReviewList 
-            productId={productId} 
+          <ReviewList
+            productId={productId}
             isEligibleToReview={isEligibleToReview}
           />
         </div>

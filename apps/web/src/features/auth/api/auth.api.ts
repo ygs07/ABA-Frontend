@@ -112,13 +112,6 @@ export const login = async (data: LoginInput): Promise<LoginResponse> => {
 };
 
 export function getUserHome(user: User): string {
-  if (
-    user.userType === 'Merchant' &&
-    user.merchantOnboardingStatus !== undefined &&
-    user.merchantOnboardingStatus !== 3
-  ) {
-    return '/erp/onboarding';
-  }
   switch (user.userType) {
     case "Customer":
       return "/portal/dashboard";

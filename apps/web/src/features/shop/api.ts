@@ -123,6 +123,7 @@ export async function getDirectoryMerchants(params: DirectoryParams = {}): Promi
     const search = new URLSearchParams({
       page: String(params.page ?? 1),
       limit: String(params.pageSize ?? storefrontConfig.merchantDirectory.pageSize),
+      hasProducts: String(params.hasProducts ?? true),
     });
     if (params.q) search.set('search', params.q);
     if (params.sort === 'newest') search.set('orderBy', 'createdAt:DESC');

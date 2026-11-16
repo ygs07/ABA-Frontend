@@ -50,12 +50,12 @@ export function MerchantCard({ merchant, className }: MerchantCardProps) {
 
         <p className="mt-2 flex items-center gap-1 text-xs text-text-muted">
           <MapPin className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-          <span className="truncate">{merchant.city}, {merchant.state}</span>
+          <span className="truncate">{merchant.business_address || merchant.location || merchant.address}</span>
         </p>
-        <p className="mt-1 flex items-center gap-1 text-xs text-text-muted">
+        {/* <p className="mt-1 flex items-center gap-1 text-xs text-text-muted">
           <ShoppingBag className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
           <span>Joined {joined} · {merchant.ordersCount.toLocaleString('en-NG')} orders</span>
-        </p>
+        </p> */}
 
         <Link
           href={`/merchants/${merchant.id}`}

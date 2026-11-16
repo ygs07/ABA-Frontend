@@ -225,11 +225,11 @@ export function StorefrontHeader() {
 
             <div className="hidden md:block h-6 w-px bg-border mx-1"></div>
 
-            {isLoggedIn ? (
+            {/* {isLoggedIn ? (
               <div className="hidden md:flex items-center gap-2 pr-4 border-r border-border mr-2">
                 <PointsChip />
               </div>
-            ) : null}
+            ) : null} */}
 
             {isLoggedIn ? (
               <div className="hidden md:flex items-center gap-1">

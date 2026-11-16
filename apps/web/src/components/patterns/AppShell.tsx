@@ -1,15 +1,15 @@
 'use client';
-import { brand } from '@/config/brand';
-
-
 import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Search, Bell, Plus, HelpCircle, Menu, ChevronRight } from 'lucide-react';
+import { brand } from '@/config/brand';
 import { Sidebar } from './Sidebar';
+import { MerchantKycRestrictedView } from './MerchantKycRestrictedView';
 import { useAuthStore } from '@/features/auth/store';
 import { removeAuthCookie } from '@/features/auth/actions';
 import { logout as logoutRequest } from '@/features/auth/api/auth.api';
+import { isMerchantUnderReview, isAllowedPathForMerchantUnderReview } from '@/features/auth/utils';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -21,6 +21,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const user = useAuthStore(state => state.user);
   const activeRole = useAuthStore(state => state.activeRole);
   const logout = useAuthStore(state => state.logout);
+  const isRestrictedMerchantRoute = isMerchantUnderReview(user) && !isAllowedPathForMerchantUnderReview(pathname);
 
   const getInitials = (name: string) => {
     return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -53,8 +54,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       <div className="flex-1 flex flex-col min-w-0">
         <header ref={headerRef} className="h-16 shrink-0 bg-white border-b border-border flex items-center px-4 justify-between sticky top-0 z-10">
-
-
           {/* Left: Breadcrumbs & Mobile Menu */}
           <div className="flex items-center gap-4">
             <button className="md:hidden text-text-muted hover:text-text">
@@ -112,12 +111,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {openDropdown === 'create' && (
                 <div className="absolute right-0 top-10 w-48 bg-white rounded-lg shadow-md border border-border py-1 z-50">
                   <div className="px-3 py-2 text-xs font-semibold text-text-muted uppercase tracking-wider">Quick Create</div>
-                  <Link href="/erp/orders/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Order</Link>
-                  <Link href="/erp/customers/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Customer</Link>
-                  <Link href="/erp/products/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Product</Link>
-                  <div className="h-px bg-border my-1"></div>
-                  <Link href="/erp/procurement/requests/new" className="block px-4 py-2 text-sm hover:bg-surface-2">Purchase Request</Link>
-                  <Link href="/erp/production/new" className="block px-4 py-2 text-sm hover:bg-surface-2">Production Order</Link>
+                  {isMerchantUnderReview(user) ? (
+                    <>
+                      <Link href="/erp/products/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Product Draft</Link>
+                      <Link href="/erp/storefront/profile" className="block px-4 py-2 text-sm hover:bg-surface-2">Store Profile</Link>
+                    </>
+                  ) : (
+                    <>
+                      <Link href="/erp/orders/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Order</Link>
+                      <Link href="/erp/customers/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Customer</Link>
+                      <Link href="/erp/products/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Product</Link>
+                      <div className="h-px bg-border my-1"></div>
+                      <Link href="/erp/procurement/requests/new" className="block px-4 py-2 text-sm hover:bg-surface-2">Purchase Request</Link>
+                      <Link href="/erp/production/new" className="block px-4 py-2 text-sm hover:bg-surface-2">Production Order</Link>
+                    </>
+                  )}
                 </div>
               )}
             </div>
@@ -231,7 +239,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="flex-1 overflow-auto relative px-4">
-          {children}
+          {isRestrictedMerchantRoute ? <MerchantKycRestrictedView /> : children}
         </main>
       </div>
     </div>

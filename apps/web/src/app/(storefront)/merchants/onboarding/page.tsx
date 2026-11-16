@@ -1,12 +1,17 @@
 'use client';
 
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { ArrowLeft, ArrowRight, Loader2, Store } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { merchantOnboardingSchema, MerchantOnboardingData, ONBOARDING_STEPS } from './types';
+import {
+  merchantOnboardingSchema,
+  MerchantOnboardingData,
+  ONBOARDING_STEPS,
+  normalizeNigerianPhone,
+} from './types';
 import { OnboardingStepBusiness } from './components/OnboardingStepBusiness';
 import { OnboardingStepIdentity } from './components/OnboardingStepIdentity';
 import { OnboardingStepLocation } from './components/OnboardingStepLocation';
@@ -16,11 +21,47 @@ import { OnboardingSuccess } from './components/OnboardingSuccess';
 import { API_MODE, ApiError, fetchApi } from '@/lib/api';
 import { useAuthStore } from '@/features/auth/store';
 
+const ONBOARDING_STORAGE_KEY = 'aba_merchant_onboarding_state';
+
+interface SavedOnboardingState {
+  currentStep?: number;
+  values?: Partial<MerchantOnboardingData>;
+}
+
+const DEFAULT_VALUES: MerchantOnboardingData = {
+  businessName: '',
+  businessType: '',
+  isProvisional: false,
+  rcNumber: '',
+  cacDocumentName: undefined,
+  ownerName: '',
+  phone: '',
+  email: '',
+  idType: 'National Identity Number (NIN)',
+  ninNumber: '',
+  idDocumentName: '',
+  address: '',
+  marketCluster: '',
+  city: '',
+  state: '',
+  bankName: '',
+  accountNumber: '',
+  productDescription: '',
+  capacity: '',
+  samplePhotosCount: 0,
+  certificationTypes: ['None / Artisanal Guild'],
+  certificationNumber: '',
+  certificationDocumentName: undefined,
+  confirmSupplyCapacity: false,
+  agreeToFulfillmentSla: false,
+};
+
 function MerchantOnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const user = useAuthStore((state) => state.user);
   const isEditingApplication = searchParams.get('edit') === 'true' && user?.userType === 'Merchant';
+  const hasRestoredRef = useRef(false);
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -38,30 +79,65 @@ function MerchantOnboardingContent() {
   const form = useForm<MerchantOnboardingData>({
     resolver: zodResolver(merchantOnboardingSchema),
     mode: 'onTouched',
-    defaultValues: {
-      businessName: '',
-      businessType: '',
-      isProvisional: false,
-      rcNumber: '',
-      ownerName: '',
-      phone: '',
-      email: '',
-      idType: '',
-      ninNumber: '',
-      address: '',
-      marketCluster: '',
-      city: '',
-      state: '',
-      bankName: '',
-      accountNumber: '',
-      productDescription: '',
-      capacity: '',
-      samplePhotosCount: 0,
-      certificationTypes: ['None / Artisanal Guild'],
-      confirmSupplyCapacity: false,
-      agreeToFulfillmentSla: false,
-    },
+    defaultValues: DEFAULT_VALUES,
   });
+
+  useEffect(() => {
+    if (isEditingApplication || hasRestoredRef.current) return;
+    hasRestoredRef.current = true;
+    try {
+      const raw = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as SavedOnboardingState;
+      if (saved.values) {
+        form.reset({
+          ...DEFAULT_VALUES,
+          ...saved.values,
+          // File objects cannot be persisted across reloads, so require re-attaching files
+          cacDocumentName: undefined,
+          idDocumentName: '',
+          certificationDocumentName: undefined,
+          samplePhotosCount: 0,
+        });
+      }
+      if (
+        typeof saved.currentStep === 'number' &&
+        saved.currentStep >= 0 &&
+        saved.currentStep < ONBOARDING_STEPS.length
+      ) {
+        setCurrentStep(saved.currentStep);
+      }
+    } catch {
+      // Ignore invalid persisted state
+    }
+  }, [form, isEditingApplication]);
+
+  useEffect(() => {
+    if (isEditingApplication || isSuccess) return;
+    const persistState = (values: Partial<MerchantOnboardingData>, stepIndex: number) => {
+      try {
+        const serializableValues: Partial<MerchantOnboardingData> = {
+          ...values,
+          cacDocumentName: undefined,
+          idDocumentName: undefined,
+          certificationDocumentName: undefined,
+          samplePhotosCount: 0,
+        };
+        window.localStorage.setItem(
+          ONBOARDING_STORAGE_KEY,
+          JSON.stringify({ currentStep: stepIndex, values: serializableValues }),
+        );
+      } catch {
+        // Ignore storage quota / private mode errors
+      }
+    };
+
+    persistState(form.getValues(), currentStep);
+    const subscription = form.watch((values) => {
+      persistState(values as Partial<MerchantOnboardingData>, currentStep);
+    });
+    return () => subscription.unsubscribe();
+  }, [currentStep, form, isEditingApplication, isSuccess]);
 
   useEffect(() => {
     if (!isEditingApplication || API_MODE === 'mock') return;
@@ -84,11 +160,15 @@ function MerchantOnboardingContent() {
     setSubmissionError(null);
     try {
       if (API_MODE !== 'mock') {
+        const normalizedValues: MerchantOnboardingData = {
+          ...values,
+          phone: normalizeNigerianPhone(values.phone),
+        };
         const payload = new FormData();
-        Object.entries(values).forEach(([key, value]) => {
+        Object.entries(normalizedValues).forEach(([key, value]) => {
           if (value !== undefined && value !== null) payload.append(key, String(value));
         });
-        payload.set('certificationTypes', JSON.stringify(values.certificationTypes));
+        payload.set('certificationTypes', JSON.stringify(normalizedValues.certificationTypes));
         if (cacDocument) payload.append('cacDocument', cacDocument);
         if (identityDocument) payload.append('identityDocument', identityDocument);
         if (certificationDocument) payload.append('certificationDocument', certificationDocument);
@@ -97,6 +177,11 @@ function MerchantOnboardingContent() {
           method: isEditingApplication ? 'PATCH' : 'POST',
           body: payload,
         });
+      }
+      try {
+        window.localStorage.removeItem(ONBOARDING_STORAGE_KEY);
+      } catch {
+        // Ignore storage errors
       }
       setIsSuccess(true);
     } catch (error) {
@@ -112,11 +197,19 @@ function MerchantOnboardingContent() {
 
   const handleNext = async () => {
     let fields: (keyof MerchantOnboardingData)[] = [];
-    if (currentStep === 0) fields = ['businessName', 'businessType'];
-    if (currentStep === 1) fields = ['ownerName', 'phone', 'email', 'idType', 'ninNumber'];
+    if (currentStep === 0) fields = ['businessName', 'businessType', 'rcNumber', 'cacDocumentName'];
+    if (currentStep === 1) fields = ['ownerName', 'phone', 'email', 'idType', 'ninNumber', 'idDocumentName'];
     if (currentStep === 2) fields = ['address', 'marketCluster', 'city', 'state', 'bankName', 'accountNumber'];
     if (currentStep === 3) fields = ['productDescription', 'capacity', 'samplePhotosCount'];
-    if (currentStep === 4) fields = ['certificationTypes', 'confirmSupplyCapacity', 'agreeToFulfillmentSla'];
+    if (currentStep === 4) {
+      fields = [
+        'certificationTypes',
+        'certificationNumber',
+        'certificationDocumentName',
+        'confirmSupplyCapacity',
+        'agreeToFulfillmentSla',
+      ];
+    }
 
     const valid = await form.trigger(fields);
     if (valid) {

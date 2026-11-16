@@ -18,12 +18,12 @@ export default function SettingsPage() {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         
         {/* Navigation Sidebar */}
-        <div className="space-y-2">
+        {/* <div className="space-y-2">
           <Button variant="ghost" className="w-full justify-start bg-surface-2">Company Profile</Button>
           <Button variant="ghost" className="w-full justify-start text-text-muted hover:bg-surface-2 hover:text-text">Regional & Taxes</Button>
           <Button variant="ghost" className="w-full justify-start text-text-muted hover:bg-surface-2 hover:text-text">Notifications</Button>
           <Button variant="ghost" className="w-full justify-start text-text-muted hover:bg-surface-2 hover:text-text">API & Webhooks</Button>
-        </div>
+        </div> */}
 
         {/* Content Area */}
         <div className="md:col-span-3 space-y-6">

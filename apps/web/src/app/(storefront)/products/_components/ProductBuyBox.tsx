@@ -7,12 +7,13 @@ import { AddToCartButton } from '@/components/storefront/AddToCartButton';
 import { ProductOptions } from './ProductOptions';
 import { ProductVariant, Product } from '@/features/products/types';
 import { ShareMenu } from '@/components/patterns/ShareMenu';
-import { cn } from '@/lib/utils';
+import { cn, getWhatsAppLink } from '@/lib/utils';
 import { brand } from '@/config/brand';
 import { useAuthStore } from '@/features/auth/store';
 import { useCartStore } from '@/features/cart/store';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 interface ProductBuyBoxProps {
   product: Product;
@@ -28,7 +29,7 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
   const isCustomer = useAuthStore((state) =>
     Boolean(state.isAuthenticated && (state.user?.userType === 'Customer' || state.user?.roles.includes('Customer'))),
   );
-  
+
   const activePrice = selectedVariant ? selectedVariant.price : product.price;
   const activeStock = selectedVariant ? selectedVariant.stockCount : product.totalStock;
   const inStock = activeStock > 0;
@@ -60,9 +61,9 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
       {/* 1. Title */}
       <div className="flex justify-between items-start gap-4 mb-3">
         <h1 className="text-2xl font-bold text-text tracking-tight">{product.name}</h1>
-        <ShareMenu 
+        <ShareMenu
           url={`/products/${product.id}${selectedVariant ? `?color=${selectedVariant.attributes?.find(a => a.name.toLowerCase() === 'color' || a.name.toLowerCase() === 'colour')?.value}` : ''}`}
-          title={product.name} text={''} 
+          title={product.name} text={''}
         />
       </div>
 
@@ -90,7 +91,7 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
           <div className="text-xs text-text-muted mt-0.5 truncate flex items-center gap-1">
             <span>99.9% positive</span>
             <span>&middot;</span>
-            <a 
+            <a
               href="#reviews"
               onClick={(e) => {
                 e.preventDefault();
@@ -102,8 +103,11 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
             </a>
           </div>
         </div>
+
         <Button variant="outline" size="sm" className="rounded-full text-xs shrink-0">
-          Message
+          <Link href={getWhatsAppLink(product.merchant?.whatsappNumber || product.merchant?.phone || '', product.merchant?.name || '')} target='_blank' className="w-full">
+            Message
+          </Link>
         </Button>
       </div>
 
@@ -133,8 +137,8 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
 
       {/* 4. Product Options */}
       <div className="mb-6">
-        <ProductOptions 
-          variants={product.variants || []} 
+        <ProductOptions
+          variants={product.variants || []}
           selectedVariant={selectedVariant}
           onVariantSelect={setSelectedVariant}
         />
@@ -198,16 +202,16 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
             <span className="text-text-muted w-20 shrink-0">Shipping:</span>
             <div className="text-text">
               Delivery calculated at checkout.{' '}
-              <a 
-                href="#delivery" 
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  const btn = document.getElementById('delivery-tab-btn'); 
-                  if(btn) { 
-                    btn.click(); 
-                    btn.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
-                  } 
-                }} 
+              <a
+                href="#delivery"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const btn = document.getElementById('delivery-tab-btn');
+                  if (btn) {
+                    btn.click();
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
                 className="underline cursor-pointer hover:text-brand-600"
               >
                 See details
@@ -223,16 +227,16 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
             <span className="text-text-muted w-20 shrink-0">Returns:</span>
             <div className="text-text">
               14 days returns. Buyer pays for return shipping.{' '}
-              <a 
-                href="#delivery" 
-                onClick={(e) => { 
-                  e.preventDefault(); 
-                  const btn = document.getElementById('delivery-tab-btn'); 
-                  if(btn) { 
-                    btn.click(); 
-                    btn.scrollIntoView({ behavior: 'smooth', block: 'start' }); 
-                  } 
-                }} 
+              <a
+                href="#delivery"
+                onClick={(e) => {
+                  e.preventDefault();
+                  const btn = document.getElementById('delivery-tab-btn');
+                  if (btn) {
+                    btn.click();
+                    btn.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                  }
+                }}
                 className="underline cursor-pointer hover:text-brand-600"
               >
                 See details

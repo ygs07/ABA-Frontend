@@ -37,7 +37,7 @@ export function AddToCartButton({ product, variant = 'default', className = '', 
       return;
     }
     setLoading(true);
-    
+
     if (!selectedVariant?.id && product.variants?.length) {
       toast.error('This product does not have a purchasable variant yet.');
       setLoading(false);
@@ -62,8 +62,8 @@ export function AddToCartButton({ product, variant = 'default', className = '', 
 
   if (variant === 'icon') {
     return (
-      <Button 
-        size="sm" 
+      <Button
+        size="sm"
         className={`rounded-full w-8 h-8 p-0 flex items-center justify-center hover:scale-110 hover:bg-brand-700 transition-transform ${className}`}
         onClick={handleAddToCart}
         disabled={disabled || loading || (selectedVariant ? selectedVariant.stockCount < quantity : product.totalStock < quantity)}
@@ -75,9 +75,9 @@ export function AddToCartButton({ product, variant = 'default', className = '', 
   }
 
   return (
-    <Button 
-      size="lg" 
-      className={`flex-1 h-12 text-base font-semibold ${className}`} 
+    <Button
+      size="lg"
+      className={`text-base font-semibold  bg-linear-to-r from-orange-500 to-amber-500 text-white ${className}`}
       disabled={disabled || loading || (selectedVariant ? selectedVariant.stockCount < quantity : product.totalStock < quantity)}
       onClick={handleAddToCart}
     >

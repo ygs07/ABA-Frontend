@@ -8,7 +8,7 @@ export function TakeBusinessOnline() {
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center max-w-3xl">
                 <h2 className="text-3xl font-extrabold text-brand-900 mb-4 animate-in slide-in-from-bottom-4 duration-700">Take Your Business Online</h2>
                 <p className="text-lg text-text-muted mb-8">
-                    Whether you run a shop, workshop, fashion business, restaurant, or growing brand, ABA Online gives you a digital storefront to reach millions of buyers nationwide.
+                    Whether you run a shop, workshop, fashion business, restaurant, or growing brand, BuyNaija gives you a digital storefront to reach millions of buyers nationwide.
                 </p>
                 <div className="flex flex-wrap justify-center gap-x-8 gap-y-4 mb-8 text-sm font-medium text-brand-700">
                     <span className="flex items-center gap-2 hover:text-brand-900 transition-colors cursor-default"><CheckCircle2 className="w-4 h-4" /> Create your storefront</span>

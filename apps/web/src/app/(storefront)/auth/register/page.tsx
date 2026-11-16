@@ -101,11 +101,10 @@ function StorefrontRegisterContent() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-text mb-1">Middle name</label>
+                <label className="block text-sm font-medium text-text mb-1">Middle name (Optional)</label>
                 <input
                   type="text"
                   name="middle_name"
-                  required
                   value={formData.middle_name}
                   onChange={handleChange}
                   className="block w-full px-3 py-2 border border-border rounded-md text-text focus:outline-none focus:ring-2 focus:ring-brand-500 bg-surface-1 sm:text-sm"

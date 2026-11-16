@@ -117,6 +117,7 @@ export function OnboardingStepBusiness({
               placeholder="e.g. RC-1234567 or BN-987654"
               className="w-full h-11 px-4 rounded-lg border border-border text-sm focus:border-brand-500 focus:ring-1 focus:ring-brand-500 outline-none"
             />
+            {errors.rcNumber && <p className="text-error text-xs mt-1">{errors.rcNumber.message}</p>}
           </div>
 
           <div>
@@ -130,14 +131,17 @@ export function OnboardingStepBusiness({
               isUploaded={cacUploaded || Boolean(cacDocumentName)}
               accept=".pdf,.jpg,.jpeg,.png"
               onFileSelect={(file) => {
-                setValue('cacDocumentName', file.name);
+                setValue('cacDocumentName', file.name, { shouldValidate: true });
                 onUploadCac(file);
               }}
               onRemove={() => {
-                setValue('cacDocumentName', undefined);
+                setValue('cacDocumentName', undefined, { shouldValidate: true });
                 onRemoveCac();
               }}
             />
+            {errors.cacDocumentName && (
+              <p className="text-error text-xs mt-1">{errors.cacDocumentName.message}</p>
+            )}
           </div>
         </div>
       ) : (

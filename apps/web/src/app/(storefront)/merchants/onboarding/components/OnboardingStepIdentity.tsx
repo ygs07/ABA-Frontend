@@ -112,14 +112,17 @@ export function OnboardingStepIdentity({
         isUploaded={idUploaded || Boolean(form.watch('idDocumentName'))}
         accept=".pdf,.jpg,.jpeg,.png"
         onFileSelect={(file) => {
-          form.setValue('idDocumentName', file.name);
+          form.setValue('idDocumentName', file.name, { shouldValidate: true });
           onUploadId(file);
         }}
         onRemove={() => {
-          form.setValue('idDocumentName', undefined);
+          form.setValue('idDocumentName', '', { shouldValidate: true });
           onRemoveId();
         }}
       />
+      {errors.idDocumentName && (
+        <p className="text-error text-xs -mt-3">{errors.idDocumentName.message}</p>
+      )}
     </div>
   );
 }

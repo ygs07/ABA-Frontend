@@ -45,7 +45,7 @@ export default function PortalLayout({ children }: { children: React.ReactNode }
     { name: 'My Wallet', href: '/portal/wallet', icon: Wallet },
     { name: 'Referrals', href: '/portal/referrals', icon: Users },
     { name: 'KYC Profile', href: '/portal/kyc', icon: ShieldCheck },
-    { name: 'Rewards', href: '/portal/rewards', icon: Medal },
+    // { name: 'Rewards', href: '/portal/rewards', icon: Medal },
     ...(isCustomer ? [{ name: 'Profile', href: '/portal/profile', icon: Settings }] : []),
     { name: 'Notifications', href: '/portal/notifications', icon: Bell },
     // saved-sellers

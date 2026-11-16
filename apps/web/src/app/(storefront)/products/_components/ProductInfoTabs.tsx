@@ -30,7 +30,7 @@ export function ProductInfoTabs({ product }: ProductInfoTabsProps) {
             <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-600" />
           )}
         </button>
-        <button
+        {/* <button
           onClick={() => setActiveTab('specifications')}
           className={cn(
             "flex items-center gap-2 px-6 py-4 text-sm font-semibold transition-colors relative whitespace-nowrap",
@@ -42,7 +42,7 @@ export function ProductInfoTabs({ product }: ProductInfoTabsProps) {
           {activeTab === 'specifications' && (
             <div className="absolute bottom-0 left-0 w-full h-0.5 bg-brand-600" />
           )}
-        </button>
+        </button> */}
         <button
           id="delivery-tab-btn"
           onClick={() => setActiveTab('delivery')}
@@ -94,7 +94,7 @@ export function ProductInfoTabs({ product }: ProductInfoTabsProps) {
         )}
 
         {/* Specifications Tab */}
-        {activeTab === 'specifications' && (
+        {/* {activeTab === 'specifications' && (
           <div className="animate-in fade-in duration-300">
             <h3 className="text-xl font-bold text-text mb-6">Technical Specifications</h3>
             
@@ -122,7 +122,7 @@ export function ProductInfoTabs({ product }: ProductInfoTabsProps) {
               </div>
             )}
           </div>
-        )}
+        )} */}
 
         {/* Delivery Tab */}
         {activeTab === 'delivery' && (
