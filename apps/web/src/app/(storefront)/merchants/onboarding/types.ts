@@ -6,6 +6,53 @@ export function normalizeNigerianPhone(value: string): string {
   return value.trim().replace(/[\s-]/g, '');
 }
 
+export const IDENTITY_DOCUMENT_TYPES = [
+  'nin',
+  'international_passport',
+  'drivers_license',
+  'voters_card',
+] as const;
+
+export type IdentityDocumentType = (typeof IDENTITY_DOCUMENT_TYPES)[number];
+
+export const IDENTITY_DOCUMENT_NUMBER_DETAILS: Record<
+  IdentityDocumentType,
+  { label: string; inputLabel: string; placeholder: string; maxLength: number; description: string; pattern: RegExp }
+> = {
+  nin: {
+    label: 'National Identity Number (NIN)',
+    inputLabel: 'NIN Number',
+    placeholder: 'e.g. 12345678901',
+    maxLength: 11,
+    description: 'Exactly 11 digits.',
+    pattern: /^\d{11}$/,
+  },
+  international_passport: {
+    label: 'International Passport',
+    inputLabel: 'Passport Number',
+    placeholder: 'e.g. A12345678',
+    maxLength: 20,
+    description: '6–20 letters and numbers.',
+    pattern: /^[A-Z0-9]{6,20}$/i,
+  },
+  drivers_license: {
+    label: "Driver's Licence",
+    inputLabel: "Driver's Licence Number",
+    placeholder: 'e.g. ABC-123456789',
+    maxLength: 30,
+    description: '6–30 letters, numbers, or hyphens.',
+    pattern: /^[A-Z0-9-]{6,30}$/i,
+  },
+  voters_card: {
+    label: "Voter's Card",
+    inputLabel: 'Voter Identification Number (VIN)',
+    placeholder: 'e.g. 90F5B7D11A2C3E4F567',
+    maxLength: 19,
+    description: 'Exactly 19 letters and numbers.',
+    pattern: /^[A-Z0-9]{19}$/i,
+  },
+};
+
 export const merchantOnboardingSchema = z
   .object({
     // Step 1: Business Registration
@@ -15,16 +62,21 @@ export const merchantOnboardingSchema = z
     rcNumber: z.string().optional(),
     cacDocumentName: z.string().optional(),
 
-    // Step 2: Owner Identity & NIN
+    // Step 2: Owner Identity
     ownerName: z.string().trim().min(2, 'Owner or representative full name is required'),
-    phone: z
+    contactPhoneNumber: z
       .string()
       .refine((val) => NIGERIAN_PHONE_REGEX.test(normalizeNigerianPhone(val)), {
-        message: 'Enter a valid Nigerian phone number (e.g. 08031234567 or +2348031234567)',
+        message: 'Enter a valid Nigerian contact phone number (e.g. 08031234567 or +2348031234567)',
+      }),
+    whatsappPhoneNumber: z
+      .string()
+      .refine((val) => NIGERIAN_PHONE_REGEX.test(normalizeNigerianPhone(val)), {
+        message: 'Enter a valid Nigerian WhatsApp number (e.g. 08031234567 or +2348031234567)',
       }),
     email: z.string().trim().email('Valid business email address is required'),
-    idType: z.string().min(1, 'Identity document type is required'),
-    ninNumber: z.string().trim().regex(/^\d{11}$/, 'NIN / ID number must be exactly 11 digits'),
+    idType: z.enum(IDENTITY_DOCUMENT_TYPES, { message: 'Identity document type is required' }),
+    idNumber: z.string().trim().min(1, 'Identity document number is required'),
     idDocumentName: z.string().min(1, 'Please upload your identification document'),
 
     // Step 3: Location & Settlement
@@ -69,6 +121,15 @@ export const merchantOnboardingSchema = z
       }
     }
 
+    const identityRule = IDENTITY_DOCUMENT_NUMBER_DETAILS[data.idType];
+    if (!identityRule.pattern.test(data.idNumber)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['idNumber'],
+        message: `${identityRule.inputLabel} is invalid. ${identityRule.description}`,
+      });
+    }
+
     const hasRegulatoryCert = data.certificationTypes.some(
       (cert) => cert !== 'None / Artisanal Guild',
     );
@@ -100,7 +161,7 @@ export interface StepItem {
 
 export const ONBOARDING_STEPS: StepItem[] = [
   { id: 'business', title: 'Business & CAC', description: 'Registration details' },
-  { id: 'identity', title: 'Owner & NIN', description: 'Identity verification' },
+  { id: 'identity', title: 'Owner & Identity', description: 'Identity verification' },
   { id: 'location', title: 'Location & Settlement', description: 'Address and banking' },
   { id: 'products', title: 'Products & Quality', description: 'Catalog standards' },
   { id: 'certifications', title: 'Certifications & SLA', description: 'Regulatory & fulfillment' },

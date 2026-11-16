@@ -11,6 +11,7 @@ import {
   MerchantOnboardingData,
   ONBOARDING_STEPS,
   normalizeNigerianPhone,
+  IDENTITY_DOCUMENT_TYPES,
 } from './types';
 import { OnboardingStepBusiness } from './components/OnboardingStepBusiness';
 import { OnboardingStepIdentity } from './components/OnboardingStepIdentity';
@@ -28,6 +29,41 @@ interface SavedOnboardingState {
   values?: Partial<MerchantOnboardingData>;
 }
 
+interface OnboardingApplicationResponse {
+  business_name: string;
+  business_type: string;
+  is_provisional: boolean;
+  rc_number?: string | null;
+  owner_name: string;
+  contact_phone_number?: string;
+  whatsapp_phone_number?: string;
+  /** Legacy response field retained for applicants created before the contact split. */
+  phone?: string;
+  email: string;
+  id_type: string;
+  id_number: string;
+  address: string;
+  market_cluster: string;
+  city: string;
+  state: string;
+  bank_name: string;
+  account_number: string;
+  product_description: string;
+  capacity: string;
+  sample_photos_count: number;
+  certifications?: string[];
+  certification_type?: string;
+  certification_number?: string | null;
+  confirm_supply_capacity: boolean;
+  agree_to_fulfillment_sla: boolean;
+}
+
+function normalizeIdentityDocumentType(value: string | undefined): MerchantOnboardingData['idType'] {
+  return IDENTITY_DOCUMENT_TYPES.includes(value as MerchantOnboardingData['idType'])
+    ? (value as MerchantOnboardingData['idType'])
+    : 'nin';
+}
+
 const DEFAULT_VALUES: MerchantOnboardingData = {
   businessName: '',
   businessType: '',
@@ -35,10 +71,11 @@ const DEFAULT_VALUES: MerchantOnboardingData = {
   rcNumber: '',
   cacDocumentName: undefined,
   ownerName: '',
-  phone: '',
+  contactPhoneNumber: '',
+  whatsappPhoneNumber: '',
   email: '',
-  idType: 'National Identity Number (NIN)',
-  ninNumber: '',
+  idType: 'nin',
+  idNumber: '',
   idDocumentName: '',
   address: '',
   marketCluster: '',
@@ -90,9 +127,17 @@ function MerchantOnboardingContent() {
       if (!raw) return;
       const saved = JSON.parse(raw) as SavedOnboardingState;
       if (saved.values) {
+        const legacyValues = saved.values as Partial<MerchantOnboardingData> & {
+          phone?: string;
+          ninNumber?: string;
+        };
         form.reset({
           ...DEFAULT_VALUES,
-          ...saved.values,
+          ...legacyValues,
+          contactPhoneNumber: legacyValues.contactPhoneNumber ?? legacyValues.phone ?? '',
+          whatsappPhoneNumber: legacyValues.whatsappPhoneNumber ?? legacyValues.contactPhoneNumber ?? legacyValues.phone ?? '',
+          idType: normalizeIdentityDocumentType(legacyValues.idType),
+          idNumber: legacyValues.idNumber ?? legacyValues.ninNumber ?? '',
           // File objects cannot be persisted across reloads, so require re-attaching files
           cacDocumentName: undefined,
           idDocumentName: '',
@@ -141,11 +186,14 @@ function MerchantOnboardingContent() {
 
   useEffect(() => {
     if (!isEditingApplication || API_MODE === 'mock') return;
-    void fetchApi<any>('/api/v1/merchant-onboarding/applications/me').then((application) => {
+    void fetchApi<OnboardingApplicationResponse>('/api/v1/merchant-onboarding/applications/me').then((application) => {
       form.reset({
         businessName: application.business_name, businessType: application.business_type, isProvisional: application.is_provisional,
-        rcNumber: application.rc_number ?? '', ownerName: application.owner_name, phone: application.phone, email: application.email,
-        idType: application.id_type, ninNumber: application.nin_number, address: application.address, marketCluster: application.market_cluster,
+        rcNumber: application.rc_number ?? '', ownerName: application.owner_name,
+        contactPhoneNumber: application.contact_phone_number ?? application.phone,
+        whatsappPhoneNumber: application.whatsapp_phone_number ?? application.contact_phone_number ?? application.phone,
+        email: application.email,
+        idType: normalizeIdentityDocumentType(application.id_type), idNumber: application.id_number, address: application.address, marketCluster: application.market_cluster,
         city: application.city, state: application.state, bankName: application.bank_name, accountNumber: application.account_number,
         productDescription: application.product_description, capacity: application.capacity, samplePhotosCount: application.sample_photos_count,
         certificationTypes: application.certifications?.length ? application.certifications : [application.certification_type], certificationNumber: application.certification_number ?? '',
@@ -162,7 +210,8 @@ function MerchantOnboardingContent() {
       if (API_MODE !== 'mock') {
         const normalizedValues: MerchantOnboardingData = {
           ...values,
-          phone: normalizeNigerianPhone(values.phone),
+          contactPhoneNumber: normalizeNigerianPhone(values.contactPhoneNumber),
+          whatsappPhoneNumber: normalizeNigerianPhone(values.whatsappPhoneNumber),
         };
         const payload = new FormData();
         Object.entries(normalizedValues).forEach(([key, value]) => {
@@ -198,7 +247,7 @@ function MerchantOnboardingContent() {
   const handleNext = async () => {
     let fields: (keyof MerchantOnboardingData)[] = [];
     if (currentStep === 0) fields = ['businessName', 'businessType', 'rcNumber', 'cacDocumentName'];
-    if (currentStep === 1) fields = ['ownerName', 'phone', 'email', 'idType', 'ninNumber', 'idDocumentName'];
+    if (currentStep === 1) fields = ['ownerName', 'contactPhoneNumber', 'whatsappPhoneNumber', 'email', 'idType', 'idNumber', 'idDocumentName'];
     if (currentStep === 2) fields = ['address', 'marketCluster', 'city', 'state', 'bankName', 'accountNumber'];
     if (currentStep === 3) fields = ['productDescription', 'capacity', 'samplePhotosCount'];
     if (currentStep === 4) {
