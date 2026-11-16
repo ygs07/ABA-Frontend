@@ -1,24 +1,14 @@
-import React from 'react';
 import { PageHeader } from '@/components/patterns/PageHeader';
-import { PromotionsTable } from '@/features/promotions/components/PromotionsTable';
-import { Button } from '@/components/ui/button';
-import Link from 'next/link';
 
 export default function PromotionsAdminPage() {
   return (
     <div className="space-y-6">
       <PageHeader 
-        title="Promotions" 
-        description="Manage product promotions, view revenue, and approve requests."
-        action={
-          <Button asChild>
-            <Link href="/erp/promotions/new">Create Promotion</Link>
-          </Button>
-        }
+        title="Spotlight Applications"
+        description="Merchant spotlight applications will be available here once the platform rules and approval workflow are finalised."
       />
-      
-      <div className="bg-white rounded-xl shadow-sm border p-6">
-        <PromotionsTable />
+      <div className="rounded-xl border border-border bg-surface p-6 text-sm text-text-muted">
+        Promotions are no longer offered on BuyNaija. Use the storefront spotlight programme when it becomes available.
       </div>
     </div>
   );

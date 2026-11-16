@@ -128,7 +128,13 @@ export type CommissionRuleInput = {
   qualificationTrigger?: 'order_paid' | 'order_delivered' | 'first_order_only';
   minimumOrderValue?: number;
   networkLevels?: number;
-  levelRates?: Array<{ level: number; percentageAmount: number }>;
+  levelRates?: Array<{
+    level: number;
+    /** Legacy network allocation; retained for existing rules. */
+    percentageAmount?: number;
+    systemPercentageAmount?: number;
+    merchantPercentageAmount?: number;
+  }>;
   baseAmountNet?: boolean;
   approvalMode?: 'automatic' | 'manual';
   holdingPeriodDays?: number;
@@ -162,7 +168,16 @@ export type CommissionSimulation = {
   commissionType: number;
   eligible: boolean;
   minimumOrderValue: number;
-  levels: Array<{ level: number; rate: number | null; amount: number }>;
+  levels: Array<{
+    level: number;
+    networkRate: number | null;
+    systemRate: number | null;
+    networkAmount: number;
+    platformAmount: number;
+    amount: number;
+  }>;
+  totalNetworkCommission: number;
+  totalPlatformCommission: number;
   totalCommission: number;
 };
 
@@ -185,7 +200,12 @@ export type BackendCommissionRule = {
   fixed_amount?: string | number | null;
   qualification_trigger: 'order_paid' | 'order_delivered' | 'first_order_only';
   network_levels: number;
-  level_rates: Array<{ level: number; percentageAmount: number }>;
+  level_rates: Array<{
+    level: number;
+    percentageAmount: number;
+    systemPercentageAmount?: number;
+    merchantPercentageAmount?: number;
+  }>;
   percentage_amount?: string | number | null;
   is_active: boolean;
   effective_from?: string | null;

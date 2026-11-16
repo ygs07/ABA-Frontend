@@ -123,12 +123,10 @@ export async function getDirectoryMerchants(params: DirectoryParams = {}): Promi
     const search = new URLSearchParams({
       page: String(params.page ?? 1),
       limit: String(params.pageSize ?? storefrontConfig.merchantDirectory.pageSize),
-      hasProducts: String(params.hasProducts ?? true),
     });
     if (params.q) search.set('search', params.q);
     if (params.sort === 'newest') search.set('orderBy', 'createdAt:DESC');
-    if (params.sort === 'rating') search.set('orderBy', 'rating:DESC');
-    if (params.sort === 'orders') search.set('orderBy', 'ordersCount:DESC');
+    if (params.sort === 'newest') search.set('orderBy', 'createdAt:DESC');
 
     const response = await fetchApi<{
       data: Array<{
@@ -142,7 +140,6 @@ export async function getDirectoryMerchants(params: DirectoryParams = {}): Promi
         createdAt?: string;
         avatar?: { url: string } | null;
         banner?: { url: string } | null;
-        ordersCount?: number;
         rating?: number;
         reviewCount?: number;
         location?: { street_address: string; city: string; state: string; lga?: string | null } | null;
@@ -181,7 +178,7 @@ export async function getDirectoryMerchants(params: DirectoryParams = {}): Promi
         status: 'Active',
         onboardedAt: merchant.createdAt ?? new Date().toISOString(),
         salesPeriod: 0,
-        ordersCount: Number(merchant.ordersCount ?? 0),
+        ordersCount: 0,
         stockValue: 0,
         outstandingBalance: 0,
         rating: Number(merchant.rating ?? 0),

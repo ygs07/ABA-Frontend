@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { MapPin, ShoppingBag, Star, BadgeCheck, Store } from 'lucide-react';
+import { MapPin, Star, BadgeCheck, Store } from 'lucide-react';
 import { cn } from 'cn';
 import type { DirectoryMerchant } from '@/features/merchants/types';
 
@@ -10,7 +10,6 @@ export interface MerchantCardProps {
 
 /** Compact public merchant card used by the Meet Businesses carousel and the /merchants directory. */
 export function MerchantCard({ merchant, className }: MerchantCardProps) {
-  const joined = new Date(merchant.onboardedAt).getFullYear();
   return (
     <article className={cn('group h-full flex flex-col bg-white rounded-2xl border border-border overflow-hidden shadow-sm hover:shadow-md transition-shadow', className)}>
       <div className="relative h-24 bg-linear-to-br from-brand-600 to-brand-800">

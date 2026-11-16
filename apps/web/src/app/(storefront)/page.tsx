@@ -7,7 +7,6 @@ import { TrendingProducts } from './_components/TrendingProducts';
 import { SpotlightSection } from '@/features/spotlight/components/SpotlightSection';
 import { ProductSpotlight } from '@/features/promotions/components/ProductSpotlight';
 import { CategoryMarquee } from './_components/CategoryMarquee';
-import { RewardsProgramPromo } from './_components/RewardsProgramPromo';
 import { MadeInAbaPromo } from './_components/MadeInAbaPromo';
 import { TakeBusinessOnline } from './_components/TakeBusinessOnline';
 
@@ -33,8 +32,6 @@ function Landing() {
       <CategoryMarquee />
 
       <SpotlightSection />
-
-      <RewardsProgramPromo />
 
       <MadeInAbaPromo />
 

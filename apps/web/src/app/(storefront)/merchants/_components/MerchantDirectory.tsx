@@ -3,19 +3,16 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Search, SlidersHorizontal } from 'lucide-react';
+import { Loader2, Search } from 'lucide-react';
 import { getDirectoryMerchants } from '@/features/shop/api';
 import type { MerchantSort } from '@/features/merchants/types';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { ErrorState } from '@/components/patterns/ErrorState';
 import { MerchantCard } from '@/components/patterns/MerchantCard';
-import { Button } from '@/components/ui/button';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { MerchantFilters, SORT_OPTIONS } from './MerchantFilters';
 import { Pagination } from '@/components/ui/pagination';
 import { TakeBusinessOnline } from '../../_components/TakeBusinessOnline';
 
-const SORTS = SORT_OPTIONS.map(o => o.value);
+const SORTS: MerchantSort[] = ['recommended', 'newest'];
 
 /** `/merchants` directory (Doc 06 §6.2). Every control is synced to the URL. */
 export function MerchantDirectory() {
@@ -24,10 +21,6 @@ export function MerchantDirectory() {
   const sp = useSearchParams();
 
   const q = sp.get('q') ?? '';
-  const category = sp.get('category') ?? '';
-  const state = sp.get('state') ?? '';
-  const minRating = sp.get('rating') ?? '';
-  const verified = sp.get('verified') === '1';
   const sortParam = sp.get('sort') as MerchantSort | null;
   const sort: MerchantSort = sortParam && SORTS.includes(sortParam) ? sortParam : 'recommended';
   const page = Math.max(1, Number(sp.get('page')) || 1);
@@ -58,28 +51,15 @@ export function MerchantDirectory() {
   }, [term, q]);
 
   const { data, isLoading, isError, error, refetch, isFetching } = useQuery({
-    queryKey: ['merchant_directory', q, category, state, minRating, verified, sort, page],
-    queryFn: () => getDirectoryMerchants({ q, category, state, minRating: Number(minRating) || undefined, verifiedOnly: verified, sort, page, hasProducts: true }),
+    queryKey: ['merchant_directory', q, sort, page],
+    queryFn: () => getDirectoryMerchants({ q, sort, page }),
     placeholderData: prev => prev,
     retry: false,
   });
 
 
-  const hasActive = Boolean(q || category || state || minRating || verified);
+  const hasActive = Boolean(q);
   const clearAll = () => router.push(pathname);
-  const filters = (
-    <MerchantFilters
-      values={{ state, minRating, verified }}
-      states={data?.facets.states ?? []}
-      hasActive={hasActive}
-      onClear={clearAll}
-      onChange={p => setParams({
-        ...(p.state !== undefined && { state: p.state || null }),
-        ...(p.minRating !== undefined && { rating: p.minRating || null }),
-        ...(p.verified !== undefined && { verified: p.verified ? '1' : null }),
-      })}
-    />
-  );
 
   const meta = data?.meta;
 
@@ -90,7 +70,7 @@ export function MerchantDirectory() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl md:text-5xl font-bold mb-4">Discover Top Merchants</h1>
           <p className="text-lg text-brand-100 max-w-2xl mx-auto mb-8">
-            Shop directly from verified vendors on the ABA Marketplace. Quality products, trusted sellers.
+            Shop directly from verified BuyNaija merchants. Quality products, trusted sellers.
           </p>
 
           <div className="max-w-xl mx-auto relative">
@@ -100,7 +80,7 @@ export function MerchantDirectory() {
               aria-label="Search businesses"
               value={term}
               onChange={e => setTerm(e.target.value)}
-              placeholder="Search by name, city or state"
+              placeholder="Search by store name"
               className="w-full h-12 pl-12 pr-4 rounded-full border-2 border-white/30 focus:ring-2 focus:ring-brand-300 shadow-lg"
             />
           </div>
@@ -113,15 +93,6 @@ export function MerchantDirectory() {
             {meta ? `${meta.total?.toLocaleString('en-NG')} ${meta.total === 1 ? 'business' : 'businesses'}` : 'Loading…'}
           </p>
           <div className="flex items-center gap-2">
-            <Sheet>
-              <SheetTrigger render={<Button variant="outline" className="lg:hidden gap-2"><SlidersHorizontal className="w-4 h-4" />Filters</Button>} />
-              <SheetContent side="left" className="w-[300px] sm:w-[340px] overflow-y-auto">
-                <SheetHeader className="mb-4"><SheetTitle>Filters</SheetTitle></SheetHeader>
-                <div className="space-y-6">
-                  {filters}
-                </div>
-              </SheetContent>
-            </Sheet>
             <label htmlFor="merchant-sort" className="text-sm text-text-muted">Sort by</label>
             <select
               id="merchant-sort"
@@ -129,16 +100,13 @@ export function MerchantDirectory() {
               onChange={e => setParams({ sort: e.target.value === 'recommended' ? null : e.target.value })}
               className="h-10 rounded-md border border-border bg-white px-3 text-sm focus:outline-none focus:ring-2 focus:ring-brand-500"
             >
-              {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+              <option value="recommended">Recommended</option>
+              <option value="newest">Newest</option>
             </select>
           </div>
         </div>
 
-        <div className="flex flex-col lg:flex-row gap-8">
-          <aside className="hidden lg:block w-[240px] shrink-0 space-y-6 sticky top-4">
-            {filters}
-          </aside>
-
+        <div className="min-w-0">
           <div className="flex-1 min-w-0">
             {isLoading ? (
               <div className="flex justify-center items-center min-h-[60vh]">

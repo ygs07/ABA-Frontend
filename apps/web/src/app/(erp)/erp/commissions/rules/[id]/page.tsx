@@ -20,7 +20,7 @@ type FormValues = {
   networkLevels: number;
   holdingPeriodDays: number;
   isActive: boolean;
-  rates: number[];
+  rates: Array<{ system: number; merchant: number }>;
 };
 
 export default function EditRulePage() {
@@ -35,9 +35,18 @@ export default function EditRulePage() {
 
   useEffect(() => {
     if (!rule) return;
-    const rates = Array.from({ length: rule.network_levels }, (_, index) =>
-      Number(rule.level_rates?.[index]?.percentageAmount ?? (index === 0 ? rule.percentage_amount ?? 0 : 0)),
-    );
+    const rates = Array.from({ length: rule.network_levels }, (_, index) => {
+      const rate = rule.level_rates?.[index];
+      return {
+        system: Number(rate?.systemPercentageAmount ?? 0),
+        merchant: Number(
+          rate?.merchantPercentageAmount ?? rate?.percentageAmount ??
+            (index === 0 ? rule.percentage_amount ?? 0 : 0),
+        ),
+      };
+    });
+    // The editable draft must be reset only when the asynchronously loaded rule changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setForm({
       title: rule.title,
       description: rule.description ?? '',
@@ -61,8 +70,13 @@ export default function EditRulePage() {
         effectiveTo: form.effectiveTo || undefined,
         minimumOrderValue: form.minimumOrderValue,
         networkLevels: form.networkLevels,
-        levelRates: form.rates.map((percentageAmount, index) => ({ level: index + 1, percentageAmount })),
-        percentageAmount: form.rates[0] ?? 0,
+        levelRates: form.rates.map((rate, index) => ({
+          level: index + 1,
+          systemPercentageAmount: rate.system,
+          merchantPercentageAmount: rate.merchant,
+          percentageAmount: rate.merchant,
+        })),
+        percentageAmount: form.rates[0]?.merchant ?? 0,
         holdingPeriodDays: form.holdingPeriodDays,
         isActive: form.isActive,
       });
@@ -85,7 +99,10 @@ export default function EditRulePage() {
     setForm((current) => current ? {
       ...current,
       networkLevels,
-      rates: Array.from({ length: networkLevels }, (_, index) => current.rates[index] ?? 0),
+      rates: Array.from(
+        { length: networkLevels },
+        (_, index) => current.rates[index] ?? { system: 0, merchant: 0 },
+      ),
     } : current);
   };
 
@@ -106,8 +123,8 @@ export default function EditRulePage() {
           <label className="space-y-2 text-sm font-medium">Network levels<Input type="number" min="1" max="10" value={form.networkLevels} onChange={(event) => updateLevelCount(Number(event.target.value))} /></label>
         </div>
         <div className="space-y-3 rounded-lg border border-border bg-surface-2 p-4">
-          <div><h2 className="font-semibold">Level rates</h2><p className="text-xs text-text-muted">Each rate is a percentage of the commissionable order amount.</p></div>
-          {form.rates.map((rate, index) => <label key={index} className="flex items-center gap-3 text-sm font-medium">Level {index + 1}<Input className="max-w-40" type="number" min="0" max="100" value={rate} onChange={(event) => { const rates = [...form.rates]; rates[index] = Number(event.target.value); setField('rates', rates); }} /><span className="text-text-muted">%</span></label>)}
+          <div><h2 className="font-semibold">Level allocations</h2><p className="text-xs text-text-muted">The platform and referral-network allocations combined cannot exceed 100% per level.</p></div>
+          {form.rates.map((rate, index) => <div key={index} className="grid gap-3 rounded-md border border-border p-3 sm:grid-cols-[auto_1fr_1fr]"><span className="self-center text-sm font-medium">Level {index + 1}</span><label className="text-xs text-text-muted">Platform (%)<Input className="mt-1" type="number" min="0" max="100" value={rate.system} onChange={(event) => { const rates = [...form.rates]; rates[index] = { ...rate, system: Number(event.target.value) }; setField('rates', rates); }} /></label><label className="text-xs text-text-muted">Network (%)<Input className="mt-1" type="number" min="0" max="100" value={rate.merchant} onChange={(event) => { const rates = [...form.rates]; rates[index] = { ...rate, merchant: Number(event.target.value) }; setField('rates', rates); }} /></label></div>)}
         </div>
       </div>
     </div>

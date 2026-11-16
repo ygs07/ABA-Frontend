@@ -15,7 +15,6 @@ import { MegaMenu } from './MegaMenu';
 import { CategorySearchSelect } from './CategorySearchSelect';
 import { MobileMenu } from './MobileMenu';
 import { SellEarnCtas } from './SellEarnCtas';
-import { PointsChip } from '@/features/rewards/components/PointsChip';
 import { searchStorefront, StorefrontSearchResult } from '@/features/shop/api';
 import { SearchResultGroup } from './SearchResultGroup';
 

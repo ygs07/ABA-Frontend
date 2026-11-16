@@ -96,6 +96,10 @@ export interface Product {
 
   // KPIs / Aggregates
   totalStock: number;
+  /** Distinct customers currently holding this product in their carts. */
+  cartUsersCount?: number;
+  /** Distinct orders containing this product. */
+  ordersCount?: number;
   updatedAt: string;
   inStock?: boolean;
   totalSold?: number;

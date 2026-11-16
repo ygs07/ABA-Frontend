@@ -1,24 +1,17 @@
 'use client';
 
 import React from 'react';
-import { Store, Star, MapPin, Loader2, MessageSquare } from 'lucide-react';
+import { Store, Star, MapPin, MessageSquare, Phone } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { MerchantProfile } from '@/features/merchant/types';
 import { ShareMenu } from '@/components/patterns/ShareMenu';
-import { MessageSellerDialog } from './MessageSellerDialog';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { saveSeller, unsaveSeller } from '@/features/merchant/api';
-import { toast } from 'sonner';
 import { getWhatsAppLink } from '@/lib/utils';
-// Optionally, if auth is required for saveSeller, check user status.
 
 interface MerchantHeaderProps {
   merchant: MerchantProfile;
 }
 
 export function MerchantHeader({ merchant }: MerchantHeaderProps) {
-  const queryClient = useQueryClient();
-
   return (
     <div className="bg-brand-700 min-h-[320px] md:min-h-[256px] relative flex flex-col justify-end">
       {merchant.bannerImage ? (
@@ -56,9 +49,16 @@ export function MerchantHeader({ merchant }: MerchantHeaderProps) {
                 <MessageSquare className="w-4 h-4 mr-2" /> Message
               </Button>
             </a>
+            {merchant.phone ? (
+              <a href={`tel:${merchant.phone}`}>
+                <Button variant="outline" className="text-white border-white hover:bg-white/10">
+                  <Phone className="w-4 h-4 mr-2" /> Call
+                </Button>
+              </a>
+            ) : null}
             <ShareMenu
               title={merchant.name}
-              text={`Check out ${merchant.name} on ABA ERP`}
+              text={`Check out ${merchant.name} on BuyNaija`}
               url={`/merchants/${merchant.id}`}
             />
           </div>

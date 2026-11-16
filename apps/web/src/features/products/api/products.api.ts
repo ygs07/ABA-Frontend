@@ -38,6 +38,8 @@ type BackendProduct = {
   updatedAt?: string;
   updated_at?: string;
   total_stock?: number;
+  cart_users_count?: number;
+  orders_count?: number;
   ratings?: string | number;
   reviewCount?: string | number;
 };
@@ -115,6 +117,9 @@ export function toProduct(product: BackendProduct): Product {
     allowBackorder: false,
     isCommissionable: false,
     totalStock: product.total_stock ?? variants.reduce((total, variant) => total + variant.stockCount, 0),
+    cartUsersCount: Number(product.cart_users_count ?? 0),
+    ordersCount: Number(product.orders_count ?? 0),
+    totalSold: Number(product.orders_count ?? 0),
     updatedAt: product.updatedAt ?? product.updated_at ?? new Date().toISOString(),
     rating: numberValue(product.ratings),
     reviewCount: Number(product.reviewCount ?? 0),

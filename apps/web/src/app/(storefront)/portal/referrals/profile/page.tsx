@@ -34,7 +34,6 @@ export default function MarketerProfilePage() {
       { name: 'Level 1 Override', value: 2100000 },
       { name: 'Level 2 Override', value: 800000 },
       { name: 'Campaign Bonus', value: 1500000 },
-      { name: 'Reward Points', value: 300000 },
     ],
   };
 

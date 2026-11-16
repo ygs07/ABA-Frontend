@@ -1,7 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
-import { Calendar, Store, MessageCircle, Heart, Star, CheckCircle2, Phone } from 'lucide-react';
+import { Store, MessageCircle, Phone } from 'lucide-react';
 import { Merchant } from '@/features/merchants/types';
 import { ReviewList } from '@/features/reviews';
 import { getWhatsAppLink } from '@/lib/utils';
@@ -31,14 +31,10 @@ export function AboutSellerTab({ merchant, productId, isEligibleToReview }: Abou
             </div>
             <div>
               <h3 className="text-xl font-bold text-text">{merchant.name}</h3>
-              <p className="text-sm text-text-muted mt-1">99.9% positive feedback &middot; {(merchant?.ordersCount || 0).toLocaleString('en-NG')} items sold</p>
+              <p className="text-sm text-text-muted mt-1">Shop products from this BuyNaija merchant.</p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-sm text-text-muted mb-6">
-            <Calendar className="w-4 h-4" />
-            <span>Joined Oct 2025</span>
-          </div>
 
           <div className="flex flex-col gap-3">
             <Link href={`/ merchants / ${merchant.id} `} className="w-full">

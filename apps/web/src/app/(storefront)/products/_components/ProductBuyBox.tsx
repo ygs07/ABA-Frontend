@@ -7,7 +7,7 @@ import { AddToCartButton } from '@/components/storefront/AddToCartButton';
 import { ProductOptions } from './ProductOptions';
 import { ProductVariant, Product } from '@/features/products/types';
 import { ShareMenu } from '@/components/patterns/ShareMenu';
-import { cn, getWhatsAppLink } from '@/lib/utils';
+import { getWhatsAppLink } from '@/lib/utils';
 import { brand } from '@/config/brand';
 import { useAuthStore } from '@/features/auth/store';
 import { useCartStore } from '@/features/cart/store';
@@ -131,7 +131,7 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
       <div className="flex gap-4 text-sm mb-6 pb-6 border-b border-border">
         <span className="text-text-muted w-20">Condition:</span>
         <div className="font-medium text-text">
-          New <span className="text-text-muted font-normal italic ml-1">"Brand new, sealed"</span>
+          New <span className="text-text-muted font-normal italic ml-1">&quot;Brand new, sealed&quot;</span>
         </div>
       </div>
 
@@ -161,6 +161,12 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
               <>
                 <span>&middot;</span>
                 <span className="font-medium text-error-main">{product.totalSold} sold</span>
+              </>
+            )}
+            {inStock && product.cartUsersCount && product.cartUsersCount > 0 && (
+              <>
+                <span>&middot;</span>
+                <span>{product.cartUsersCount} {product.cartUsersCount === 1 ? 'person has' : 'people have'} this in their cart</span>
               </>
             )}
           </div>

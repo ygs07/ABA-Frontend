@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useRouter } from 'next/navigation';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Plus, CheckCircle2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -10,7 +10,6 @@ import { toast } from 'sonner';
 import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Checkbox } from '@/components/ui/checkbox';
 import { fetchApi } from '@/lib/api';
 
 import {
@@ -84,16 +83,19 @@ export default function CreateCommissionPlanPage() {
           title: values.name,
           description: values.description || undefined,
           isActive: values.isActive,
-          commissionType: values.calculationBaseType === 'pool_percentage' ? 1 : 2,
-          poolPercentage: values.poolPercentage,
-          includeShipping: values.includeShipping,
-          includeTax: values.includeTax,
+          commissionType: 1,
+          baseAmountNet: !values.includeShipping,
+          minimumOrderValue: values.networkLevels[0]?.minOrderValue ?? 0,
+          effectiveFrom: values.networkLevels[0]?.effectiveFrom || undefined,
+          effectiveTo: values.networkLevels[0]?.effectiveTo || undefined,
+          approvalMode: values.networkLevels[0]?.approvalMode === 'manual' ? 'manual' : 'automatic',
+          holdingPeriodDays: values.networkLevels[0]?.payoutDelay ?? 0,
           networkLevels: values.networkLevels.length,
-          levelConfigurations: values.networkLevels,
           percentageAmount: values.networkLevels[0]?.rate ?? 0,
           levelRates: values.networkLevels.map((lvl) => ({
             level: lvl.level,
-            systemPercentage: lvl.systemRate,
+            systemPercentageAmount: lvl.systemRate,
+            merchantPercentageAmount: lvl.rate,
             percentageAmount: lvl.rate,
           })),
           qualificationTrigger: values.networkLevels[0]?.qualificationTrigger ?? 'order_paid',
@@ -101,11 +103,8 @@ export default function CreateCommissionPlanPage() {
       });
       toast.success('Commission plan created successfully');
       router.push('/erp/commissions/rules');
-    } catch {
-      // Endpoint for revamped levels is still in progress on backend; provide seamless UI flow
-      console.info('Revamped commission plan payload:', values);
-      toast.success('Commission plan updated successfully (UI preview)');
-      router.push('/erp/commissions/rules');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to create the commission plan');
     }
   }
 
