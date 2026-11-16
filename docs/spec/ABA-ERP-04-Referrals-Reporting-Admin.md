@@ -1,4 +1,4 @@
-# BuyNaija ERP — Document 4: Referrals, Reporting & Administration
+# Naijahands ERP — Document 4: Referrals, Reporting & Administration
 
 **Covers:** Referral Management · Reporting & Analytics · Role-based Dashboards · Audit & Activity Tracking · Users, Roles & Permissions (full matrix) · Settings
 **Depends on:** Doc 1 (components, DataTable, states), Doc 2 (Customers, Orders, Users basics), Doc 3 (Commissions, Payouts, Finance).
@@ -329,7 +329,7 @@ Auditor, Admin/Super Admin, Finance Manager (financial events), Module managers 
 
 ## 4.6 Audit log list
 
-- **Title:** Audit Logs — "A tamper-proof history of activity across BuyNaija." No primary action (read-only); **Export** (CSV/Excel; audited).
+- **Title:** Audit Logs — "A tamper-proof history of activity across Naijahands." No primary action (read-only); **Export** (CSV/Excel; audited).
 - **Search:** user name, record reference, IP. **Filters:** Date-time range, User (combobox), Module, Action (multi), Entity type, Record ID/ref, Result (Success/Failed/Denied), Severity (Info/Notice/High-risk), Merchant, IP address. Presets: "High-risk events", "Financial", "Security", "My activity".
 - **Sort:** newest first (default). **Pagination:** cursor-based (append-only, large).
 - **Columns:** Timestamp (with timezone tooltip UTC), User (avatar/name/role), Action (verb badge: Created/Updated/Deleted/Approved/Rejected/Login…), Module, **Record** (EntityLink e.g., PO-2041), Summary ("Changed unit price 4,500 → 5,200"), Severity badge, Result, IP, Actions (View).

@@ -84,7 +84,7 @@ export const useReferralActivationStore = create<ReferralActivationState>()(
       },
     }),
     {
-      name: 'buynaija_referral_activation',
+      name: 'naijahands_referral_activation',
       storage: createJSONStorage(() => localStorage),
     }
   )

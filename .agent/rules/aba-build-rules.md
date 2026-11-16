@@ -2,7 +2,7 @@
 trigger: always_on
 ---
 
-# BuyNaija ERP — Agent Build Rules
+# Naijahands ERP — Agent Build Rules
 
 These rules apply to every session in this repository. Read them first, every time.
 

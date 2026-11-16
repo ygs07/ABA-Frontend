@@ -192,7 +192,7 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
                 <div className="bg-brand-50 rounded-xl border border-brand-100 p-6 shadow-sm">
                   <h3 className="font-semibold text-brand-900 mb-2">Referral Network</h3>
                   <p className="text-sm text-brand-800 mb-4">
-                    This merchant is part of the BuyNaija referral network. You can earn commissions by referring their products!
+                    This merchant is part of the Naijahands referral network. You can earn commissions by referring their products!
                   </p>
                   <Button size="sm" variant="outline" className="w-full bg-white border-brand-200 text-brand-700 hover:bg-brand-100">
                     Join their network

@@ -24,7 +24,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     id: 'order-place',
     category: 'Orders & Delivery',
-    question: 'How do I place an order on BuyNaija?',
+    question: 'How do I place an order on Naijahands?',
     answer:
       'Browse products on the storefront, add your preferred variants to your cart, and proceed to checkout. You can select a saved Nigerian delivery address or add a new one, choose a delivery method, optionally apply a referral code, and complete payment.',
   },
@@ -80,7 +80,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     id: 'merchant-apply',
     category: 'Merchants & Selling',
-    question: 'How do I become a merchant on BuyNaija?',
+    question: 'How do I become a merchant on Naijahands?',
     answer:
       'Click Sell or visit the Merchant Onboarding page (/merchants/onboarding) to submit your business details, store location, and required KYC documents for review.',
   },

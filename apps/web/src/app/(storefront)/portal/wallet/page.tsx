@@ -210,7 +210,7 @@ export default function PortalWalletPage() {
               <AmountText amountInKobo={shoppingCreditsKobo} />
             </h2>
             <p className="text-xs text-amber-800/80 mt-2 leading-relaxed">
-              Credited from referral activation fee. Valid for purchasing all BuyNaija marketplace products.
+              Credited from referral activation fee. Valid for purchasing all Naijahands marketplace products.
             </p>
           </div>
           <div className="mt-4 pt-3 border-t border-amber-200 text-xs text-amber-900 flex items-center gap-1 font-medium">

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" xmlns="http://www.w3.org/1999/xhtml">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,35 +8,113 @@
   <meta name="x-apple-disable-message-reformatting" />
   <meta name="color-scheme" content="light" />
   <meta name="supported-color-schemes" content="light" />
-  <title>{{email_subject}} | BuyNaija</title>
+  <title>{{email_subject}} | Naijahands</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap"
+    rel="stylesheet" />
   <style type="text/css">
     /* Reset & Email Client Normalization */
-    body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
-    table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; border-collapse: collapse; }
-    img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
-    body { margin: 0 !important; padding: 0 !important; width: 100% !important; background-color: #fdfaf1; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #111827; }
-    .font-mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-variant-numeric: tabular-nums; }
-    .btn-primary:hover { background-color: #122117 !important; }
-    .btn-copper:hover { background-color: #a67732 !important; }
-    .nav-link:hover { color: #122117 !important; background-color: #e6e1d8 !important; }
+    body,
+    table,
+    td,
+    a {
+      -webkit-text-size-adjust: 100%;
+      -ms-text-size-adjust: 100%;
+    }
+
+    table,
+    td {
+      mso-table-lspace: 0pt;
+      mso-table-rspace: 0pt;
+      border-collapse: collapse;
+    }
+
+    img {
+      -ms-interpolation-mode: bicubic;
+      border: 0;
+      height: auto;
+      line-height: 100%;
+      outline: none;
+      text-decoration: none;
+    }
+
+    body {
+      margin: 0 !important;
+      padding: 0 !important;
+      width: 100% !important;
+      background-color: #fdfaf1;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      color: #111827;
+    }
+
+    .font-mono {
+      font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .btn-primary:hover {
+      background-color: #122117 !important;
+    }
+
+    .btn-copper:hover {
+      background-color: #a67732 !important;
+    }
+
+    .nav-link:hover {
+      color: #122117 !important;
+      background-color: #e6e1d8 !important;
+    }
+
     @media only screen and (max-width: 620px) {
-      .wrapper { padding: 12px 8px !important; }
-      .container { width: 100% !important; max-width: 100% !important; }
-      .px-mobile { padding-left: 20px !important; padding-right: 20px !important; }
-      .stack-col { display: block !important; width: 100% !important; text-align: center !important; padding-bottom: 8px !important; }
-      .hero-title { font-size: 24px !important; line-height: 32px !important; }
-      .otp-code { font-size: 24px !important; letter-spacing: 6px !important; }
-      .btn-full { display: block !important; width: 100% !important; box-sizing: border-box !important; text-align: center !important; }
+      .wrapper {
+        padding: 12px 8px !important;
+      }
+
+      .container {
+        width: 100% !important;
+        max-width: 100% !important;
+      }
+
+      .px-mobile {
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+      }
+
+      .stack-col {
+        display: block !important;
+        width: 100% !important;
+        text-align: center !important;
+        padding-bottom: 8px !important;
+      }
+
+      .hero-title {
+        font-size: 24px !important;
+        line-height: 32px !important;
+      }
+
+      .otp-code {
+        font-size: 24px !important;
+        letter-spacing: 6px !important;
+      }
+
+      .btn-full {
+        display: block !important;
+        width: 100% !important;
+        box-sizing: border-box !important;
+        text-align: center !important;
+      }
     }
   </style>
 </head>
-<body style="margin: 0; padding: 0; background-color: #fdfaf1; color: #111827; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+
+<body
+  style="margin: 0; padding: 0; background-color: #fdfaf1; color: #111827; font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
   <!-- Preheader Text (Hidden in Email Body) -->
-  <div style="display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #fdfaf1;">
-    {{preheader_text}} — Shop Local, BuyNaija.&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
+  <div
+    style="display: none; max-height: 0; overflow: hidden; mso-hide: all; font-size: 1px; line-height: 1px; color: #fdfaf1;">
+    {{preheader_text}} — Shop Local, Naijahands.&#847;&zwnj;&nbsp;&#847;&zwnj;&nbsp;
   </div>
 
   <!-- Outer Canvas (#fdfaf1 Storefront Warm Linen) -->
@@ -44,7 +123,8 @@
       <td align="center" class="wrapper" style="padding: 32px 16px;">
 
         <!-- Main 600px Container -->
-        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0" style="width: 600px; max-width: 600px;">
+        <table role="presentation" class="container" width="600" cellpadding="0" cellspacing="0" border="0"
+          style="width: 600px; max-width: 600px;">
 
           <!-- ========================================================= -->
           <!-- BLOCK 1: UTILITY STRIP & BRAND HEADER                     -->
@@ -53,44 +133,55 @@
             <td style="background-color: #e6e1d8; border: 1px solid #d5cfc5; border-bottom: none; padding: 10px 24px;">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td class="stack-col" align="left" style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #172a1d;">
-                    Shop Local, BuyNaija
+                  <td class="stack-col" align="left"
+                    style="font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #172a1d;">
+                    Shop Local, Naijahands
                   </td>
                   <td class="stack-col" align="right" style="font-size: 11px; font-weight: 600; color: #5b6472;">
-                    <a href="https://buynaija.example.com/merchants/onboarding" style="color: #172a1d; text-decoration: none; font-weight: 700;">Sell on BuyNaija</a>
+                    <a href="https://naijahands.example.com/merchants/onboarding"
+                      style="color: #172a1d; text-decoration: none; font-weight: 700;">Sell on Naijahands</a>
                     &nbsp;&bull;&nbsp;
-                    <a href="https://buynaija.example.com/community" style="color: #bd8939; text-decoration: none; font-weight: 700;">Refer &amp; Earn</a>
+                    <a href="https://naijahands.example.com/community"
+                      style="color: #bd8939; text-decoration: none; font-weight: 700;">Refer &amp; Earn</a>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
           <tr>
-            <td style="background-color: #ffffff; border: 1px solid #e3e6eb; padding: 18px 24px; box-shadow: 0 4px 12px rgba(16, 24, 40, 0.06);">
+            <td
+              style="background-color: #ffffff; border: 1px solid #e3e6eb; padding: 18px 24px; box-shadow: 0 4px 12px rgba(16, 24, 40, 0.06);">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
                 <tr>
                   <td class="stack-col" align="left" valign="middle">
-                    <a href="https://buynaija.example.com" style="text-decoration: none; display: inline-block;">
-                      <img src="/logo-full.png" alt="BuyNaija" width="128" height="36" style="display: block; height: 32px; width: auto; font-size: 18px; font-weight: 800; color: #172a1d;" />
+                    <a href="https://naijahands.example.com" style="text-decoration: none; display: inline-block;">
+                      <img src="/logo-full.png" alt="Naijahands" width="128" height="36"
+                        style="display: block; height: 32px; width: auto; font-size: 18px; font-weight: 800; color: #172a1d;" />
                     </a>
                   </td>
                   <td class="stack-col" align="right" valign="middle">
-                    <a href="https://buynaija.example.com" class="nav-link" style="display: inline-block; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5b6472; text-decoration: none;">Shop</a>
-                    <a href="https://buynaija.example.com/merchants" class="nav-link" style="display: inline-block; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5b6472; text-decoration: none;">Merchants</a>
-                    <a href="https://buynaija.example.com/community" class="nav-link" style="display: inline-block; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5b6472; text-decoration: none;">Community</a>
+                    <a href="https://naijahands.example.com" class="nav-link"
+                      style="display: inline-block; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5b6472; text-decoration: none;">Shop</a>
+                    <a href="https://naijahands.example.com/merchants" class="nav-link"
+                      style="display: inline-block; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5b6472; text-decoration: none;">Merchants</a>
+                    <a href="https://naijahands.example.com/community" class="nav-link"
+                      style="display: inline-block; padding: 6px 12px; border-radius: 9999px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5b6472; text-decoration: none;">Community</a>
                   </td>
                 </tr>
               </table>
             </td>
           </tr>
 
-          <tr><td style="height: 16px; line-height: 16px; font-size: 16px;">&nbsp;</td></tr>
+          <tr>
+            <td style="height: 16px; line-height: 16px; font-size: 16px;">&nbsp;</td>
+          </tr>
 
           <!-- ========================================================= -->
           <!-- MAIN CONTENT SURFACE CARD                                 -->
           <!-- ========================================================= -->
           <tr>
-            <td class="px-mobile" style="background-color: #ffffff; border: 1px solid #e3e6eb; padding: 36px 32px; box-shadow: 0 4px 12px rgba(16, 24, 40, 0.06);">
+            <td class="px-mobile"
+              style="background-color: #ffffff; border: 1px solid #e3e6eb; padding: 36px 32px; box-shadow: 0 4px 12px rgba(16, 24, 40, 0.06);">
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
 
                 <!-- =================================================== -->
@@ -99,13 +190,15 @@
                 <tr>
                   <td align="left" style="padding-bottom: 16px;">
                     <!-- Pill Badge (Copper / Brand / Status) -->
-                    <span style="display: inline-block; padding: 5px 12px; border-radius: 9999px; background-color: #fff9f0; border: 1px solid #f5e6d3; color: #bd8939; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;">
+                    <span
+                      style="display: inline-block; padding: 5px 12px; border-radius: 9999px; background-color: #fff9f0; border: 1px solid #f5e6d3; color: #bd8939; font-size: 11px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;">
                       {{badge_label}}
                     </span>
                   </td>
                 </tr>
                 <tr>
-                  <td align="left" class="hero-title" style="font-size: 28px; line-height: 36px; font-weight: 800; letter-spacing: -0.02em; color: #060b08; padding-bottom: 12px;">
+                  <td align="left" class="hero-title"
+                    style="font-size: 28px; line-height: 36px; font-weight: 800; letter-spacing: -0.02em; color: #060b08; padding-bottom: 12px;">
                     {{heading_title}}
                   </td>
                 </tr>
@@ -119,7 +212,8 @@
                 <!-- Primary Pill CTA Button (Racing Green #172a1d) -->
                 <tr>
                   <td align="left" style="padding-bottom: 28px;">
-                    <a href="{{primary_cta_url}}" class="btn-primary btn-full" style="display: inline-block; background-color: #172a1d; color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; padding: 14px 28px; border-radius: 9999px;">
+                    <a href="{{primary_cta_url}}" class="btn-primary btn-full"
+                      style="display: inline-block; background-color: #172a1d; color: #ffffff; font-size: 14px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; text-decoration: none; padding: 14px 28px; border-radius: 9999px;">
                       {{primary_cta_label}} &rarr;
                     </a>
                   </td>
@@ -131,13 +225,16 @@
                 <!-- =================================================== -->
                 <tr>
                   <td style="padding-bottom: 28px;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #fdfaf1; border: 1px solid #d5cfc5; border-radius: 12px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                      style="background-color: #fdfaf1; border: 1px solid #d5cfc5; border-radius: 12px;">
                       <tr>
                         <td align="center" style="padding: 20px 24px;">
-                          <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #5b6472; padding-bottom: 8px;">
+                          <div
+                            style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: #5b6472; padding-bottom: 8px;">
                             Verification / Referral Code
                           </div>
-                          <div class="font-mono otp-code" style="font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; letter-spacing: 8px; color: #172a1d; padding: 6px 0;">
+                          <div class="font-mono otp-code"
+                            style="font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; letter-spacing: 8px; color: #172a1d; padding: 6px 0;">
                             {{verification_code}}
                           </div>
                           <div style="font-size: 12px; color: #8a93a0; padding-top: 6px;">
@@ -155,14 +252,17 @@
                 <!-- =================================================== -->
                 <tr>
                   <td style="padding-bottom: 28px;">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #e3e6eb; border-radius: 12px; overflow: hidden;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                      style="border: 1px solid #e3e6eb; border-radius: 12px; overflow: hidden;">
                       <!-- Table Header Bar -->
                       <tr style="background-color: #f1f3f6;">
-                        <td style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #5b6472; border-bottom: 1px solid #e3e6eb;">
+                        <td
+                          style="padding: 12px 16px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #5b6472; border-bottom: 1px solid #e3e6eb;">
                           Order <span class="font-mono" style="color: #111827;">#{{order_reference}}</span>
                         </td>
                         <td align="right" style="padding: 12px 16px; border-bottom: 1px solid #e3e6eb;">
-                          <span style="display: inline-block; padding: 3px 10px; border-radius: 9999px; background-color: #ecfdf3; border: 1px solid #abefc6; color: #15803d; font-size: 11px; font-weight: 700;">
+                          <span
+                            style="display: inline-block; padding: 3px 10px; border-radius: 9999px; background-color: #ecfdf3; border: 1px solid #abefc6; color: #15803d; font-size: 11px; font-weight: 700;">
                             {{order_status}}
                           </span>
                         </td>
@@ -171,9 +271,11 @@
                       <tr>
                         <td style="padding: 14px 16px; border-bottom: 1px solid #e3e6eb;">
                           <div style="font-size: 14px; font-weight: 600; color: #111827;">{{item_name}}</div>
-                          <div style="font-size: 12px; color: #5b6472;">Merchant: {{merchant_name}} &bull; Qty: {{item_qty}}</div>
+                          <div style="font-size: 12px; color: #5b6472;">Merchant: {{merchant_name}} &bull; Qty:
+                            {{item_qty}}</div>
                         </td>
-                        <td align="right" class="font-mono" style="padding: 14px 16px; border-bottom: 1px solid #e3e6eb; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #111827;">
+                        <td align="right" class="font-mono"
+                          style="padding: 14px 16px; border-bottom: 1px solid #e3e6eb; font-family: 'JetBrains Mono', monospace; font-size: 14px; font-weight: 600; color: #111827;">
                           &#8358;{{item_amount}}
                         </td>
                       </tr>
@@ -182,7 +284,8 @@
                         <td style="padding: 14px 16px; font-size: 14px; font-weight: 700; color: #172a1d;">
                           Total Paid
                         </td>
-                        <td align="right" class="font-mono" style="padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #172a1d;">
+                        <td align="right" class="font-mono"
+                          style="padding: 14px 16px; font-family: 'JetBrains Mono', monospace; font-size: 16px; font-weight: 700; color: #172a1d;">
                           &#8358;{{order_total}}
                         </td>
                       </tr>
@@ -196,19 +299,24 @@
                 <!-- =================================================== -->
                 <tr>
                   <td>
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #172a1d; border-radius: 14px;">
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0"
+                      style="background-color: #172a1d; border-radius: 14px;">
                       <tr>
                         <td style="padding: 24px;">
-                          <span style="display: inline-block; padding: 4px 10px; border-radius: 9999px; background-color: #fff9f0; color: #bd8939; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;">
+                          <span
+                            style="display: inline-block; padding: 4px 10px; border-radius: 9999px; background-color: #fff9f0; color: #bd8939; font-size: 10px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase;">
                             Reward Points &bull; BNG-{{referral_code}}
                           </span>
-                          <div style="font-size: 18px; font-weight: 800; color: #ffffff; padding-top: 10px; padding-bottom: 6px;">
+                          <div
+                            style="font-size: 18px; font-weight: 800; color: #ffffff; padding-top: 10px; padding-bottom: 6px;">
                             Shop. Refer. Earn. Grow.
                           </div>
                           <div style="font-size: 13px; line-height: 20px; color: #e6e1d8; padding-bottom: 16px;">
-                            Invite buyers and local businesses to BuyNaija and earn commissions on eligible purchases across your referral network.
+                            Invite buyers and local businesses to Naijahands and earn commissions on eligible purchases
+                            across your referral network.
                           </div>
-                          <a href="https://buynaija.example.com/portal/referrals/network" class="btn-copper" style="display: inline-block; background-color: #bd8939; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; padding: 10px 20px; border-radius: 9999px;">
+                          <a href="https://naijahands.example.com/portal/referrals/network" class="btn-copper"
+                            style="display: inline-block; background-color: #bd8939; color: #ffffff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; text-decoration: none; padding: 10px 20px; border-radius: 9999px;">
                             Explore Rewards Program &rarr;
                           </a>
                         </td>
@@ -226,26 +334,34 @@
           <!-- ========================================================= -->
           <tr>
             <td style="padding: 28px 24px 16px 24px; text-align: center;">
-              <div style="font-size: 16px; font-weight: 800; color: #122117; letter-spacing: -0.01em; padding-bottom: 6px;">
-                BuyNaija
+              <div
+                style="font-size: 16px; font-weight: 800; color: #122117; letter-spacing: -0.01em; padding-bottom: 6px;">
+                Naijahands
               </div>
               <div style="font-size: 12px; line-height: 18px; color: #5b6472; padding-bottom: 16px;">
                 The premier marketplace and community platform connecting buyers and merchants across Nigeria.
               </div>
               <div style="font-size: 12px; font-weight: 600; color: #172a1d; padding-bottom: 16px;">
-                <a href="https://buynaija.example.com" style="color: #172a1d; text-decoration: none;">Marketplace</a>
+                <a href="https://naijahands.example.com" style="color: #172a1d; text-decoration: none;">Marketplace</a>
                 &nbsp;&nbsp;&bull;&nbsp;&nbsp;
-                <a href="https://buynaija.example.com/merchants" style="color: #172a1d; text-decoration: none;">Our Merchants</a>
+                <a href="https://naijahands.example.com/merchants" style="color: #172a1d; text-decoration: none;">Our
+                  Merchants</a>
                 &nbsp;&nbsp;&bull;&nbsp;&nbsp;
-                <a href="https://buynaija.example.com/portal/rewards" style="color: #172a1d; text-decoration: none;">Reward Points</a>
+                <a href="https://naijahands.example.com/portal/rewards"
+                  style="color: #172a1d; text-decoration: none;">Reward Points</a>
                 &nbsp;&nbsp;&bull;&nbsp;&nbsp;
-                <a href="https://buynaija.example.com/contact" style="color: #172a1d; text-decoration: none;">Support</a>
+                <a href="https://naijahands.example.com/contact"
+                  style="color: #172a1d; text-decoration: none;">Support</a>
               </div>
-              <div style="border-top: 1px solid #e3e6eb; padding-top: 16px; font-size: 11px; line-height: 18px; color: #8a93a0;">
-                Need help? Contact us at <a href="mailto:support@buynaija.example.com" style="color: #172a1d; text-decoration: underline;">support@buynaija.example.com</a><br />
-                Powered by BuyNaija &bull; &copy; 2026 BuyNaija Ltd. All rights reserved.<br />
-                <a href="{{unsubscribe_url}}" style="color: #5b6472; text-decoration: underline;">Notification Preferences</a> &nbsp;|&nbsp;
-                <a href="https://buynaija.example.com/privacy" style="color: #5b6472; text-decoration: underline;">Privacy Policy</a>
+              <div
+                style="border-top: 1px solid #e3e6eb; padding-top: 16px; font-size: 11px; line-height: 18px; color: #8a93a0;">
+                Need help? Contact us at <a href="mailto:support@naijahands.example.com"
+                  style="color: #172a1d; text-decoration: underline;">support@naijahands.example.com</a><br />
+                Powered by Naijahands &bull; &copy; 2026 Naijahands Ltd. All rights reserved.<br />
+                <a href="{{unsubscribe_url}}" style="color: #5b6472; text-decoration: underline;">Notification
+                  Preferences</a> &nbsp;|&nbsp;
+                <a href="https://naijahands.example.com/privacy"
+                  style="color: #5b6472; text-decoration: underline;">Privacy Policy</a>
               </div>
             </td>
           </tr>
@@ -255,5 +371,5 @@
     </tr>
   </table>
 </body>
-</html>
 
+</html>

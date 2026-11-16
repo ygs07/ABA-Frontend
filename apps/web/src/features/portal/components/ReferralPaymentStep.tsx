@@ -46,7 +46,7 @@ export function ReferralPaymentStep({ onPay, onBack }: ReferralPaymentStepProps)
           <div className="text-xs space-y-1">
             <p className="font-bold text-text">100% Credited to Your Shopping Wallet!</p>
             <p className="text-text-muted leading-relaxed">
-              Your ₦5,000 fee is credited immediately to your BuyNaija wallet. It cannot be withdrawn, but you can use it anytime to purchase any products across BuyNaija.
+              Your ₦5,000 fee is credited immediately to your Naijahands wallet. It cannot be withdrawn, but you can use it anytime to purchase any products across Naijahands.
             </p>
           </div>
         </div>

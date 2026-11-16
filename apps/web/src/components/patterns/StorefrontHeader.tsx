@@ -182,14 +182,16 @@ export function StorefrontHeader() {
           <div className="flex items-center gap-8 pl-4 lg:pl-6">
             {/* Logo */}
             <Link href="/" className="shrink-0 flex items-center">
-              <Image
+            {/* Using text for now */}
+            <h2 className='text-primary font-extrabold text-2xl'>Naijahands</h2>
+              {/* <Image
                 src={brand.logo.full}
                 alt={brand.name}
                 width={120}
                 height={40}
                 className="h-8 w-auto object-contain"
                 priority
-              />
+              /> */}
             </Link>
 
             {/* Desktop Navigation */}

@@ -11,7 +11,7 @@
 The client reviewed the delivered UI and asked for these changes:
 
 1. **Restructure:** the shop becomes the landing page, the current home becomes About, hero moves to the shop, a horizontal mega menu on all pages.
-2. **Rebrand:** drop the "ABA" name for a "made in Nigeria" identity ("BuyNaija" was floated).
+2. **Rebrand:** drop the "ABA" name for a "made in Nigeria" identity ("Naijahands" was floated).
 3. **Marketplace features:** merchant spotlight (free, auto-rotated), product spotlight (paid by merchants), a smaller "Meet businesses" carousel.
 4. **Store pages:** share buttons, a store sub-menu with category filtering down to leaf level, Save Seller, a trust panel for vetting sellers, eBay-style collapsing category bar.
 5. **Reviews:** high-quality review system modelled on an example the client shared in a group chat.
@@ -58,7 +58,7 @@ Each question has a **default** so work can start without waiting.
 | Q1  | Which side panel should be reduced: the shop filter sidebar, or the dashboard sidebar?                                                                         | Shop filter sidebar becomes 240px and collapsible.                                                               |
 | Q2  | Please describe the "two top slivers" (circular search, Sell, Earn).                                                                                           | A slim top band: a pill-shaped search box, plus two compact blocks "Sell" and "Earn" with one line of text each. |
 | Q3  | Should the mega menu replace the sidebar on admin, merchant back-office and POS screens too?                                                                   | No. Storefront, customer portal and public merchant pages only.                                                  |
-| Q4  | What is the final name and logo? Is the platform now nationwide, or still Aba-focused?                                                                         | Working name "BuyNaija" (one config change); nationwide copy.                                                    |
+| Q4  | What is the final name and logo? Is the platform now nationwide, or still Aba-focused?                                                                         | Working name "Naijahands" (one config change); nationwide copy.                                                  |
 | Q5  | Please resend the review example from the group chat.                                                                                                          | Standard marketplace review pattern (stars, verified purchase, photos, helpful votes, seller reply).             |
 | Q6  | What are the product promotion packages and prices? Should merchants pay online themselves from the start, or will your team set promotions up for them first? | Admin-managed promotions first; self-service payment later.                                                      |
 | Q7  | On store pages, may we show completed order counts and the "referred by" marketer? Should revenue stay hidden?                                                 | Order counts shown; revenue hidden; marketer shown only if both sides agree.                                     |
@@ -418,7 +418,7 @@ Use the normal audit prompt (Prompt 2 in `aba-build-and-audit-prompts.md`) in a 
 - **Privacy:** the marketer network visual and the "referred by" line expose relationships between people. The defaults (aliases, aggregates, opt-in, no contact or bank details) are there to meet Nigerian data protection expectations. Please have the client confirm them in writing.
 - **Paid placement:** sponsored items must be clearly labelled. Do not let paid and organic placements mix without the label.
 - **Points programme:** if points become redeemable they are a liability on the books. Do not enable redemption until Finance and the client agree on value and expiry.
-- **Name and domain:** before the client commits to "BuyNaija" or any name, check domain availability and existing trademarks. This guide does not check either.
+- **Name and domain:** before the client commits to "Naijahands" or any name, check domain availability and existing trademarks. This guide does not check either.
 - **Performance:** the mega menu, spotlight, quick view and image galleries add weight to the landing page. Lazy-load below the fold and keep the first products visible quickly (the hero height cap in Doc 06 section 2.2 is there for this reason).
 - **Scope growth:** reviews, rewards, promotions and the network visual are each a small product. Phase them as shown in section 6 so the S1 changes can be shown at the next review without waiting for the rest.
 - **Open decisions:** add Q1 to Q14 above to `/docs/QUESTIONS.md` as D-13 to D-26 and keep the defaults until the client answers.

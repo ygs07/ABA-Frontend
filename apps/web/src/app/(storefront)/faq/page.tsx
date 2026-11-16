@@ -27,7 +27,7 @@ export default function FaqPage() {
       <div className="mb-8">
         <h1 className="text-3xl md:text-4xl font-bold text-text tracking-tight">Frequently Asked Questions</h1>
         <p className="mt-3 text-base text-text-muted">
-          Common questions about shopping, checkout, wallet payments, referrals, and selling on BuyNaija.
+          Common questions about shopping, checkout, wallet payments, referrals, and selling on Naijahands.
         </p>
       </div>
 
@@ -51,11 +51,10 @@ export default function FaqPage() {
               key={category}
               type="button"
               onClick={() => setSelectedCategory(category)}
-              className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${
-                isActive
+              className={`px-3.5 py-1.5 rounded-full text-sm font-medium border transition-colors ${isActive
                   ? 'bg-brand-600 text-white border-brand-600'
                   : 'bg-white text-text-muted border-border hover:border-brand-500 hover:text-text'
-              }`}
+                }`}
             >
               {category}
             </button>
@@ -86,9 +85,8 @@ export default function FaqPage() {
                     <span className="text-base font-semibold text-text">{item.question}</span>
                   </div>
                   <ChevronDown
-                    className={`w-5 h-5 text-text-muted shrink-0 transition-transform ${
-                      isOpen ? 'rotate-180' : ''
-                    }`}
+                    className={`w-5 h-5 text-text-muted shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''
+                      }`}
                   />
                 </button>
                 {isOpen && (

@@ -1,9 +1,9 @@
 export const brand = {
   // Working name until client confirms
-  name: "BuyNaija",
-  shortName: "BuyNaija",
-  legalName: "BuyNaija Ltd.", // Working name
-  tagline: "Shop Local, BuyNaija", // Updated from "Shop Local, Shop Aba"
+  name: "Naijahands",
+  shortName: "Naijahands",
+  legalName: "Naijahands Ltd.", // Working name
+  tagline: "Shop Local, Naijahands", // Updated from "Shop Local, Shop Aba"
   logo: {
     full: "/logo-full.png",
     mark: "/logo-mark.svg",
@@ -20,7 +20,7 @@ export const brand = {
   },
   rewardsName: "Reward Points", // Default from spec
   referralCodePrefix: "BNG-", // Changed from ABA-
-  receiptFooter: "Powered by BuyNaija", // Replaces "Powered by BuyNaija"
-  emailSenderName: "BuyNaija",
-  metaTitleTemplate: "%s | BuyNaija",
+  receiptFooter: "Powered by Naijahands", // Replaces "Powered by Naijahands"
+  emailSenderName: "Naijahands",
+  metaTitleTemplate: "%s | Naijahands",
 };

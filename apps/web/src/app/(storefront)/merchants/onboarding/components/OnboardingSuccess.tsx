@@ -13,9 +13,8 @@ export function OnboardingSuccess({ isProvisional }: OnboardingSuccessProps) {
   return (
     <div className="max-w-xl mx-auto px-4 py-16 text-center animate-in fade-in duration-500">
       <div
-        className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${
-          isProvisional ? 'bg-amber-100 text-amber-700' : 'bg-success-100 text-success-main'
-        }`}
+        className={`w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 ${isProvisional ? 'bg-amber-100 text-amber-700' : 'bg-success-100 text-success-main'
+          }`}
       >
         {isProvisional ? <Clock className="w-10 h-10" /> : <CheckCircle2 className="w-10 h-10" />}
       </div>
@@ -23,11 +22,10 @@ export function OnboardingSuccess({ isProvisional }: OnboardingSuccessProps) {
       <div className="space-y-3">
         <div className="inline-block">
           <span
-            className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase ${
-              isProvisional
+            className={`px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase ${isProvisional
                 ? 'bg-amber-100 text-amber-800 border border-amber-300'
                 : 'bg-brand-50 text-brand-700 border border-brand-200'
-            }`}
+              }`}
           >
             {isProvisional ? 'Provisional Status • 60 Days Remaining' : 'Status: Under Admin Review'}
           </span>
@@ -39,7 +37,7 @@ export function OnboardingSuccess({ isProvisional }: OnboardingSuccessProps) {
 
         <p className="text-sm text-text-muted leading-relaxed max-w-md mx-auto">
           {isProvisional
-            ? 'Welcome to BuyNaija! Your store is provisionally active. Please complete and submit your CAC registration within 60 days to unlock full verified merchant status.'
+            ? 'Welcome to Naijahands! Your store is provisionally active. Please complete and submit your CAC registration within 60 days to unlock full verified merchant status.'
             : 'Our verification team is reviewing your CAC, NIN, and workshop details. Verification typically completes within 24–48 hours.'}
         </p>
       </div>
