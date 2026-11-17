@@ -66,6 +66,8 @@ export interface Product {
   type: ProductType;
   category?: Category;
   categoryName: string;
+  subcategoryId?: string;
+  subcategoryName?: string;
   brand?: string;
   description?: string;
   unitOfMeasure: string;
