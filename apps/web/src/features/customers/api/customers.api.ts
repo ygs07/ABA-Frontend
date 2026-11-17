@@ -45,8 +45,16 @@ const MOCK_CUSTOMERS: Customer[] = [
   }
 ];
 
-export const getCustomers = async (): Promise<Customer[]> => {
+export type CustomerFilters = {
+  search?: string;
+  status?: 'active' | 'inactive';
+};
+
+export const getCustomers = async (filters: CustomerFilters = {}): Promise<Customer[]> => {
   if (API_MODE !== 'mock') {
+    const params = new URLSearchParams({ limit: '100' });
+    if (filters.search?.trim()) params.set('search', filters.search.trim());
+    if (filters.status) params.set('status', filters.status);
     const response = await fetchApi<{ data: Array<{
       id: number;
       status: 'active' | 'inactive';
@@ -64,7 +72,7 @@ export const getCustomers = async (): Promise<Customer[]> => {
       walletBalance?: string | number;
       deliveryAddresses?: Array<{ id: number; name: string; street: string; city: string; state: string }>;
       orders?: Array<{ id: number; order_number: string; total_amount: string | number; status: string | number; createdAt: string; items: Array<unknown>; payments: Array<{ id: number; reference: string; amount: string | number; status: string; payment_method: string | null; paid_at: string | null; createdAt: string }> }>;
-    }>; meta: unknown }>('/api/v1/customers?limit=100');
+    }>; meta: unknown }>(`/api/v1/customers?${params.toString()}`);
     return response.data.map((customer) => ({
       id: String(customer.id),
       customerNo: `CUS-${String(customer.id).padStart(5, '0')}`,
@@ -212,25 +220,30 @@ export const getCustomerById = async (id: string): Promise<Customer> => {
 };
 
 export const createCustomer = async (data: CreateCustomerInput): Promise<Customer> => {
+  if (API_MODE !== 'mock') {
+    const customer = await fetchApi<{ id: number }>('/api/v1/customers', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId: data.userId,
+        ...(data.referralCode ? { referralCode: data.referralCode } : {}),
+      }),
+    });
+    return getCustomerById(String(customer.id));
+  }
   await delay(1000);
-  if (data.phone === '+2348000000000') throw new Error('Customer with this phone exists');
-
   const newCustomer: Customer = {
     id: `cus-${Date.now()}`,
     customerNo: `CUS-${Math.floor(Math.random() * 9000) + 1000}`,
-    type: data.type,
-    firstName: data.firstName,
-    lastName: data.lastName,
-    companyName: data.companyName,
-    phone: data.phone,
-    email: data.email,
-    customerGroup: data.customerGroup,
-    merchantId: data.merchantId,
-    referredBy: data.referredBy,
-    referralCode: `REF-${Math.floor(Math.random() * 9000)}`,
-    addresses: data.addresses?.map(a => ({ id: `add-${Date.now()}`, ...a })) || [],
-    creditLimit: data.creditLimit,
-    notes: data.notes,
+    type: 'Individual',
+    firstName: 'New',
+    lastName: 'Customer',
+    phone: '',
+    email: '',
+    customerGroup: 'Retail',
+    referralCode: data.referralCode ?? '',
+    addresses: [],
+    creditLimit: 0,
     status: 'Active',
     registeredAt: new Date().toISOString(),
     ordersCount: 0,

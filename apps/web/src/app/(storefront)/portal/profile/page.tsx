@@ -9,6 +9,7 @@ import { fetchApi } from '@/lib/api';
 import { DeliveryAddress, getDeliveryAddresses } from '@/features/checkout/api';
 import { NIGERIAN_STATES } from '@/lib/constants/nigeria';
 import { toast } from 'sonner';
+import { changePassword, updateProfile } from '@/features/auth/api/profile.api';
 
 const emptyAddress = { name: '', street: '', city: '', state: '', zip: '' };
 
@@ -20,6 +21,13 @@ export default function PortalProfile() {
   const [editingAddressId, setEditingAddressId] = useState<number | null>(null);
   const [isAddressFormOpen, setIsAddressFormOpen] = useState(false);
   const [isSavingAddress, setIsSavingAddress] = useState(false);
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [isSavingProfile, setIsSavingProfile] = useState(false);
+  const [isSavingPassword, setIsSavingPassword] = useState(false);
   const isCustomer = Boolean(
     isAuthenticated && user && (user.userType === 'Customer' || user.roles.includes('Customer')),
   );
@@ -40,6 +48,41 @@ export default function PortalProfile() {
   useEffect(() => {
     if (isCustomer) void loadAddresses();
   }, [isCustomer]);
+
+  useEffect(() => {
+    if (!user) return;
+    setName(user.name);
+    setPhone(user.phone ?? '');
+  }, [user]);
+
+  const saveProfile = async () => {
+    if (!name.trim()) return toast.error('Your name is required.');
+    setIsSavingProfile(true);
+    try {
+      await updateProfile({ name, phone, email: user?.email ?? '', language: 'English', timezone: 'Africa/Lagos' });
+      toast.success('Profile updated.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update profile.');
+    } finally {
+      setIsSavingProfile(false);
+    }
+  };
+
+  const savePassword = async () => {
+    if (newPassword !== confirmPassword) return toast.error('New password and confirmation do not match.');
+    setIsSavingPassword(true);
+    try {
+      await changePassword({ currentPassword, newPassword, confirmPassword });
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      toast.success('Password updated.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update password.');
+    } finally {
+      setIsSavingPassword(false);
+    }
+  };
 
   const openAddressForm = (address?: DeliveryAddress) => {
     setEditingAddressId(address?.id ?? null);
@@ -93,26 +136,26 @@ export default function PortalProfile() {
               <label className="block text-sm font-medium text-text mb-1">Full Name</label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="text" defaultValue="Jane Doe" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                <input type="text" value={name} onChange={(event) => setName(event.target.value)} className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-text mb-1">Email Address</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="email" defaultValue="jane.doe@example.com" disabled className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-surface-1 text-sm text-text-muted cursor-not-allowed" />
+                <input type="email" value={user?.email ?? ''} disabled className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-surface-1 text-sm text-text-muted cursor-not-allowed" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-text mb-1">Phone Number</label>
               <div className="relative">
                 <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="tel" defaultValue="+2348012345678" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                <input type="tel" value={phone} onChange={(event) => setPhone(event.target.value)} className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
             </div>
           </div>
           <div className="mt-6">
-            <Button>Save Changes</Button>
+            <Button onClick={saveProfile} disabled={isSavingProfile}>{isSavingProfile ? 'Saving…' : 'Save Changes'}</Button>
           </div>
         </div>
 
@@ -164,17 +207,24 @@ export default function PortalProfile() {
               <label className="block text-sm font-medium text-text mb-1">Current Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="password" placeholder="••••••••" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="••••••••" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
             </div>
             <div>
               <label className="block text-sm font-medium text-text mb-1">New Password</label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="password" placeholder="••••••••" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+                <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="••••••••" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
               </div>
             </div>
-            <Button>Update Password</Button>
+            <div>
+              <label className="block text-sm font-medium text-text mb-1">Confirm New Password</label>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="••••••••" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+              </div>
+            </div>
+            <Button onClick={savePassword} disabled={isSavingPassword || !currentPassword || !newPassword || !confirmPassword}>{isSavingPassword ? 'Updating…' : 'Update Password'}</Button>
           </div>
         </div>
       </div>

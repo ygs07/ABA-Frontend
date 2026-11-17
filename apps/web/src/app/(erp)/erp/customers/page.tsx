@@ -24,11 +24,11 @@ export default function CustomersListPage() {
   const [search, setSearch] = useState('');
   const [overview, setOverview] = useState<CustomerOverview | null>(null);
 
-  const fetchCustomers = async () => {
+  const fetchCustomers = async (searchTerm = '') => {
     setIsLoading(true);
     try {
       const [data, customerOverview] = await Promise.all([
-        getCustomers(),
+        getCustomers({ search: searchTerm }),
         getCustomerOverview(),
       ]);
       setCustomers(data);
@@ -41,15 +41,12 @@ export default function CustomersListPage() {
   };
 
   useEffect(() => {
-    fetchCustomers();
-  }, []);
+    const timer = window.setTimeout(() => {
+      void fetchCustomers(search.trim());
+    }, 300);
 
-  const filteredCustomers = customers.filter(c => 
-    c.firstName.toLowerCase().includes(search.toLowerCase()) || 
-    c.lastName.toLowerCase().includes(search.toLowerCase()) ||
-    c.customerNo.toLowerCase().includes(search.toLowerCase()) ||
-    c.phone.includes(search)
-  );
+    return () => window.clearTimeout(timer);
+  }, [search]);
 
   const columns = [
     { 
@@ -165,7 +162,7 @@ export default function CustomersListPage() {
 
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
         <DataTable 
-          data={filteredCustomers} 
+          data={customers} 
           columns={columns} 
           isLoading={isLoading}
           emptyMessage="No customers found."

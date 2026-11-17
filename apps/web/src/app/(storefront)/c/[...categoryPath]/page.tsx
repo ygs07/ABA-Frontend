@@ -1,6 +1,9 @@
-import React from 'react';
+'use client';
+
 import Link from 'next/link';
-import { getShopProducts, getShopCategories } from '@/features/shop/api';
+import { useParams } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
+import { ChevronRight, Loader2 } from 'lucide-react';
 import { CategoryFilter } from '@/components/patterns/CategoryFilter';
 import { ProductCard } from '@/components/storefront/ProductCard';
 import { StorefrontEmptyState } from '@/components/patterns/StorefrontEmptyState';
@@ -28,34 +31,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
   } catch {
     loadError = true;
   }
-
-  const currentCategory = categories.find((c) => c.slug === categorySlug);
-
-  if (!currentCategory) {
-    const topCategories = categories.filter((c) => !c.parentId).slice(0, 8);
-    const requestedLabel = formatSlugLabel(categorySlug);
-
-    return (
-      <StorefrontEmptyState
-        breadcrumbLabel={requestedLabel}
-        title={
-          loadError
-            ? 'We could not load this category right now'
-            : `No listings found for "${requestedLabel}"`
-        }
-        description={
-          loadError
-            ? 'There was a temporary issue loading category details. You can browse all products or try again shortly.'
-            : 'This category may have been renamed, moved, or does not have active products yet.'
-        }
-        suggestionsTitle="Explore Available Categories"
-        suggestions={topCategories.map((cat) => ({
-          id: cat.id,
-          label: cat.name,
-          href: `/c/${cat.slug}`,
-        }))}
-      />
-    );
+  if (categoriesError || !currentCategory) {
+    return <div className="mx-auto max-w-7xl px-4 py-32 text-center"><h1 className="text-2xl font-bold text-text">Category not found</h1><Link className="mt-4 inline-block text-brand-600 hover:underline" href="/shop">Browse all products</Link></div>;
   }
 
   // Fetch products

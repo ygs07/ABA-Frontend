@@ -21,6 +21,7 @@ export default function StorefrontLoginPage() {
   const [password, setPassword] = useState(isMock ? 'password123' : '');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [rememberMe, setRememberMe] = useState(false);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,11 +29,14 @@ export default function StorefrontLoginPage() {
     setError(null);
 
     try {
-      const response = await loginRequest({ identifier, password });
+      const response = await loginRequest({ identifier, password, rememberMe });
       const role = response.user.userType ?? response.user.roles[0];
       if (!role) throw new Error('This user does not have an assigned user type or role.');
-      await setAuthCookie(response.token, role);
+      await setAuthCookie(response.token, role, rememberMe);
       login(response.user, role);
+      if (!rememberMe) {
+        window.localStorage.removeItem('aba_ui_auth_state');
+      }
       router.push(getUserHome(response.user));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred during sign in');
@@ -102,6 +106,8 @@ export default function StorefrontLoginPage() {
               id="remember-me"
               name="remember-me"
               type="checkbox"
+              checked={rememberMe}
+              onChange={(event) => setRememberMe(event.target.checked)}
               className="h-4 w-4 text-brand-600 focus:ring-brand-500 border-border rounded"
             />
             <label htmlFor="remember-me" className="ml-2 block text-sm text-text-muted">

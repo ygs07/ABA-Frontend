@@ -2,7 +2,15 @@ import { API_MODE, fetchApi } from '@/lib/api';
 import { Category } from './types';
 import { mockShopCategories } from './mocks';
 
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+export type ProductSubcategory = {
+  id: number;
+  category_id: number;
+  name: string;
+  slug: string;
+  description: string | null;
+  is_active: boolean;
+  productCount?: number;
+};
 
 export type BackendCategory = {
   id: number;
@@ -51,8 +59,14 @@ export async function getCategories(): Promise<{ data: Category[] }> {
     );
     return { data: mapBackendCategories(response.data) };
   }
-  await delay(400);
-  return { data: mockShopCategories };
+  return fetchApi<Paginated<ProductCategory>>('/api/v1/product-categories?limit=100&includeCounts=true');
+}
+
+export async function getCategories(): Promise<{ data: Category[] }> {
+  const response = await getCategoryHierarchy();
+  return {
+    data: response.data.filter((category) => category.is_active).map(toCategory),
+  };
 }
 
 export async function getCategoryMenu(): Promise<{ data: Category[] }> {
@@ -65,21 +79,32 @@ export async function getCategoryMenu(): Promise<{ data: Category[] }> {
   await delay(400);
   return { data: mockShopCategories };
 }
-export async function createCategory(data: Partial<Category>): Promise<{ data: Category }> {
-  await delay(800);
-  const newCategory: Category = {
-    id: `cat-${Date.now()}`,
-    name: data.name || '',
-    slug: data.slug || '',
-    image: data.image,
-    productCount: 0,
+
+export async function createSubcategory(input: {
+  categoryId: number;
+  name: string;
+  slug?: string;
+  description?: string;
+  isActive: boolean;
+}) {
+  return fetchApi<ProductSubcategory>('/api/v1/product-subcategories', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(input),
+  });
+}
+
+function toCategory(category: ProductCategory | ProductSubcategory, parentId?: number): Category {
+  const isSubcategory = 'category_id' in category;
+  return {
+    id: String(category.id),
+    name: category.name,
+    slug: category.slug,
+    parentId: isSubcategory ? String(category.category_id) : parentId ? String(parentId) : null,
     sortOrder: 0,
-    status: 'active',
-    showInMenu: false,
-    featuredMerchantIds: []
+    status: category.is_active ? 'active' : 'inactive',
+    showInMenu: true,
+    featuredMerchantIds: [],
+    productCount: category.productCount ?? 0,
   };
-  // In a real app this would save to the backend.
-  // For the mock, we can push to the mockShopCategories array
-  mockShopCategories.push(newCategory);
-  return { data: newCategory };
 }

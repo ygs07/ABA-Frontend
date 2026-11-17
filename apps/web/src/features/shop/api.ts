@@ -40,6 +40,22 @@ export type StorefrontSearchResult = {
   brands: Array<{ id: number; name: string; slug: string }>;
 };
 
+export type PopularBrand = {
+  id: number;
+  name: string;
+  slug: string;
+  isVerified: boolean;
+  productCount: number;
+  orderedQuantity: number;
+};
+
+export type RelatedSearch = {
+  id: number;
+  label: string;
+  query: string;
+  type: 'category' | 'subcategory' | 'brand';
+};
+
 export async function searchStorefront(query: string): Promise<StorefrontSearchResult> {
   const trimmedQuery = query.trim();
   if (!trimmedQuery) {
@@ -48,6 +64,16 @@ export async function searchStorefront(query: string): Promise<StorefrontSearchR
   return fetchApi<StorefrontSearchResult>(
     `/api/v1/storefront/search?q=${encodeURIComponent(trimmedQuery)}&limit=5`,
   );
+}
+
+export async function getPopularBrands(): Promise<PopularBrand[]> {
+  if (API_MODE === 'mock') return [];
+  return fetchApi<PopularBrand[]>('/api/v1/storefront/popular-brands');
+}
+
+export async function getRelatedSearches(): Promise<RelatedSearch[]> {
+  if (API_MODE === 'mock') return [];
+  return fetchApi<RelatedSearch[]>('/api/v1/storefront/related-searches');
 }
 
 export async function getShopCategories(): Promise<{ data: Category[] }> {
@@ -201,13 +227,17 @@ export async function getMeetBusinesses(): Promise<{ data: DirectoryMerchant[] }
 export async function getShopProducts(params?: { 
   categoryId?: string;
   categorySlug?: string; 
+  categoryId?: number;
+  subcategoryId?: number;
   merchantId?: string;
   q?: string;
   minRating?: number;
   inStockOnly?: boolean;
   onSaleOnly?: boolean;
   sort?: 'recommended' | 'newest' | 'price-asc' | 'price-desc' | 'rating';
-}): Promise<{ data: Product[] }> {
+};
+
+export async function getShopProducts(params?: ShopProductFilters): Promise<{ data: Product[] }> {
   if (API_MODE !== 'mock') {
     const search = new URLSearchParams({ limit: '100', includeVariants: 'true' });
     const isSubcategory = Boolean(params?.categoryId?.startsWith('sub-'));
@@ -217,6 +247,8 @@ export async function getShopProducts(params?: {
     }
     if (params?.categorySlug) search.set('categorySlug', params.categorySlug);
     if (params?.merchantId) search.set('merchantId', params.merchantId);
+    if (params?.categoryId) search.set('categoryId', String(params.categoryId));
+    if (params?.subcategoryId) search.set('subcategoryId', String(params.subcategoryId));
     if (params?.q) search.set('search', params.q);
     if (params?.sort === 'rating') search.set('orderBy', 'ratings:DESC');
     if (params?.sort === 'newest') search.set('orderBy', 'createdAt:DESC');
@@ -276,6 +308,26 @@ export async function getShopProducts(params?: {
   }
 
   return { data: products };
+}
+
+export async function getMerchantShopProducts(
+  merchantId: string,
+  params?: Omit<ShopProductFilters, 'merchantId'>,
+): Promise<{ data: Product[] }> {
+  if (API_MODE === 'mock') {
+    return getShopProducts({ ...params, merchantId });
+  }
+
+  const search = new URLSearchParams({ limit: '100', includeVariants: 'true' });
+  if (params?.q) search.set('search', params.q);
+  if (params?.categoryId) search.set('categoryId', String(params.categoryId));
+  if (params?.subcategoryId) search.set('subcategoryId', String(params.subcategoryId));
+  if (params?.sort === 'rating') search.set('orderBy', 'ratings:DESC');
+  if (params?.sort === 'newest') search.set('orderBy', 'createdAt:DESC');
+  const response = await fetchApi<{ data: Parameters<typeof toProduct>[0][] }>(
+    `/api/v1/storefront/merchants/${encodeURIComponent(merchantId)}/products?${search.toString()}`,
+  );
+  return { data: response.data.map(toProduct) };
 }
 
 export async function getShopProductBySlug(slug: string): Promise<{ data: Product }> {

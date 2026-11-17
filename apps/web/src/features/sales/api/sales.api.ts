@@ -183,9 +183,14 @@ function toOrderStatus(status: string): Order['status'] {
   return 'Pending';
 }
 
-export const getOrders = async (): Promise<Order[]> => {
+export const getOrders = async (filters: { search?: string; status?: number; startDate?: string; endDate?: string } = {}): Promise<Order[]> => {
   if (API_MODE !== 'mock') {
-    const response = await fetchApi<{ data: BackendOrder[] }>('/api/v1/orders?limit=100');
+    const query = new URLSearchParams({ limit: '100' });
+    if (filters.search) query.set('search', filters.search);
+    if (filters.status) query.set('status', String(filters.status));
+    if (filters.startDate) query.set('startDate', filters.startDate);
+    if (filters.endDate) query.set('endDate', filters.endDate);
+    const response = await fetchApi<{ data: BackendOrder[] }>(`/api/v1/orders?${query.toString()}`);
     return response.data.map(presentOrder);
   }
   await delay(800);

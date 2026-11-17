@@ -167,15 +167,25 @@ function toStorefrontMerchantProfile(merchantRecord: BackendStorefrontMerchant):
   };
 }
 
-export const getMerchants = async (): Promise<{ data: Merchant[] }> => {
+export type MerchantFilters = {
+  search?: string;
+  verified?: boolean;
+};
+
+export function getMerchants(): Promise<{ data: Merchant[] }>;
+export function getMerchants(filters: MerchantFilters): Promise<{ data: Merchant[] }>;
+export async function getMerchants(filters: MerchantFilters = {}): Promise<{ data: Merchant[] }> {
   if (API_MODE !== 'mock') {
-    const response = await fetchApi<PaginatedMerchants>('/api/v1/merchants?limit=100');
+    const params = new URLSearchParams({ limit: '100' });
+    if (filters.search?.trim()) params.set('search', filters.search.trim());
+    if (filters.verified !== undefined) params.set('verified', String(filters.verified));
+    const response = await fetchApi<PaginatedMerchants>(`/api/v1/merchants?${params.toString()}`);
     return { data: response.data.map(toMerchant) };
   }
 
   await delay(800);
   return { data: MOCK_MERCHANTS };
-};
+}
 
 export const getMerchantById = async (id: string): Promise<{ data: MerchantProfile }> => {
   if (API_MODE !== 'mock') {

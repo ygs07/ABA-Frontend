@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Search, ArrowRight, ArrowLeft, Store, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuthStore } from '@/features/auth/store';
@@ -10,6 +11,7 @@ import { Category } from '@/features/category/types';
 import { getCategoryMenu } from '@/features/category/api';
 
 export function MobileMenu({ isOpen, onClose, navLinks }: { isOpen: boolean, onClose: () => void, navLinks: any[] }) {
+  const router = useRouter();
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const user = useAuthStore(state => state.user);
   const accountHref = user ? getUserHome(user) : '/auth/login';
@@ -54,8 +56,11 @@ export function MobileMenu({ isOpen, onClose, navLinks }: { isOpen: boolean, onC
     if (cat.children && cat.children.length > 0) {
       setHistory([...history, cat]);
     } else {
-      // Leaf node: we would navigate.
-      // E.g., window.location.href = `/c/${currentPath}/${cat.slug}`;
+      const path = [...history, cat]
+        .map((category) => category.slug)
+        .filter((slug, index, slugs) => index === 0 || slug !== slugs[index - 1])
+        .join('/');
+      router.push(`/c/${path}`);
       onClose();
     }
   };
@@ -112,7 +117,7 @@ export function MobileMenu({ isOpen, onClose, navLinks }: { isOpen: boolean, onC
           
           {history.length > 0 && currentCategory && (
             <Link
-              href={`/c/${currentCategory.slug}`}
+              href={`/c/${history.map((category) => category.slug).join('/')}`}
               className="px-4 py-4 rounded-2xl text-brand-600 font-bold hover:bg-surface-2 flex items-center justify-between text-left mt-2 border border-brand-200 bg-brand-50"
               onClick={onClose}
             >

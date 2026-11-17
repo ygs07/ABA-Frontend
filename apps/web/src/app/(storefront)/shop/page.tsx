@@ -9,7 +9,6 @@ import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'next/navigation';
 import { getShopProducts, getShopMerchants } from '@/features/shop/api';
 import { ProductCard } from '@/components/storefront/ProductCard';
-import { CategoryFilter } from '@/components/patterns/CategoryFilter';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { Pagination } from '@/components/ui/pagination';
 
@@ -76,7 +75,6 @@ function ShopContent() {
                                     <SheetTitle>Filters</SheetTitle>
                                 </SheetHeader>
                                 <div className="space-y-6">
-                                    <CategoryFilter />
                                     <ShopFilters
                                         merchants={merchantsData || []}
                                         selectedMerchant={selectedMerchant}
@@ -92,7 +90,6 @@ function ShopContent() {
                 <div className="flex flex-col md:flex-row gap-8 mt-8">
                     {/* Filters Sidebar */}
                     <aside className="w-full lg:w-[240px] shrink-0 hidden lg:block space-y-6 sticky top-40 self-start">
-                        <CategoryFilter />
                         <ShopFilters
                             merchants={merchantsData || []}
                             selectedMerchant={selectedMerchant}

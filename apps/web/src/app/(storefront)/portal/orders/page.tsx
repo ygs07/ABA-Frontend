@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useDeferredValue, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { Package, Search, Filter, ChevronRight, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -10,13 +10,25 @@ import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
 
 export default function PortalOrdersPage() {
+  const [search, setSearch] = useState('');
+  const [tab, setTab] = useState<'all' | 'active' | 'completed' | 'cancelled'>('all');
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const deferredSearch = useDeferredValue(search);
+  const serverStatus = tab === 'completed' ? 4 : tab === 'cancelled' ? 5 : undefined;
   const { data: orders, isLoading, error } = useQuery({
-    queryKey: ['portal_orders'],
+    queryKey: ['portal_orders', deferredSearch, serverStatus, startDate, endDate],
     queryFn: async () => {
-      const res = await getCustomerOrders();
+      const res = await getCustomerOrders({ search: deferredSearch, status: serverStatus, startDate, endDate });
       return res.data;
     }
   });
+
+  const visibleOrders = useMemo(() => {
+    if (tab !== 'active') return orders ?? [];
+    return (orders ?? []).filter((order) => ['Pending', 'Processing', 'Shipped'].includes(order.status));
+  }, [orders, tab]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -54,27 +66,32 @@ export default function PortalOrdersPage() {
             <input
               type="text"
               placeholder="Search orders..."
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
               className="h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500 w-full sm:w-64"
             />
           </div>
-          <Button variant="outline" className="px-3">
+          <Button variant="outline" className="px-3" onClick={() => setFiltersOpen((open) => !open)} aria-expanded={filtersOpen} aria-label="Filter orders">
             <Filter className="w-4 h-4" />
           </Button>
         </div>
       </div>
 
+      {filtersOpen && <div className="flex flex-col gap-3 rounded-lg border border-border bg-white p-4 sm:flex-row sm:items-end">
+        <label className="text-sm font-medium text-text">From<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="mt-1 block h-10 rounded-md border border-border px-3 text-sm" /></label>
+        <label className="text-sm font-medium text-text">To<input type="date" value={endDate} min={startDate || undefined} onChange={(event) => setEndDate(event.target.value)} className="mt-1 block h-10 rounded-md border border-border px-3 text-sm" /></label>
+        {(startDate || endDate) && <Button type="button" variant="ghost" onClick={() => { setStartDate(''); setEndDate(''); }}>Clear dates</Button>}
+      </div>}
+
       <div className="flex space-x-6 border-b border-border mb-6">
-        <button className="pb-2 border-b-2 border-brand-600 text-brand-600 font-medium text-sm">All Orders</button>
-        <button className="pb-2 border-b-2 border-transparent text-text-muted hover:text-text font-medium text-sm">Active</button>
-        <button className="pb-2 border-b-2 border-transparent text-text-muted hover:text-text font-medium text-sm">Completed</button>
-        <button className="pb-2 border-b-2 border-transparent text-text-muted hover:text-text font-medium text-sm">Cancelled</button>
+        {([['all', 'All Orders'], ['active', 'Active'], ['completed', 'Completed'], ['cancelled', 'Cancelled']] as const).map(([value, label]) => <button key={value} onClick={() => setTab(value)} className={`pb-2 border-b-2 font-medium text-sm ${tab === value ? 'border-brand-600 text-brand-600' : 'border-transparent text-text-muted hover:text-text'}`}>{label}</button>)}
       </div>
 
       <div className="space-y-4">
-        {orders.length === 0 ? (
+        {visibleOrders.length === 0 ? (
           <div className="text-center py-12 text-text-muted">You have no orders yet.</div>
         ) : (
-          orders.map((order) => (
+          visibleOrders.map((order) => (
             <div key={order.id} className="bg-white rounded-xl border border-border shadow-sm overflow-hidden hover:border-brand-300 transition-colors">
               <div className="p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
 

@@ -1,186 +1,29 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
+import { FolderTree, Loader2, Plus, Search, Tag } from 'lucide-react';
 import { PageHeader } from '@/components/patterns/PageHeader';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { getCategories } from '@/features/category/api';
-import { Category } from '@/features/category/types';
-import { toast } from 'sonner';
-import { GripVertical, Edit } from 'lucide-react';
+import { getCategoryHierarchy } from '@/features/category/api';
 
 export function CategoriesTree() {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-
-  // Local state for drag and drop
-  const [draggedId, setDraggedId] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchCategories = async () => {
-      try {
-        const res = await getCategories();
-        setCategories(res.data);
-      } catch (err) {
-        toast.error('Failed to load categories');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    fetchCategories();
-  }, []);
-
-  const buildTree = (cats: Category[]) => {
-    const map = new Map<string, Category>();
-    const roots: Category[] = [];
-    cats.forEach(c => map.set(c.id, { ...c, children: [] }));
-    cats.forEach(c => {
-      if (c.parentId) {
-        map.get(c.parentId)?.children?.push(map.get(c.id)!);
-      } else {
-        roots.push(map.get(c.id)!);
-      }
-    });
-    
-    const sortFn = (a: Category, b: Category) => a.sortOrder - b.sortOrder;
-    roots.sort(sortFn);
-    roots.forEach(r => {
-      r.children?.sort(sortFn);
-      r.children?.forEach(c => c.children?.sort(sortFn));
-    });
-    return roots;
-  };
-
-  const handleDragStart = (e: React.DragEvent, id: string) => {
-    setDraggedId(id);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-  };
-
-  const handleDrop = (e: React.DragEvent, targetId: string) => {
-    e.preventDefault();
-    if (!draggedId || draggedId === targetId) return;
-    
-    // Simple simulated swap for now
-    const newCats = [...categories];
-    const draggedIdx = newCats.findIndex(c => c.id === draggedId);
-    const targetIdx = newCats.findIndex(c => c.id === targetId);
-    
-    if (draggedIdx > -1 && targetIdx > -1) {
-      // Just swap sort orders
-      const tempSort = newCats[draggedIdx].sortOrder;
-      newCats[draggedIdx].sortOrder = newCats[targetIdx].sortOrder;
-      newCats[targetIdx].sortOrder = tempSort;
-      
-      setCategories(newCats);
-      toast.success('Categories reordered');
-    }
-    setDraggedId(null);
-  };
-
-  const filtered = search 
-    ? categories.filter(c => c.name.toLowerCase().includes(search.toLowerCase()))
-    : categories;
-
-  const tree = buildTree(filtered);
-
-  const renderNode = (node: Category, depth = 0) => {
-    return (
-      <div key={node.id}>
-        <div 
-          className="flex items-center justify-between p-3 border-b border-border bg-white hover:bg-surface-1 transition-colors"
-          style={{ paddingLeft: `${(depth * 24) + 12}px` }}
-          draggable
-          onDragStart={(e) => handleDragStart(e, node.id)}
-          onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, node.id)}
-        >
-          <div className="flex items-center gap-3">
-            <button className="cursor-grab text-text-muted hover:text-text">
-              <GripVertical className="w-4 h-4" />
-            </button>
-            {node.image ? (
-              <img src={node.image} alt="" className="w-8 h-8 rounded object-cover border border-border" />
-            ) : (
-              <div className="w-8 h-8 rounded bg-surface-2 flex items-center justify-center border border-border text-[10px] text-text-muted">
-                IMG
-              </div>
-            )}
-            <div>
-              <Link href={`/erp/categories/${node.id}`} className="font-medium text-text hover:text-brand-600">
-                {node.name}
-              </Link>
-              <div className="text-xs text-text-muted font-mono">{node.slug}</div>
-            </div>
-          </div>
-          
-          <div className="flex items-center gap-6">
-            <div className="text-sm text-text-muted hidden sm:block">
-              {node.productCount} products
-            </div>
-            <div className="text-xs">
-              {node.status === 'active' ? (
-                <span className="px-2 py-1 bg-green-50 text-green-700 rounded-full font-medium">Active</span>
-              ) : (
-                <span className="px-2 py-1 bg-surface-2 text-text-muted rounded-full font-medium">Inactive</span>
-              )}
-            </div>
-            <Button variant="ghost" size="sm" className="h-8 px-2">
-              <Edit className="w-4 h-4 text-text-muted" />
-            </Button>
-          </div>
-        </div>
-        
-        {node.children && node.children.length > 0 && (
-          <div className="flex flex-col">
-            {node.children.map(child => renderNode(child, depth + 1))}
-          </div>
-        )}
-      </div>
-    );
-  };
+  const { data, isLoading, error } = useQuery({ queryKey: ['product-category-hierarchy'], queryFn: getCategoryHierarchy });
+  const categories = useMemo(() => {
+    const term = search.trim().toLowerCase();
+    if (!term) return data?.data ?? [];
+    return (data?.data ?? []).filter((category) => category.name.toLowerCase().includes(term) || category.slug.toLowerCase().includes(term) || category.subcategories.some((subcategory) => subcategory.name.toLowerCase().includes(term) || subcategory.slug.toLowerCase().includes(term)));
+  }, [data?.data, search]);
 
   return (
     <div className="space-y-6 pb-20">
-      <PageHeader 
-        title="Categories" 
-        description="Manage product categories and hierarchy."
-        action={
-          <div className="flex gap-2">
-            <Link href="/erp/categories/new">
-              <Button>Add Category</Button>
-            </Link>
-          </div>
-        }
-      />
-
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <div className="w-full max-w-md">
-          <Input 
-            placeholder="Search categories..." 
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <div className="bg-surface rounded-xl border border-border overflow-hidden shadow-sm">
-        {isLoading ? (
-          <div className="p-8 text-center text-text-muted">Loading categories...</div>
-        ) : tree.length > 0 ? (
-          <div className="flex flex-col">
-            {tree.map(root => renderNode(root, 0))}
-          </div>
-        ) : (
-          <div className="p-8 text-center text-text-muted">No categories found.</div>
-        )}
-      </div>
+      <PageHeader title="Categories" description="Manage top-level product categories and their subcategories." action={<div className="flex gap-2"><Button variant="outline" asChild><Link href="/erp/categories/new?type=subcategory"><Plus className="mr-1.5 h-4 w-4" />Add subcategory</Link></Button><Button asChild><Link href="/erp/categories/new"><Plus className="mr-1.5 h-4 w-4" />Add category</Link></Button></div>} />
+      <div className="max-w-md"><div className="relative"><Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-text-muted" /><Input value={search} onChange={(event) => setSearch(event.target.value)} className="pl-9" placeholder="Search categories or subcategories…" /></div></div>
+      {isLoading ? <div className="flex min-h-48 items-center justify-center text-sm text-text-muted"><Loader2 className="mr-2 h-4 w-4 animate-spin" />Loading catalogue structure…</div> : error ? <div className="rounded-xl border border-error-border bg-error-bg p-4 text-sm text-error">Unable to load categories. Please refresh and try again.</div> : categories.length === 0 ? <div className="rounded-xl border border-dashed border-border bg-surface p-10 text-center"><FolderTree className="mx-auto h-7 w-7 text-text-muted" /><h2 className="mt-3 font-semibold text-text">No matching categories</h2><p className="mt-1 text-sm text-text-muted">Create a top-level category, then add subcategories beneath it.</p></div> : <div className="space-y-4">{categories.map((category) => <section key={category.id} className="overflow-hidden rounded-xl border border-border bg-surface shadow-sm"><div className="flex flex-col justify-between gap-3 border-b border-border bg-surface-1 p-5 sm:flex-row sm:items-center"><div className="flex items-start gap-3"><FolderTree className="mt-0.5 h-5 w-5 text-brand-600" /><div><div className="flex flex-wrap items-center gap-2"><h2 className="font-semibold text-text">{category.name}</h2><Badge variant={category.is_active ? 'default' : 'secondary'}>{category.is_active ? 'Active' : 'Inactive'}</Badge></div><p className="mt-1 text-xs text-text-muted">/{category.slug}{category.description ? ` · ${category.description}` : ''}</p></div></div><div className="text-sm text-text-muted">{category.productCount ?? 0} product{(category.productCount ?? 0) === 1 ? '' : 's'} · {category.subcategories.length} subcategor{category.subcategories.length === 1 ? 'y' : 'ies'}</div></div><div className="divide-y divide-border">{category.subcategories.length ? category.subcategories.map((subcategory) => <div key={subcategory.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between"><div className="flex items-start gap-3"><Tag className="mt-0.5 h-4 w-4 text-text-muted" /><div><div className="flex items-center gap-2"><span className="text-sm font-medium text-text">{subcategory.name}</span><Badge variant={subcategory.is_active ? 'default' : 'secondary'}>{subcategory.is_active ? 'Active' : 'Inactive'}</Badge></div><p className="mt-1 text-xs text-text-muted">/{category.slug}/{subcategory.slug}{subcategory.description ? ` · ${subcategory.description}` : ''}</p></div></div><span className="text-sm text-text-muted">{subcategory.productCount ?? 0} product{(subcategory.productCount ?? 0) === 1 ? '' : 's'}</span></div>) : <p className="p-4 text-sm text-text-muted">No subcategories yet.</p>}</div></section>)}</div>}
     </div>
   );
 }
