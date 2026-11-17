@@ -13,6 +13,7 @@ export const createProductSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters').max(120),
   type: z.enum(['Finished good', 'Raw material', 'Service', 'Bundle']),
   categoryId: z.string().min(1, 'Category is required'),
+  subcategoryId: z.string().optional(),
   vendorId: z.string().optional(),
   brandId: z.string().optional(),
   description: z.string().max(2000).optional(),

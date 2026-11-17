@@ -274,6 +274,7 @@ export const createProduct = async (data: CreateProductInput): Promise<Product> 
 
     const formData = new FormData();
     formData.append('categoryId', data.categoryId);
+    if (data.subcategoryId) formData.append('subcategoryId', data.subcategoryId);
     if (data.vendorId) formData.append('merchantId', data.vendorId);
     formData.append('name', data.name);
     if (data.description) formData.append('description', data.description);

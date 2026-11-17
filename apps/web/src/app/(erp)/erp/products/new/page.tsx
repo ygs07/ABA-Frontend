@@ -11,7 +11,7 @@ import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
-import { getCategories } from '@/features/category/api';
+import { getCategoryHierarchy } from '@/features/category/api';
 import { getMerchants } from '@/features/merchant/api';
 import { useAuthStore } from '@/features/auth/store';
 import { ProductImagesSection } from '@/features/products/components/ProductImagesSection';
@@ -23,7 +23,7 @@ export default function NewProductPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const activeRole = useAuthStore((state) => state.activeRole);
   const canSelectVendor = activeRole === 'Admin' || activeRole === 'Super Admin';
-  const { data: categoriesData } = useQuery({ queryKey: ['product-categories'], queryFn: getCategories });
+  const { data: categoriesData } = useQuery({ queryKey: ['product-category-hierarchy'], queryFn: getCategoryHierarchy });
   const { data: brandsData } = useQuery({ queryKey: ['product-brands'], queryFn: getProductBrands });
   const { data: vendorsData } = useQuery({ queryKey: ['vendors'], queryFn: getMerchants, enabled: canSelectVendor });
 
@@ -46,6 +46,8 @@ export default function NewProductPage() {
   const cost = watch('cost');
   const sellingPrice = watch('sellingPrice');
   const images = watch('images') || [];
+  const selectedCategoryId = watch('categoryId');
+  const selectedCategory = categoriesData?.data.find((category) => String(category.id) === selectedCategoryId);
 
   const onSubmit = async (data: CreateProductInput) => {
     setIsSubmitting(true);
@@ -112,14 +114,28 @@ export default function NewProductPage() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Category <span className="text-error">*</span></label>
-                <select {...register('categoryId')} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm">
+                <select {...register('categoryId', { onChange: () => setValue('subcategoryId', '') })} className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm">
                   <option value="">Select a category</option>
                   {categoriesData?.data.map((category) => <option key={category.id} value={category.id}>{category.name}</option>)}
                 </select>
                 {errors.categoryId?.message && <p className="text-sm text-error">{errors.categoryId.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subcategory <span className="text-text-muted">(Optional)</span></label>
+                <select
+                  {...register('subcategoryId')}
+                  disabled={!selectedCategory}
+                  className="w-full flex h-10 rounded-md border border-border bg-surface px-3 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <option value="">{selectedCategory ? 'Select a subcategory' : 'Select a category first'}</option>
+                  {selectedCategory?.subcategories.map((subcategory) => (
+                    <option key={subcategory.id} value={subcategory.id}>{subcategory.name}</option>
+                  ))}
+                </select>
+                {errors.subcategoryId?.message && <p className="text-sm text-error">{errors.subcategoryId.message}</p>}
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Unit of Measure <span className="text-error">*</span></label>
