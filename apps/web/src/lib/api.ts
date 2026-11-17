@@ -44,6 +44,36 @@ function isApiEnvelope<T>(value: unknown): value is ApiEnvelope<T> {
   );
 }
 
+function resolveRequestUrl(endpoint: string): string {
+  if (typeof window !== 'undefined' || !endpoint.startsWith('/')) {
+    return endpoint;
+  }
+
+  const baseApiUrl = process.env.BASE_API_URL;
+  if (baseApiUrl && endpoint.startsWith('/api/v1')) {
+    try {
+      const parsed = new URL(baseApiUrl);
+      const basePath = parsed.pathname.replace(/\/+$/, '');
+      const apiPrefix = basePath.endsWith('/api/v1')
+        ? basePath
+        : basePath.endsWith('/api')
+          ? `${basePath}/v1`
+          : `${basePath}/api/v1`;
+      const suffix = endpoint.slice('/api/v1'.length);
+      return `${parsed.origin}${apiPrefix}${suffix}`;
+    } catch {
+      // Fall through to local origin fallback if BASE_API_URL is malformed
+    }
+  }
+
+  const origin =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.NEXT_PUBLIC_APP_URL ||
+    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${process.env.PORT || 3000}`);
+
+  return `${origin.replace(/\/+$/, '')}${endpoint}`;
+}
+
 export async function fetchApi<T>(
   endpoint: string,
   options?: RequestInit,
@@ -52,7 +82,7 @@ export async function fetchApi<T>(
   if (API_MODE === "mock") {
     return {} as T;
   }
-  const res = await fetch(endpoint, {
+  const res = await fetch(resolveRequestUrl(endpoint), {
     ...options,
     credentials: options?.credentials ?? "include",
   });

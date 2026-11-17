@@ -1,23 +1,61 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { getShopProducts, getShopCategories } from '@/features/shop/api';
 import { CategoryFilter } from '@/components/patterns/CategoryFilter';
 import { EntityCard } from '@/components/patterns/EntityCard';
+import { StorefrontEmptyState } from '@/components/patterns/StorefrontEmptyState';
 import { ChevronRight } from 'lucide-react';
+
+function formatSlugLabel(slug: string): string {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
 
 export default async function CategoryPage({ params }: { params: Promise<{ categoryPath: string[] }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
   const { categoryPath } = await params;
-  
+
   // Find the leaf category slug (the last element of the array)
   const categorySlug = categoryPath[categoryPath.length - 1];
 
-  // In a real app we'd fetch the exact category by slug
-  const { data: categories } = await getShopCategories();
-  const currentCategory = categories.find(c => c.slug === categorySlug);
+  let categories: Awaited<ReturnType<typeof getShopCategories>>['data'] = [];
+  let loadError = false;
+  try {
+    const res = await getShopCategories();
+    categories = res.data;
+  } catch {
+    loadError = true;
+  }
+
+  const currentCategory = categories.find((c) => c.slug === categorySlug);
 
   if (!currentCategory) {
-    notFound();
+    const topCategories = categories.filter((c) => !c.parentId).slice(0, 8);
+    const requestedLabel = formatSlugLabel(categorySlug);
+
+    return (
+      <StorefrontEmptyState
+        breadcrumbLabel={requestedLabel}
+        title={
+          loadError
+            ? 'We could not load this category right now'
+            : `No listings found for "${requestedLabel}"`
+        }
+        description={
+          loadError
+            ? 'There was a temporary issue loading category details. You can browse all products or try again shortly.'
+            : 'This category may have been renamed, moved, or does not have active products yet.'
+        }
+        suggestionsTitle="Explore Available Categories"
+        suggestions={topCategories.map((cat) => ({
+          id: cat.id,
+          label: cat.name,
+          href: `/c/${cat.slug}`,
+        }))}
+      />
+    );
   }
 
   // Fetch products
