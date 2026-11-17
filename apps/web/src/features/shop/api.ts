@@ -39,6 +39,22 @@ export type StorefrontSearchResult = {
   brands: Array<{ id: number; name: string; slug: string }>;
 };
 
+export type PopularBrand = {
+  id: number;
+  name: string;
+  slug: string;
+  isVerified: boolean;
+  productCount: number;
+  orderedQuantity: number;
+};
+
+export type RelatedSearch = {
+  id: number;
+  label: string;
+  query: string;
+  type: 'category' | 'subcategory' | 'brand';
+};
+
 export async function searchStorefront(query: string): Promise<StorefrontSearchResult> {
   const trimmedQuery = query.trim();
   if (!trimmedQuery) {
@@ -47,6 +63,16 @@ export async function searchStorefront(query: string): Promise<StorefrontSearchR
   return fetchApi<StorefrontSearchResult>(
     `/api/v1/storefront/search?q=${encodeURIComponent(trimmedQuery)}&limit=5`,
   );
+}
+
+export async function getPopularBrands(): Promise<PopularBrand[]> {
+  if (API_MODE === 'mock') return [];
+  return fetchApi<PopularBrand[]>('/api/v1/storefront/popular-brands');
+}
+
+export async function getRelatedSearches(): Promise<RelatedSearch[]> {
+  if (API_MODE === 'mock') return [];
+  return fetchApi<RelatedSearch[]>('/api/v1/storefront/related-searches');
 }
 
 export async function getShopCategories(): Promise<{ data: Category[] }> {
