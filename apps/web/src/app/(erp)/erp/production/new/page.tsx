@@ -5,7 +5,12 @@ import { PageHeader } from '@/components/patterns/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
+// Temporarily disabled until the production workflow is connected.
 export default function NewProductionOrderPage() {
+  return <div className="max-w-3xl space-y-6 pb-20"><PageHeader title="Production Orders" description="Creating production orders is temporarily unavailable." backHref="/erp/production" /></div>;
+}
+
+function DisabledProductionOrderForm() {
   const router = useRouter();
 
   return (

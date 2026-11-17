@@ -10,7 +10,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
+// Temporarily disabled until the procurement request workflow is connected.
 export default function NewPurchaseRequestPage() {
+  return <div className="max-w-3xl space-y-6 pb-20"><PageHeader title="Purchase Requests" description="Creating purchase requests is temporarily unavailable." backHref="/erp/procurement/requests" /></div>;
+}
+
+function DisabledPurchaseRequestForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

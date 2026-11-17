@@ -13,7 +13,12 @@ import { Input } from '@/components/ui/input';
 import { AmountText } from '@/components/patterns/AmountText';
 import { toast } from 'sonner';
 
+// Temporarily disabled until manual ERP order creation is connected.
 export default function NewOrderPage() {
+  return <div className="max-w-3xl space-y-6 pb-20"><PageHeader title="Orders" description="Creating orders from the ERP is temporarily unavailable." backHref="/erp/orders" /></div>;
+}
+
+function DisabledOrderForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 

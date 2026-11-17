@@ -11,7 +11,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
 
+// Temporarily disabled: customers are created through registration.
 export default function NewCustomerPage() {
+  return <div className="max-w-3xl space-y-6 pb-20"><PageHeader title="Customers" description="Creating customers from the ERP is temporarily unavailable." backHref="/erp/customers" /></div>;
+}
+
+function DisabledCustomerForm() {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm<CreateCustomerInput>({

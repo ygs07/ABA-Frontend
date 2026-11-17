@@ -118,12 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     </>
                   ) : (
                     <>
-                      <Link href="/erp/orders/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Order</Link>
-                      <Link href="/erp/customers/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Customer</Link>
                       <Link href="/erp/products/new" className="block px-4 py-2 text-sm hover:bg-surface-2">New Product</Link>
-                      <div className="h-px bg-border my-1"></div>
-                      <Link href="/erp/procurement/requests/new" className="block px-4 py-2 text-sm hover:bg-surface-2">Purchase Request</Link>
-                      <Link href="/erp/production/new" className="block px-4 py-2 text-sm hover:bg-surface-2">Production Order</Link>
                     </>
                   )}
                 </div>
