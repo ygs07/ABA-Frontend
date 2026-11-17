@@ -12,39 +12,52 @@ export type ProductSubcategory = {
   productCount?: number;
 };
 
-export type ProductCategory = {
+export type BackendCategory = {
   id: number;
   name: string;
   slug: string;
-  description: string | null;
   is_active: boolean;
   productCount?: number;
-  subcategories: ProductSubcategory[];
+  product_count?: number;
+  category_id?: number | null;
+  parent_id?: number | null;
+  parentId?: number | string | null;
+  subcategories?: BackendCategory[];
 };
 
-type Paginated<T> = { data: T[]; meta?: { totalItems: number; totalPages: number; currentPage: number } };
+export function mapBackendCategories(rows: BackendCategory[]): Category[] {
+  const result: Category[] = [];
+  const pushCategory = (category: BackendCategory, fallbackParentId?: string) => {
+    const rawParentId = category.parentId ?? category.parent_id ?? category.category_id;
+    const isSubcategory = fallbackParentId !== undefined || (rawParentId !== undefined && rawParentId !== null);
+    const parentId = rawParentId !== undefined && rawParentId !== null
+      ? String(rawParentId)
+      : fallbackParentId;
+    result.push({
+      id: isSubcategory ? `sub-${category.id}` : String(category.id),
+      name: category.name,
+      slug: category.slug,
+      parentId,
+      productCount: Number(category.productCount ?? category.product_count ?? 0),
+      sortOrder: 0,
+      status: category.is_active ? 'active' : 'inactive',
+      showInMenu: true,
+      featuredMerchantIds: [],
+    });
+    if (Array.isArray(category.subcategories)) {
+      category.subcategories.forEach((sub) => pushCategory(sub, String(category.id)));
+    }
+  };
+  rows.forEach((row) => pushCategory(row));
+  return result;
+}
 
-export async function getCategoryHierarchy(): Promise<Paginated<ProductCategory>> {
-  if (API_MODE === 'mock') {
-    return {
-      data: mockShopCategories.filter((category) => !category.parentId).map((category) => ({
-        id: Number(category.id.replace(/\D/g, '')) || 0,
-        name: category.name,
-        slug: category.slug,
-        description: null,
-        is_active: category.status === 'active',
-        productCount: category.productCount,
-        subcategories: mockShopCategories.filter((child) => child.parentId === category.id).map((child) => ({
-          id: Number(child.id.replace(/\D/g, '')) || 0,
-          category_id: Number(category.id.replace(/\D/g, '')) || 0,
-          name: child.name,
-          slug: child.slug,
-          description: null,
-          is_active: child.status === 'active',
-          productCount: child.productCount,
-        })),
-      })),
-    };
+export async function getCategories(): Promise<{ data: Category[] }> {
+  if (API_MODE !== 'mock') {
+    const response = await fetchApi<{ data: BackendCategory[] }>(
+      '/api/v1/product-categories?limit=100&isActive=true&includeCounts=true',
+    );
+    return { data: mapBackendCategories(response.data) };
   }
   return fetchApi<Paginated<ProductCategory>>('/api/v1/product-categories?limit=100&includeCounts=true');
 }
@@ -57,30 +70,14 @@ export async function getCategories(): Promise<{ data: Category[] }> {
 }
 
 export async function getCategoryMenu(): Promise<{ data: Category[] }> {
-  const response = await getCategoryHierarchy();
-  return {
-    data: response.data
-      .filter((category) => category.is_active)
-      .flatMap((category) => [
-        toCategory(category),
-        ...category.subcategories
-          .filter((subcategory) => subcategory.is_active)
-          .map((subcategory) => toCategory(subcategory, category.id)),
-      ]),
-  };
-}
-
-export async function createCategory(input: {
-  name: string;
-  slug?: string;
-  description?: string;
-  isActive: boolean;
-}) {
-  return fetchApi<ProductCategory>('/api/v1/product-categories', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(input),
-  });
+  if (API_MODE !== 'mock') {
+    const response = await fetchApi<{ data: BackendCategory[] }>(
+      '/api/v1/product-categories?limit=100&isActive=true&includeCounts=true',
+    );
+    return { data: mapBackendCategories(response.data) };
+  }
+  await delay(400);
+  return { data: mockShopCategories };
 }
 
 export async function createSubcategory(input: {

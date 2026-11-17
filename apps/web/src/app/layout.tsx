@@ -36,7 +36,7 @@ export default function RootLayout({
       lang="en"
       className={cn("h-full", "antialiased", inter.variable, jetbrainsMono.variable, "font-sans", geist.variable)}
     >
-      <body className="min-h-full flex flex-col bg-bg text-text">
+      <body suppressHydrationWarning className="min-h-full flex flex-col bg-bg text-text">
         <QueryProvider>
           {children}
           <Toaster richColors position="top-right" />

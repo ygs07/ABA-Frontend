@@ -31,7 +31,10 @@ type BackendProduct = {
   reorder_level?: number;
   reorder_quantity?: number;
   is_active: boolean;
-  category?: { id: number; name: string } | null;
+  category_id?: number | string | null;
+  subcategory_id?: number | string | null;
+  category?: { id: number; name: string; slug?: string } | null;
+  subcategory?: { id: number; name: string; slug?: string } | null;
   merchant?: { id: number; business_name: string } | null;
   images?: Array<{ id: number; url: string; original_name?: string } | string>;
   variants?: BackendVariant[];
@@ -87,6 +90,8 @@ export function toProduct(product: BackendProduct): Product {
   const variants = product.variants?.map(toVariant) ?? [];
   const price = nairaToKobo(product.base_selling_price) || variants[0]?.price || 0;
   const sellingPrice = price;
+  const resolvedCategoryId = product.category?.id ?? product.category_id;
+  const resolvedSubcategoryId = product.subcategory?.id ?? product.subcategory_id;
 
   return {
     id: String(product.id),
@@ -96,9 +101,15 @@ export function toProduct(product: BackendProduct): Product {
     sku: product.slug.toUpperCase(),
     type: product.type ?? 'Finished good',
     categoryName: product.category?.name ?? 'Uncategorized',
-    category: product.category
-      ? { id: String(product.category.id), name: product.category.name } as Product['category']
+    category: resolvedCategoryId != null
+      ? {
+          id: String(resolvedCategoryId),
+          name: product.category?.name ?? 'Uncategorized',
+          slug: product.category?.slug ?? '',
+        } as Product['category']
       : undefined,
+    subcategoryId: resolvedSubcategoryId != null ? String(resolvedSubcategoryId) : undefined,
+    subcategoryName: product.subcategory?.name,
     brand: typeof product.brand === 'string' ? product.brand : product.brand?.name,
     description: product.description ?? undefined,
     unitOfMeasure: product.base_unit_of_measurement ?? 'unit',
