@@ -13,7 +13,12 @@ import { getShopProducts } from '@/features/shop/api';
 export default function CategoryPage() {
   const router = useRouter();
   const params = useParams<{ categoryPath: string[] }>();
-  const categoryPath = Array.isArray(params.categoryPath) ? params.categoryPath : [params.categoryPath];
+  const rawCategoryPath = params?.categoryPath;
+  const categoryPath = Array.isArray(rawCategoryPath)
+    ? rawCategoryPath
+    : rawCategoryPath
+      ? [rawCategoryPath]
+      : [];
   const categorySlug = categoryPath.at(-1) ?? '';
   const { data: categoryResponse, isLoading: categoriesLoading, error: categoriesError } = useQuery({
     queryKey: ['category-menu'],
