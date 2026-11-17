@@ -9,6 +9,7 @@ import { queryDirectory } from '../merchants/directory';
 import { storefrontConfig } from '@/config/storefront';
 import { maybeInjectMockError } from '@/lib/mockErrors';
 import { toProduct } from '../products/api/products.api';
+import { BackendCategory, mapBackendCategories } from '../category/api';
 
 const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
@@ -51,24 +52,11 @@ export async function searchStorefront(query: string): Promise<StorefrontSearchR
 
 export async function getShopCategories(): Promise<{ data: Category[] }> {
   if (API_MODE !== 'mock') {
-    const response = await fetchApi<{ data: Array<{
-      id: number;
-      name: string;
-      slug: string;
-      is_active: boolean;
-      productCount?: number;
-    }> }>('/api/v1/product-categories?limit=100&includeCounts=true');
+    const response = await fetchApi<{ data: BackendCategory[] }>(
+      '/api/v1/product-categories?limit=100&isActive=true&includeCounts=true',
+    );
     return {
-      data: response.data.map((category) => ({
-        id: String(category.id),
-        name: category.name,
-        slug: category.slug,
-        productCount: category.productCount ?? 0,
-        sortOrder: 0,
-        status: category.is_active ? 'active' : 'inactive',
-        showInMenu: false,
-        featuredMerchantIds: [],
-      })),
+      data: mapBackendCategories(response.data),
     };
   }
   await delay(400);
@@ -211,6 +199,7 @@ export async function getMeetBusinesses(): Promise<{ data: DirectoryMerchant[] }
 }
 
 export async function getShopProducts(params?: { 
+  categoryId?: string;
   categorySlug?: string; 
   merchantId?: string;
   q?: string;
@@ -221,6 +210,12 @@ export async function getShopProducts(params?: {
 }): Promise<{ data: Product[] }> {
   if (API_MODE !== 'mock') {
     const search = new URLSearchParams({ limit: '100', includeVariants: 'true' });
+    const isSubcategory = Boolean(params?.categoryId?.startsWith('sub-'));
+    const rawCategoryId = params?.categoryId && isSubcategory ? params.categoryId.slice(4) : params?.categoryId;
+    if (rawCategoryId) {
+      search.set(isSubcategory ? 'subcategoryId' : 'categoryId', rawCategoryId);
+    }
+    if (params?.categorySlug) search.set('categorySlug', params.categorySlug);
     if (params?.merchantId) search.set('merchantId', params.merchantId);
     if (params?.q) search.set('search', params.q);
     if (params?.sort === 'rating') search.set('orderBy', 'ratings:DESC');
@@ -228,7 +223,22 @@ export async function getShopProducts(params?: {
     const response = await fetchApi<{ data: Parameters<typeof toProduct>[0][] }>(
       `/api/v1/storefront/products?${search.toString()}`,
     );
-    return { data: response.data.map(toProduct) };
+    let products = response.data.map(toProduct);
+    if (params?.categoryId) {
+      if (isSubcategory && rawCategoryId) {
+        if (products.some((p) => p.subcategoryId !== undefined)) {
+          products = products.filter((p) => p.subcategoryId === rawCategoryId);
+        }
+      } else if (products.some((p) => p.category?.id !== undefined)) {
+        products = products.filter((p) => p.category?.id === params.categoryId);
+      }
+    } else if (params?.categorySlug) {
+      const leafSlug = params.categorySlug.split('/').filter(Boolean).pop();
+      if (leafSlug && products.some((p) => Boolean(p.category?.slug))) {
+        products = products.filter((p) => p.category?.slug === leafSlug);
+      }
+    }
+    return { data: products };
   }
   await delay(600);
   let products = [...mockShopProducts];

@@ -2,7 +2,7 @@ import React from 'react';
 import Link from 'next/link';
 import { getShopProducts, getShopCategories } from '@/features/shop/api';
 import { CategoryFilter } from '@/components/patterns/CategoryFilter';
-import { EntityCard } from '@/components/patterns/EntityCard';
+import { ProductCard } from '@/components/storefront/ProductCard';
 import { StorefrontEmptyState } from '@/components/patterns/StorefrontEmptyState';
 import { ChevronRight } from 'lucide-react';
 
@@ -59,7 +59,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
   }
 
   // Fetch products
-  const { data: products } = await getShopProducts({ categorySlug });
+  const { data: products } = await getShopProducts({
+    categoryId: currentCategory.id,
+    categorySlug,
+  });
 
   return (
     <div className="pt-32 pb-20 max-w-7xl mx-auto px-4 md:px-6">
@@ -127,12 +130,8 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
           {/* Product Grid */}
           <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
             {products.length > 0 ? (
-              products.map(product => (
-                <EntityCard 
-                  key={product.id} 
-                  type="product" 
-                  entity={product}
-                />
+              products.map((product) => (
+                <ProductCard key={product.id} product={product} />
               ))
             ) : (
               <div className="col-span-full py-12 text-center bg-surface-1 rounded-xl border border-border border-dashed">

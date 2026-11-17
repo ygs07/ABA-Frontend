@@ -10,12 +10,14 @@ import { cn } from 'cn';
 const buildTree = (cats: Category[]) => {
   const map = new Map<string, Category>();
   const roots: Category[] = [];
-  cats.forEach(c => map.set(c.id, { ...c, children: [] }));
-  cats.forEach(c => {
-    if (c.parentId) {
-      map.get(c.parentId)?.children?.push(map.get(c.id)!);
+  cats.forEach((c) => map.set(c.id, { ...c, children: [] }));
+  cats.forEach((c) => {
+    const node = map.get(c.id);
+    if (!node) return;
+    if (c.parentId && map.has(c.parentId)) {
+      map.get(c.parentId)!.children!.push(node);
     } else {
-      roots.push(map.get(c.id)!);
+      roots.push(node);
     }
   });
   return roots;
@@ -27,6 +29,7 @@ export function CategoryFilter() {
   const pathname = usePathname();
   
   const [categories, setCategories] = useState<Category[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   
   const isCategoryRoute = pathname.startsWith('/c/');
@@ -35,16 +38,25 @@ export function CategoryFilter() {
     : searchParams.get('category') || '';
   
   useEffect(() => {
+    let cancelled = false;
     const fetchMenu = async () => {
       try {
         const res = await getCategoryMenu();
-        const tree = buildTree(res.data);
-        setCategories(tree);
+        if (!cancelled) {
+          setCategories(buildTree(res.data));
+        }
       } catch (err) {
         console.error('Failed to load category menu', err);
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false);
+        }
       }
     };
-    fetchMenu();
+    void fetchMenu();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
 
@@ -123,11 +135,22 @@ export function CategoryFilter() {
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="bg-white border border-border rounded-xl p-4 space-y-2">
+        <h3 className="font-bold text-text mb-4 text-base">Categories</h3>
+        {[1, 2, 3, 4].map((i) => (
+          <div key={i} className="h-6 bg-surface-2 animate-pulse rounded w-3/4" />
+        ))}
+      </div>
+    );
+  }
+
   if (categories.length === 0) {
     return (
-      <div className="space-y-2">
-        <h3 className="font-bold text-text mb-4">Categories</h3>
-        {[1,2,3,4].map(i => <div key={i} className="h-6 bg-surface-2 animate-pulse rounded w-3/4" />)}
+      <div className="bg-white border border-border rounded-xl p-4">
+        <h3 className="font-bold text-text mb-2 text-base">Categories</h3>
+        <p className="text-sm text-text-muted">No categories available.</p>
       </div>
     );
   }
