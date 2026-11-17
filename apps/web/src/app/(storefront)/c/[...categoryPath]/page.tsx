@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useMemo } from 'react';
 import Link from 'next/link';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Loader2 } from 'lucide-react';
 import { CategoryFilter } from '@/components/patterns/CategoryFilter';
@@ -11,7 +10,6 @@ import { getCategoryMenu } from '@/features/category/api';
 import { getShopProducts } from '@/features/shop/api';
 
 export default function CategoryPage() {
-  const router = useRouter();
   const params = useParams<{ categoryPath: string[] }>();
   const rawCategoryPath = params?.categoryPath;
   const categoryPath = Array.isArray(rawCategoryPath)
@@ -25,25 +23,10 @@ export default function CategoryPage() {
     queryFn: getCategoryMenu,
   });
   const categories = categoryResponse?.data ?? [];
-  const currentCategory = useMemo(
-    () => categories.find((category) => category.slug === categorySlug),
-    [categories, categorySlug],
-  );
+  const currentCategory = categories.find((category) => category.slug === categorySlug);
   const parentCategory = currentCategory?.parentId
     ? categories.find((category) => category.id === currentCategory.parentId)
     : undefined;
-  const canonicalPath = currentCategory
-    ? parentCategory
-      ? `${parentCategory.slug}/${currentCategory.slug}`
-      : currentCategory.slug
-    : '';
-
-  useEffect(() => {
-    if (canonicalPath && categoryPath.join('/') !== canonicalPath) {
-      router.replace(`/c/${canonicalPath}`);
-    }
-  }, [canonicalPath, categoryPath, router]);
-
   const { data: productResponse, isLoading: productsLoading } = useQuery({
     queryKey: ['category-products', currentCategory?.id],
     queryFn: () => getShopProducts(
@@ -54,7 +37,7 @@ export default function CategoryPage() {
     enabled: Boolean(currentCategory),
   });
 
-  if (categoriesLoading || (canonicalPath && categoryPath.join('/') !== canonicalPath)) {
+  if (categoriesLoading) {
     return <div className="flex min-h-80 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-brand-600" /></div>;
   }
   if (categoriesError || !currentCategory) {
@@ -63,7 +46,9 @@ export default function CategoryPage() {
 
   const products = productResponse?.data ?? [];
   const children = currentCategory.parentId ? [] : categories.filter((category) => category.parentId === currentCategory.id);
-  const crumbs = canonicalPath.split('/');
+  const crumbs = parentCategory
+    ? [parentCategory.slug, currentCategory.slug]
+    : [currentCategory.slug];
   return (
     <div className="mx-auto max-w-7xl px-4 pb-20 pt-32 md:px-6">
       <nav className="mb-6 flex items-center gap-2 text-sm text-text-muted"><Link href="/" className="hover:text-brand-600">Home</Link><ChevronRight className="h-4 w-4" />{crumbs.map((slug, index) => <span key={`${slug}-${index}`} className={index === crumbs.length - 1 ? 'font-semibold text-text' : ''}>{index ? <><span>{categories.find((category) => category.slug === slug)?.name ?? slug}</span><ChevronRight className="ml-2 inline h-4 w-4" /></> : categories.find((category) => category.slug === slug)?.name ?? slug}</span>)}</nav>
