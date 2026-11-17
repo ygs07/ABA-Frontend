@@ -1,13 +1,14 @@
 'use client';
 
+import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Loader2 } from 'lucide-react';
+import { getShopCategories, getShopProducts } from '@/features/shop/api';
 import { CategoryFilter } from '@/components/patterns/CategoryFilter';
 import { ProductCard } from '@/components/storefront/ProductCard';
 import { StorefrontEmptyState } from '@/components/patterns/StorefrontEmptyState';
-import { ChevronRight } from 'lucide-react';
 
 function formatSlugLabel(slug: string): string {
   return slug
@@ -17,29 +18,34 @@ function formatSlugLabel(slug: string): string {
     .join(' ');
 }
 
-export default async function CategoryPage({ params }: { params: Promise<{ categoryPath: string[] }>; searchParams?: Promise<Record<string, string | string[] | undefined>> }) {
-  const { categoryPath } = await params;
+export default function CategoryPage() {
+  const params = useParams<{ categoryPath: string[] }>();
+  const categoryPath = Array.isArray(params.categoryPath) ? params.categoryPath : [];
+  const categorySlug = categoryPath.at(-1);
+  const { data: categoriesData, isLoading: categoriesLoading, isError: categoriesError } = useQuery({
+    queryKey: ['shop-categories'],
+    queryFn: getShopCategories,
+  });
+  const categories = categoriesData?.data ?? [];
+  const currentCategory = categories.find((category) => category.slug === categorySlug);
+  const { data: productsData, isLoading: productsLoading } = useQuery({
+    queryKey: ['category-products', currentCategory?.id, categorySlug],
+    queryFn: () => getShopProducts({
+      categoryId: currentCategory?.parentId ? undefined : Number(currentCategory?.id),
+      subcategoryId: currentCategory?.parentId ? Number(String(currentCategory.id).replace(/^sub-/, '')) : undefined,
+      categorySlug,
+    }),
+    enabled: Boolean(currentCategory),
+  });
 
-  // Find the leaf category slug (the last element of the array)
-  const categorySlug = categoryPath[categoryPath.length - 1];
-
-  let categories: Awaited<ReturnType<typeof getShopCategories>>['data'] = [];
-  let loadError = false;
-  try {
-    const res = await getShopCategories();
-    categories = res.data;
-  } catch {
-    loadError = true;
+  if (categoriesLoading) {
+    return <div className="flex min-h-[50vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-brand-600" /></div>;
   }
   if (categoriesError || !currentCategory) {
     return <div className="mx-auto max-w-7xl px-4 py-32 text-center"><h1 className="text-2xl font-bold text-text">Category not found</h1><Link className="mt-4 inline-block text-brand-600 hover:underline" href="/shop">Browse all products</Link></div>;
   }
 
-  // Fetch products
-  const { data: products } = await getShopProducts({
-    categoryId: currentCategory.id,
-    categorySlug,
-  });
+  const products = productsData?.data ?? [];
 
   return (
     <div className="pt-32 pb-20 max-w-7xl mx-auto px-4 md:px-6">
@@ -80,7 +86,7 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
           <div className="flex justify-between items-end mb-6">
             <div>
               <h1 className="text-3xl font-bold text-text">{currentCategory.name}</h1>
-              <p className="text-text-muted mt-2">{products.length} products found</p>
+              <p className="text-text-muted mt-2">{productsLoading ? 'Loading products…' : `${products.length} products found`}</p>
             </div>
             
             <select className="border border-border rounded-lg px-3 py-2 text-sm bg-white focus:outline-brand-500">

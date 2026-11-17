@@ -169,17 +169,29 @@ export const logout = async (): Promise<void> => {
 export const forgotPassword = async (
   data: ForgotPasswordInput,
 ): Promise<void> => {
-  void data;
-  await delay(800);
-  // Always resolves successfully as per specs
+  if (API_MODE === 'mock') {
+    await delay(800);
+    return;
+  }
+  await fetchApi<void>('/api/v1/auth/forgot-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
 };
 
 export const resetPassword = async (
   data: ResetPasswordInput,
   token: string,
 ): Promise<void> => {
-  await delay(800);
-  if (token === "expired") {
-    throw new Error("Token is expired or invalid");
+  if (API_MODE === 'mock') {
+    await delay(800);
+    if (token === 'expired') throw new Error('Token is expired or invalid');
+    return;
   }
+  await fetchApi<void>('/api/v1/auth/reset-password', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token, password: data.password }),
+  });
 };

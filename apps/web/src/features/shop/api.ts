@@ -224,9 +224,8 @@ export async function getMeetBusinesses(): Promise<{ data: DirectoryMerchant[] }
   return { data: res.data };
 }
 
-export async function getShopProducts(params?: { 
-  categoryId?: string;
-  categorySlug?: string; 
+export type ShopProductFilters = {
+  categorySlug?: string;
   categoryId?: number;
   subcategoryId?: number;
   merchantId?: string;
@@ -240,11 +239,6 @@ export async function getShopProducts(params?: {
 export async function getShopProducts(params?: ShopProductFilters): Promise<{ data: Product[] }> {
   if (API_MODE !== 'mock') {
     const search = new URLSearchParams({ limit: '100', includeVariants: 'true' });
-    const isSubcategory = Boolean(params?.categoryId?.startsWith('sub-'));
-    const rawCategoryId = params?.categoryId && isSubcategory ? params.categoryId.slice(4) : params?.categoryId;
-    if (rawCategoryId) {
-      search.set(isSubcategory ? 'subcategoryId' : 'categoryId', rawCategoryId);
-    }
     if (params?.categorySlug) search.set('categorySlug', params.categorySlug);
     if (params?.merchantId) search.set('merchantId', params.merchantId);
     if (params?.categoryId) search.set('categoryId', String(params.categoryId));
@@ -256,14 +250,8 @@ export async function getShopProducts(params?: ShopProductFilters): Promise<{ da
       `/api/v1/storefront/products?${search.toString()}`,
     );
     let products = response.data.map(toProduct);
-    if (params?.categoryId) {
-      if (isSubcategory && rawCategoryId) {
-        if (products.some((p) => p.subcategoryId !== undefined)) {
-          products = products.filter((p) => p.subcategoryId === rawCategoryId);
-        }
-      } else if (products.some((p) => p.category?.id !== undefined)) {
+    if (params?.categoryId && products.some((p) => p.category?.id !== undefined)) {
         products = products.filter((p) => p.category?.id === params.categoryId);
-      }
     } else if (params?.categorySlug) {
       const leafSlug = params.categorySlug.split('/').filter(Boolean).pop();
       if (leafSlug && products.some((p) => Boolean(p.category?.slug))) {
