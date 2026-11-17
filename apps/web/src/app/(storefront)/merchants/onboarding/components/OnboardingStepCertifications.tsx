@@ -8,19 +8,20 @@ import { Award } from 'lucide-react';
 
 interface OnboardingStepCertificationsProps {
   form: UseFormReturn<MerchantOnboardingData>;
-  certUploaded: boolean;
-  onUploadCert: (file: File) => void;
-  onRemoveCert: () => void;
+  certificationDocuments: Record<string, File>;
+  onUploadCert: (certification: string, file: File) => void;
+  onRemoveCert: (certification: string) => void;
 }
 
 export function OnboardingStepCertifications({
   form,
-  certUploaded,
+  certificationDocuments,
   onUploadCert,
   onRemoveCert,
 }: OnboardingStepCertificationsProps) {
   const { register, watch, setValue, formState: { errors } } = form;
   const certificationTypes = watch('certificationTypes') ?? [];
+  const certificationDocumentNames = watch('certificationDocumentNames') ?? {};
   const certifications = [
     'None / Artisanal Guild',
     'NAFDAC (Regulated Goods)',
@@ -83,21 +84,27 @@ export function OnboardingStepCertifications({
             )}
           </div>
 
-          <OnboardingFileUpload
-            title="Upload Certificate Document"
-            subtitle="Attach valid regulatory certificate document (.pdf, .jpg, .png)"
-            fileName={form.watch('certificationDocumentName') || (certUploaded ? 'certification_doc.pdf' : null)}
-            isUploaded={certUploaded || Boolean(form.watch('certificationDocumentName'))}
-            accept=".pdf,.jpg,.jpeg,.png"
-            onFileSelect={(file) => {
-              form.setValue('certificationDocumentName', file.name, { shouldValidate: true });
-              onUploadCert(file);
-            }}
-            onRemove={() => {
-              form.setValue('certificationDocumentName', undefined, { shouldValidate: true });
-              onRemoveCert();
-            }}
-          />
+          {certificationTypes.filter((certification) => certification !== 'None / Artisanal Guild').map((certification) => (
+            <OnboardingFileUpload
+              key={certification}
+              title={`Upload ${certification} document`}
+              subtitle="Attach the valid certificate or registration document (.pdf, .jpg, .png)"
+              fileName={certificationDocumentNames[certification] || certificationDocuments[certification]?.name || null}
+              isUploaded={Boolean(certificationDocumentNames[certification] || certificationDocuments[certification])}
+              accept=".pdf,.jpg,.jpeg,.png"
+              onFileSelect={(file) => {
+                const names = form.getValues('certificationDocumentNames') ?? {};
+                form.setValue('certificationDocumentNames', { ...names, [certification]: file.name }, { shouldValidate: true });
+                onUploadCert(certification, file);
+              }}
+              onRemove={() => {
+                const names = { ...(form.getValues('certificationDocumentNames') ?? {}) };
+                delete names[certification];
+                form.setValue('certificationDocumentNames', names, { shouldValidate: true });
+                onRemoveCert(certification);
+              }}
+            />
+          ))}
           {errors.certificationDocumentName && (
             <p className="text-error text-xs -mt-2">{errors.certificationDocumentName.message}</p>
           )}

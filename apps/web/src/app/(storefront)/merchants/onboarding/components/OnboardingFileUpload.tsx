@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Upload, CheckCircle2, FileText, X } from 'lucide-react';
 
 interface OnboardingFileUploadProps {
@@ -29,6 +29,13 @@ export function OnboardingFileUpload({
   const [localFileName, setLocalFileName] = useState<string | null>(fileName || null);
   const [fileSizeText, setFileSizeText] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+
+  // Steps are conditionally mounted in the wizard. Mirror the parent-held name
+  // whenever this control mounts again so moving Back does not look like it
+  // discarded an already-selected document.
+  useEffect(() => {
+    setLocalFileName(fileName || null);
+  }, [fileName]);
 
   const activeName = fileName || localFileName;
   const hasUploaded = isUploaded || Boolean(activeName);

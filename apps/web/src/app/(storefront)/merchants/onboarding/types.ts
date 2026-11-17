@@ -96,6 +96,7 @@ export const merchantOnboardingSchema = z
     certificationTypes: z.array(z.string()).min(1, 'Select at least one certification'),
     certificationNumber: z.string().optional(),
     certificationDocumentName: z.string().optional(),
+    certificationDocumentNames: z.record(z.string(), z.string()).optional(),
     confirmSupplyCapacity: z.boolean().refine((val) => val === true, {
       message: 'You must confirm supply capacity',
     }),
@@ -141,11 +142,14 @@ export const merchantOnboardingSchema = z
           message: 'Certification / registration number is required',
         });
       }
-      if (!data.certificationDocumentName) {
+      const missingCertificationDocument = data.certificationTypes
+        .filter((cert) => cert !== 'None / Artisanal Guild')
+        .some((cert) => !data.certificationDocumentNames?.[cert]);
+      if (missingCertificationDocument) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           path: ['certificationDocumentName'],
-          message: 'Please upload your regulatory certificate document',
+          message: 'Please upload a document for every selected certification',
         });
       }
     }

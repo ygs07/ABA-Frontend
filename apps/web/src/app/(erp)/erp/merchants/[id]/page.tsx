@@ -4,7 +4,7 @@ import { brand } from '@/config/brand';
 
 import { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { approveMerchant, getMerchantById, suspendMerchant } from '@/features/merchant/api';
+import { approveMerchant, getMerchantById } from '@/features/merchant/api';
 import { Merchant } from '@/features/merchants/types';
 import { Button } from '@/components/ui/button';
 import { KpiCard } from '@/components/patterns/KpiCard';
@@ -23,7 +23,6 @@ export default function MerchantDetailsPage() {
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isApproving, setIsApproving] = useState(false);
-  const [isSuspending, setIsSuspending] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
 
   useEffect(() => {
@@ -52,19 +51,6 @@ export default function MerchantDetailsPage() {
       toast.error(error instanceof Error ? error.message : 'Failed to approve merchant');
     } finally {
       setIsApproving(false);
-    }
-  };
-
-  const handleSuspend = async () => {
-    setIsSuspending(true);
-    try {
-      const response = await suspendMerchant(merchant.id);
-      setMerchant((current) => current ? { ...current, ...response.data } : current);
-      toast.success('Merchant suspended');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Failed to suspend merchant');
-    } finally {
-      setIsSuspending(false);
     }
   };
 
@@ -166,18 +152,8 @@ export default function MerchantDetailsPage() {
               {isApproving ? 'Approving…' : 'Approve Merchant'}
             </Button>
           )}
-          {merchant.status === 'Active' && (
-            <Button
-              variant="outline"
-              className="text-error border-error-border bg-error-bg hover:bg-error/10"
-              disabled={isSuspending}
-              onClick={handleSuspend}
-            >
-              {isSuspending ? 'Suspending…' : 'Suspend'}
-            </Button>
-          )}
           <Button variant="outline">Open POS Settings</Button>
-          <Button>Edit</Button>
+          <Button onClick={() => router.push(`/erp/merchants/${encodeURIComponent(merchant.id)}/edit`)}>Edit</Button>
         </div>
       </div>
 

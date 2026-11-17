@@ -60,7 +60,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Menu className="w-5 h-5" />
             </button>
             <nav className="hidden sm:flex items-center text-sm">
-              <Link href="/dashboard" className="text-text-muted hover:text-text font-medium">Home</Link>
+              <Link href="/erp/dashboard" className="text-text-muted hover:text-text font-medium">Home</Link>
               {paths.map((p, i) => {
                 const isLast = i === paths.length - 1;
                 const formatted = p.charAt(0).toUpperCase() + p.slice(1).replace(/-/g, ' ');

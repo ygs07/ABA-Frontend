@@ -766,7 +766,7 @@ function CheckoutContent() {
 
                       <div>
 
-                        <p className="font-semibold text-text flex items-center gap-2"><CreditCard className="w-4 h-4" /> Credit / Debit Card</p>
+                        <p className="font-semibold text-text flex items-center gap-2"><CreditCard className="w-4 h-4" /> Pay with Paystack</p>
 
                       </div>
 
@@ -909,7 +909,7 @@ function CheckoutContent() {
 
                     </div>
 
-                    <p className="text-sm text-text-muted capitalize">Method: {paymentMethod === 'card' ? 'Card Payment (Gateway)' : `${brand.shortName} Wallet`}</p>
+                    <p className="text-sm text-text-muted capitalize">Method: {paymentMethod === 'card' ? 'Paystack' : `${brand.shortName} Wallet`}</p>
 
                     <p className="text-sm text-text-muted">Shipping: {deliveryMethod === 2 ? 'Express Delivery' : 'Standard Delivery'} (<AmountText amountInKobo={deliveryFee} />)</p>
 

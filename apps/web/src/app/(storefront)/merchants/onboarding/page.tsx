@@ -89,6 +89,7 @@ const DEFAULT_VALUES: MerchantOnboardingData = {
   certificationTypes: ['None / Artisanal Guild'],
   certificationNumber: '',
   certificationDocumentName: undefined,
+  certificationDocumentNames: {},
   confirmSupplyCapacity: false,
   agreeToFulfillmentSla: false,
 };
@@ -110,7 +111,7 @@ function MerchantOnboardingContent() {
   const [photosCount, setPhotosCount] = useState(0);
   const [cacDocument, setCacDocument] = useState<File | null>(null);
   const [identityDocument, setIdentityDocument] = useState<File | null>(null);
-  const [certificationDocument, setCertificationDocument] = useState<File | null>(null);
+  const [certificationDocuments, setCertificationDocuments] = useState<Record<string, File>>({});
   const [samplePhotos, setSamplePhotos] = useState<File[]>([]);
 
   const form = useForm<MerchantOnboardingData>({
@@ -220,7 +221,7 @@ function MerchantOnboardingContent() {
         payload.set('certificationTypes', JSON.stringify(normalizedValues.certificationTypes));
         if (cacDocument) payload.append('cacDocument', cacDocument);
         if (identityDocument) payload.append('identityDocument', identityDocument);
-        if (certificationDocument) payload.append('certificationDocument', certificationDocument);
+        Object.values(certificationDocuments).forEach((document) => payload.append('certificationDocument', document));
         samplePhotos.forEach((photo) => payload.append('samplePhotos', photo));
         await fetchApi(isEditingApplication ? '/api/v1/merchant-onboarding/applications/me' : '/api/v1/merchant-onboarding/applications', {
           method: isEditingApplication ? 'PATCH' : 'POST',
@@ -354,9 +355,9 @@ function MerchantOnboardingContent() {
             {currentStep === 4 && (
               <OnboardingStepCertifications
                 form={form}
-                certUploaded={certUploaded}
-                onUploadCert={(file) => { setCertificationDocument(file); setCertUploaded(true); }}
-                onRemoveCert={() => { setCertificationDocument(null); setCertUploaded(false); }}
+                certificationDocuments={certificationDocuments}
+                onUploadCert={(certification, file) => { setCertificationDocuments((current) => ({ ...current, [certification]: file })); setCertUploaded(true); }}
+                onRemoveCert={(certification) => { setCertificationDocuments((current) => { const next = { ...current }; delete next[certification]; return next; }); }}
               />
             )}
 

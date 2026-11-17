@@ -47,7 +47,7 @@ export const FAQ_ITEMS: FaqItem[] = [
     category: 'Payments & Wallet',
     question: 'What payment methods are accepted at checkout?',
     answer:
-      'You can pay using a debit/credit card through the payment gateway or pay directly from your Wallet balance. If you have Shopping Credits available, you can also toggle them at checkout to offset your order total.',
+      'You can pay securely with Paystack or directly from your Wallet balance. If you have Shopping Credits available, you can also toggle them at checkout to offset your order total.',
   },
   {
     id: 'wallet-how',
