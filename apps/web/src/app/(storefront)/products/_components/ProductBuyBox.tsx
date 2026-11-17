@@ -14,6 +14,7 @@ import { useCartStore } from '@/features/cart/store';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import Link from 'next/link';
+import { addToWishlist } from '@/features/wishlists/api';
 
 interface ProductBuyBoxProps {
   product: Product;
@@ -54,6 +55,19 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
       quantity,
     });
     router.push('/checkout');
+  };
+
+  const addProductToWishlist = async () => {
+    if (!isCustomer) {
+      router.push(`/auth/login?next=${encodeURIComponent(pathname)}`);
+      return;
+    }
+    try {
+      await addToWishlist('product', product.id);
+      toast.success('Added to your wishlist.');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to add this product to your wishlist.');
+    }
   };
 
   return (
@@ -179,8 +193,8 @@ export function ProductBuyBox({ product, selectedVariant, setSelectedVariant }: 
           Buy It Now
         </Button>
         <AddToCartButton product={product} quantity={quantity} />
-        <Button variant="outline" size="lg" className="w-full h-12 mt-1 border-brand-200 text-brand-700 hover:bg-brand-50">
-          <Heart className="w-4 h-4 mr-2" /> Add to Watchlist
+        <Button variant="outline" size="lg" className="w-full h-12 mt-1 border-brand-200 text-brand-700 hover:bg-brand-50" onClick={addProductToWishlist}>
+          <Heart className="w-4 h-4 mr-2" /> Add to Wishlist
         </Button>
       </div>
 
