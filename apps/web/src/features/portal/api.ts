@@ -53,11 +53,23 @@ function toPortalOrder(order: BackendOrder): PortalOrder {
   };
 }
 
-export async function getCustomerOrders(): Promise<{ data: PortalOrder[] }> {
+export type CustomerOrderFilters = {
+  search?: string;
+  status?: number;
+  startDate?: string;
+  endDate?: string;
+};
+
+export async function getCustomerOrders(filters: CustomerOrderFilters = {}): Promise<{ data: PortalOrder[] }> {
   if (API_MODE !== 'mock') {
+    const params = new URLSearchParams({ limit: '100' });
+    if (filters.search?.trim()) params.set('search', filters.search.trim());
+    if (filters.status) params.set('status', String(filters.status));
+    if (filters.startDate) params.set('startDate', filters.startDate);
+    if (filters.endDate) params.set('endDate', filters.endDate);
     const response = await fetchApi<{
       data: BackendOrder[];
-    }>('/api/v1/profile/orders?limit=100');
+    }>(`/api/v1/profile/orders?${params.toString()}`);
     return {
       data: response.data.map(toPortalOrder),
     };
@@ -67,6 +79,13 @@ export async function getCustomerOrders(): Promise<{ data: PortalOrder[] }> {
 }
 
 function toPortalOrderStatus(status: string | number): PortalOrder['status'] {
+  if (typeof status === 'number') {
+    if (status === 2) return 'Processing';
+    if (status === 3) return 'Shipped';
+    if (status === 4) return 'Delivered';
+    if (status === 5 || status === 6) return 'Cancelled';
+    return 'Pending';
+  }
   const normalizedStatus = String(status).toLowerCase();
   if (normalizedStatus.includes('process')) return 'Processing';
   if (normalizedStatus.includes('ship') || normalizedStatus.includes('pickup')) return 'Shipped';

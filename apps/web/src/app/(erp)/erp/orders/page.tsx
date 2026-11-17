@@ -15,11 +15,15 @@ export default function OrdersPage() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [showFilters, setShowFilters] = useState(false);
+  const [status, setStatus] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const fetchOrders = async () => {
     setIsLoading(true);
     try {
-      const data = await getOrders();
+      const data = await getOrders({ search, status: status ? Number(status) : undefined, startDate: startDate || undefined, endDate: endDate || undefined });
       setOrders(data);
     } catch (err) {
       toast.error('Failed to load orders');
@@ -30,12 +34,8 @@ export default function OrdersPage() {
 
   useEffect(() => {
     fetchOrders();
-  }, []);
+  }, [search, status, startDate, endDate]);
 
-  const filtered = orders.filter(o => 
-    o.orderNumber.toLowerCase().includes(search.toLowerCase()) || 
-    o.customerName.toLowerCase().includes(search.toLowerCase())
-  );
 
   const columns = [
     { 
@@ -150,13 +150,14 @@ export default function OrdersPage() {
           />
         </div>
         <div className="flex gap-2 w-full sm:w-auto">
-          <Button variant="outline" className="flex-1 sm:flex-none">Filters</Button>
+          <Button variant="outline" className="flex-1 sm:flex-none" onClick={() => setShowFilters((current) => !current)}>Filters</Button>
         </div>
       </div>
+      {showFilters && <div className="grid gap-3 rounded-xl border border-border bg-surface p-4 sm:grid-cols-3"><label className="text-sm">Order status<select value={status} onChange={(event) => setStatus(event.target.value)} className="mt-1 h-10 w-full rounded-md border border-border bg-surface px-3"><option value="">All statuses</option><option value="1">Pending</option><option value="2">Processing</option><option value="3">Shipped / pickup ready</option><option value="4">Complete</option><option value="5">Cancelled</option><option value="6">Refund requested</option></select></label><label className="text-sm">From<input type="date" value={startDate} onChange={(event) => setStartDate(event.target.value)} className="mt-1 h-10 w-full rounded-md border border-border bg-surface px-3" /></label><label className="text-sm">To<input type="date" value={endDate} onChange={(event) => setEndDate(event.target.value)} className="mt-1 h-10 w-full rounded-md border border-border bg-surface px-3" /></label></div>}
 
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
         <DataTable 
-          data={filtered} 
+          data={orders} 
           columns={columns} 
           isLoading={isLoading}
           emptyMessage="No orders found."

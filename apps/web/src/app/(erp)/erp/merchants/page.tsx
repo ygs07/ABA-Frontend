@@ -16,10 +16,10 @@ export default function MerchantsListPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
 
-  const fetchMerchants = async () => {
+  const fetchMerchants = async (searchTerm = '') => {
     setIsLoading(true);
     try {
-      const data = await getMerchants();
+      const data = await getMerchants({ search: searchTerm });
       setMerchants(data?.data);
     } catch {
       toast.error('Failed to load merchants');
@@ -30,17 +30,11 @@ export default function MerchantsListPage() {
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      void fetchMerchants();
-    }, 0);
+      void fetchMerchants(search.trim());
+    }, 300);
 
     return () => window.clearTimeout(timer);
-  }, []);
-
-  const filteredMerchants = merchants.filter(m =>
-    m.name.toLowerCase().includes(search.toLowerCase()) ||
-    m.merchantNo.toLowerCase().includes(search.toLowerCase()) ||
-    m.ownerName.toLowerCase().includes(search.toLowerCase())
-  );
+  }, [search]);
 
   const columns = [
     {
@@ -156,7 +150,7 @@ export default function MerchantsListPage() {
 
       <div className="bg-surface rounded-xl border border-border overflow-hidden">
         <DataTable
-          data={filteredMerchants}
+          data={merchants}
           columns={columns}
           isLoading={isLoading}
           emptyMessage="No merchants found."

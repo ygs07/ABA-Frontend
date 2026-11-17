@@ -117,7 +117,7 @@ export default function CreateCommissionPlanPage() {
         action={
           <Button loading={isSubmitting} onClick={handleSubmit(onSubmit)}>
             <CheckCircle2 className="w-4 h-4 mr-1.5" />
-            Update Plan
+            Create Plan
           </Button>
         }
       />
@@ -211,7 +211,7 @@ export default function CreateCommissionPlanPage() {
                 className="w-full sm:w-auto px-6"
               >
                 <CheckCircle2 className="w-4 h-4 mr-1.5" />
-                Update Plan
+                Create Plan
               </Button>
             </div>
           </div>

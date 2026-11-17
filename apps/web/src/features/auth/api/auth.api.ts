@@ -73,7 +73,11 @@ export const login = async (data: LoginInput): Promise<LoginResponse> => {
     const { access_token } = await fetchApi<{ access_token: string }>("/api/v1/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ identifier: data.identifier, password: data.password }),
+      body: JSON.stringify({
+        identifier: data.identifier,
+        password: data.password,
+        rememberMe: Boolean(data.rememberMe),
+      }),
     });
 
     const profile = await fetchApi<BackendUser>("/api/v1/auth/me", {

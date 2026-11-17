@@ -11,28 +11,8 @@ export const addressSchema = z.object({
 });
 
 export const createCustomerSchema = z.object({
-  type: z.enum(['Individual', 'Business']),
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  companyName: z.string().optional(),
-  rcNumber: z.string().optional(),
-  phone: z.string().regex(/^\+?234\d{10}$/, 'Must be a valid Nigerian phone number starting with +234 or 234'),
-  email: z.string().email('Invalid email address').optional().or(z.literal('')),
-  gender: z.enum(['Male', 'Female', 'Other']).optional(),
-  dob: z.string().optional(),
-  customerGroup: z.string().default('Retail'),
-  merchantId: z.string().optional(),
-  referredBy: z.string().optional(),
-  addresses: z.array(addressSchema).optional(),
-  creditLimit: z.coerce.number().min(0).default(0),
-  notes: z.string().max(500).optional(),
-  createPortalLogin: z.boolean().default(false),
-}).refine(data => {
-  if (data.type === 'Business' && !data.companyName) return false;
-  return true;
-}, {
-  message: "Company name is required for Business customers",
-  path: ["companyName"]
+  userId: z.coerce.number().int().positive('A valid user ID is required'),
+  referralCode: z.string().trim().optional(),
 });
 
 export type CreateCustomerInput = z.infer<typeof createCustomerSchema>;
