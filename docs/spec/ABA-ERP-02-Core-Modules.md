@@ -1,4 +1,4 @@
-# BuyNaija ERP — Document 2: Core ERP Modules
+# Naijahands ERP — Document 2: Core ERP Modules
 
 **Covers:** Authentication & User Management · Customers · Products · Merchants · Suppliers · Sales & Orders · Merchant POS
 **Depends on:** Doc 1 (tokens, shell, components, DataTable, forms, states). Anything not restated here follows Doc 1.
@@ -74,7 +74,7 @@ Shows name/role (read-only), set password, accept terms. Token expiry 72h.
 
 ### Users list `/admin/users`
 
-- **Title/description:** Users — "Manage who can access BuyNaija and what they can do." **Primary action:** Invite user (`users.create`).
+- **Title/description:** Users — "Manage who can access Naijahands and what they can do." **Primary action:** Invite user (`users.create`).
 - **Search:** name, email, phone. **Filters:** Role (multi), Status, Merchant (combobox), Last active (range), 2FA (on/off). **Sort:** name, created, last active. **Pagination:** 25 default.
 - **Bulk actions:** Deactivate, Activate, Assign role, Resend invite, Export.
 - **Columns:** User (avatar+name+email), Role(s) (badge, +N), Merchant/Scope, Status, 2FA (icon), Last active, Created, Actions.
@@ -635,7 +635,7 @@ Cashier, Merchant Manager/Owner (approvals, session reports), Platform Admin (ov
 
 ## 7.8 Receipt
 
-80mm thermal layout + on-screen preview: merchant logo/name/address/phone, receipt no., date/time, cashier, customer, items (qty × price, line total), discount, tax breakdown, total, payments (method, amount), change, footer message, QR (order verification link), "Powered by BuyNaija". Actions: Print (browser print / ESC-POS bridge), Download PDF, Share (SMS/email/WhatsApp link), **Reprint** (marked "DUPLICATE" and audited).
+80mm thermal layout + on-screen preview: merchant logo/name/address/phone, receipt no., date/time, cashier, customer, items (qty × price, line total), discount, tax breakdown, total, payments (method, amount), change, footer message, QR (order verification link), "Powered by Naijahands". Actions: Print (browser print / ESC-POS bridge), Download PDF, Share (SMS/email/WhatsApp link), **Reprint** (marked "DUPLICATE" and audited).
 
 ## 7.9 Held orders
 

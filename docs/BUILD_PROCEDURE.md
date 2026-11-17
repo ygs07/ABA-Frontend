@@ -1,4 +1,4 @@
-# BuyNaija — Standard Build Procedure
+# Naijahands — Standard Build Procedure
 
 Every build task tells you to follow this file. Read it fully before you start. It works together with the workspace rules (`aba-build-rules.md`), which always apply.
 

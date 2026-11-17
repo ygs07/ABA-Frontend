@@ -13,16 +13,16 @@
 ## 1.1 Brand configuration
 
 1. All brand values must live in one config module `src/config/brand.ts`: `name`, `shortName`, `legalName`, `tagline`, `logo` (full, mark, light and dark variants), `favicon`, `domain`, `supportEmail`, `socialLinks`, `rewardsName`, `referralCodePrefix`, `receiptFooter`, `emailSenderName`, `metaTitleTemplate`.
-2. Until the client confirms a name, `brand.name` is a clearly marked working name. "BuyNaija" was floated in the meeting and is only a candidate. Changing the name must need a change in this one file (plus logo assets).
+2. Until the client confirms a name, `brand.name` is a clearly marked working name. "Naijahands" was floated in the meeting and is only a candidate. Changing the name must need a change in this one file (plus logo assets).
 3. No UI text, page title, metadata, email, SMS, receipt, PDF or share message may contain a hard-coded product name. Components read from `brand`.
 4. Internal identifiers (package names, repository folders, CSS class prefixes) may keep the old name. Anything a user can see may not.
 
 ## 1.2 Places that must change
 
 5. Header and footer logo and name, login and register screens, browser tab titles, Open Graph tags, favicon and web manifest.
-6. Hero, About, Community and marketing copy: remove "ABA", "Aba's Marketplace", "Shop Local, Shop Aba" and similar city-specific wording. Replace with Nigeria-wide "made in Nigeria" / "BuyNaija" style copy **[CONFIRM Q4: nationwide or still Aba-focused]**.
+6. Hero, About, Community and marketing copy: remove "ABA", "Aba's Marketplace", "Shop Local, Shop Aba" and similar city-specific wording. Replace with Nigeria-wide "made in Nigeria" / "Naijahands" style copy **[CONFIRM Q4: nationwide or still Aba-focused]**.
 7. Referral code prefix (Doc 04 REQ-04-036 format `ABA-XXXXXX`) becomes `brand.referralCodePrefix`. Codes issued earlier keep working.
-8. POS receipt footer "Powered by BuyNaija" (Doc 02 section 7.8), invoice and statement PDFs, email and SMS templates, share message templates, notification text.
+8. POS receipt footer "Powered by Naijahands" (Doc 02 section 7.8), invoice and statement PDFs, email and SMS templates, share message templates, notification text.
 9. Admin and merchant back-office header, sidebar logo, login, and the browser tab title.
 
 ## 1.3 Acceptance

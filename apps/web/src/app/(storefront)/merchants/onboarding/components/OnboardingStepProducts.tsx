@@ -104,7 +104,7 @@ export function OnboardingStepProducts({
       </div>
 
       <div className="space-y-2 rounded-xl border border-brand-200 bg-brand-50/60 p-4">
-        <div className="flex items-center gap-2 text-sm font-bold text-brand-900"><Camera className="h-4 w-4 text-brand-700" />BuyNaija Product Quality Standards</div>
+        <div className="flex items-center gap-2 text-sm font-bold text-brand-900"><Camera className="h-4 w-4 text-brand-700" />Naijahands Product Quality Standards</div>
         <ul className="list-disc space-y-1 pl-5 text-xs leading-relaxed text-brand-800/90">
           <li>High-resolution photos with clear natural or studio lighting</li>
           <li>Clean or neutral background that emphasizes genuine craftsmanship</li>

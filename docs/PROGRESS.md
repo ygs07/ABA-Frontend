@@ -1,6 +1,6 @@
 # Progress Tracker
 
-This document tracks the implementation progress of the BuyNaija ERP requirements. Each module corresponds to a specific implementation phase.
+This document tracks the implementation progress of the Naijahands ERP requirements. Each module corresponds to a specific implementation phase.
 
 | Module                        | Phase | Total REQ | Built (unaudited) | Verified (audit PASS) | Built partial | Not built | Last audit                |
 | ----------------------------- | ----- | --------- | ----------------- | --------------------- | ------------- | --------- | ------------------------- |

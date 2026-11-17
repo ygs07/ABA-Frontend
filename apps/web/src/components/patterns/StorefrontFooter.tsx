@@ -8,7 +8,7 @@ export function StorefrontFooter() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
 
           <div className="col-span-1 md:col-span-1">
-            <span className="text-xl font-bold text-brand-600 tracking-tight block mb-4">BuyNaija</span>
+            <span className="text-xl font-bold text-brand-600 tracking-tight block mb-4">Naijahands</span>
             <p className="text-sm text-text-muted max-w-xs">
               The premier marketplace and community platform connecting buyers and merchants across the region.
             </p>
@@ -47,7 +47,7 @@ export function StorefrontFooter() {
 
         <div className="pt-8 border-t border-border flex flex-col md:flex-row justify-between items-center gap-4">
           <p className="text-sm text-text-subtle">
-            &copy; {new Date().getFullYear()} BuyNaija. All rights reserved.
+            &copy; {new Date().getFullYear()} Naijahands. All rights reserved.
           </p>
           <div className="flex space-x-6 text-text-muted">
             {/* Social Icons Stub */}

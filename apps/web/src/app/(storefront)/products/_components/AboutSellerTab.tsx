@@ -31,7 +31,7 @@ export function AboutSellerTab({ merchant, productId, isEligibleToReview }: Abou
             </div>
             <div>
               <h3 className="text-xl font-bold text-text">{merchant.name}</h3>
-              <p className="text-sm text-text-muted mt-1">Shop products from this BuyNaija merchant.</p>
+              <p className="text-sm text-text-muted mt-1">Shop products from this Naijahands merchant.</p>
             </div>
           </div>
 
@@ -116,7 +116,7 @@ export function AboutSellerTab({ merchant, productId, isEligibleToReview }: Abou
           <h3 className="text-lg font-bold text-text mb-4">Referral Network</h3>
           <div className="bg-brand-50 border border-brand-100 rounded-xl p-4">
             <p className="text-sm text-brand-800 mb-3">
-              This merchant is part of the BuyNaija referral network. You can earn commissions by referring their products!
+              This merchant is part of the Naijahands referral network. You can earn commissions by referring their products!
             </p>
             <Link href={`/auth/register/?ref=${merchant.id}`}>
               <Button size="sm" variant="outline" className="w-full bg-white border-brand-200 text-brand-700 hover:bg-brand-100">

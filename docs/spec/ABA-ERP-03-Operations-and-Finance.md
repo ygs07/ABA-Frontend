@@ -1,4 +1,4 @@
-# BuyNaija ERP — Document 3: Operations & Finance
+# Naijahands ERP — Document 3: Operations & Finance
 
 **Covers:** Procurement · Inventory · Production · Payments · Payouts · Commissions · Finance & Accounting
 **Depends on:** Doc 1 (design system, DataTable, forms, states) and Doc 2 (Suppliers, Products, Orders, Customers, Merchants, POS).

@@ -1,4 +1,4 @@
-# BuyNaija ERP — Document 1: Global Design System & Application Shell
+# Naijahands ERP — Document 1: Global Design System & Application Shell
 
 **Status:** Draft v1 for approval · **Audience:** Frontend developers, QA, product
 **Stack assumed:** Next.js (App Router), TypeScript, Tailwind CSS, shadcn/ui-style primitives, TanStack Query, React Hook Form + Zod, Recharts.

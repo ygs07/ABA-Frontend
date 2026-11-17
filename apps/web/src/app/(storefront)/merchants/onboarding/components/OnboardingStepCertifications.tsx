@@ -137,7 +137,7 @@ export function OnboardingStepCertifications({
           <div className="text-xs space-y-0.5">
             <p className="font-bold text-text">Fulfillment &amp; Dispatch Standards Agreement</p>
             <p className="text-text-muted leading-relaxed">
-              I agree to dispatch orders within 24–48 hours and strictly adhere to BuyNaija buyer protection, packaging, and delivery guidelines.
+              I agree to dispatch orders within 24–48 hours and strictly adhere to Naijahands buyer protection, packaging, and delivery guidelines.
             </p>
             {errors.agreeToFulfillmentSla && (
               <p className="text-error font-medium">{errors.agreeToFulfillmentSla.message}</p>

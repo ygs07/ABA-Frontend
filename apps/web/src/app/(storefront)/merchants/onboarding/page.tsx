@@ -298,7 +298,7 @@ function MerchantOnboardingContent() {
           </div>
           <h1 className="text-3xl font-extrabold text-text tracking-tight">{isEditingApplication ? 'Update Merchant Application' : 'Merchant Verification'}</h1>
           <p className="text-xs text-text-muted mt-1 max-w-md mx-auto">
-            Complete the 5-step verification process to become an approved seller on BuyNaija.
+            Complete the 5-step verification process to become an approved seller on Naijahands.
           </p>
         </div>
 

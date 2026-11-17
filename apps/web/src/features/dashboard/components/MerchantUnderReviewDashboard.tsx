@@ -43,18 +43,16 @@ export function MerchantUnderReviewDashboard({ user }: MerchantUnderReviewDashbo
 
       {/* Primary KYC Under Review Alert Banner */}
       <div
-        className={`rounded-2xl border p-6 shadow-xs ${
-          isRejected
+        className={`rounded-2xl border p-6 shadow-xs ${isRejected
             ? 'border-error/40 bg-error-50 text-error-dark'
             : 'border-amber-200 bg-amber-50/70 text-amber-950'
-        }`}
+          }`}
       >
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <div
-              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-xs ${
-                isRejected ? 'bg-error text-white' : 'bg-amber-500 text-white'
-              }`}
+              className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-xl shadow-xs ${isRejected ? 'bg-error text-white' : 'bg-amber-500 text-white'
+                }`}
             >
               {isRejected ? <AlertCircle className="h-6 w-6" /> : <Clock className="h-6 w-6" />}
             </div>
@@ -66,9 +64,8 @@ export function MerchantUnderReviewDashboard({ user }: MerchantUnderReviewDashbo
                     : 'Account Under Review · KYC Verification Pending'}
                 </h2>
                 <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    isRejected ? 'bg-error text-white' : 'bg-amber-200 text-amber-900'
-                  }`}
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold uppercase tracking-wider ${isRejected ? 'bg-error text-white' : 'bg-amber-200 text-amber-900'
+                    }`}
                 >
                   {isRejected ? 'Action Required' : 'Minimal Access Mode'}
                 </span>
@@ -76,7 +73,7 @@ export function MerchantUnderReviewDashboard({ user }: MerchantUnderReviewDashbo
               <p className="mt-1 text-sm text-text-muted leading-relaxed max-w-3xl">
                 {isRejected
                   ? user.merchantOnboardingRejectionReason ||
-                    'Your submitted onboarding documents need correction. Please review the notes and resubmit for administrator approval.'
+                  'Your submitted onboarding documents need correction. Please review the notes and resubmit for administrator approval.'
                   : 'Your business details and KYC documents have been submitted. An administrator must verify and approve your KYC before full selling, live order processing, and payout features unlock.'}
               </p>
             </div>
@@ -217,7 +214,7 @@ export function MerchantUnderReviewDashboard({ user }: MerchantUnderReviewDashbo
           <div className="text-xs text-text-muted space-y-1">
             <p className="font-semibold text-text">Why are some features locked?</p>
             <p>
-              To ensure platform security and regulatory compliance, the BuyNaija administration team must verify every merchant&apos;s CAC documents, National Identity (NIN), and verified settlement bank account. Live order checkout, settlement payouts, and public marketplace listings will activate immediately once your verification is approved.
+              To ensure platform security and regulatory compliance, the Naijahands administration team must verify every merchant&apos;s CAC documents, National Identity (NIN), and verified settlement bank account. Live order checkout, settlement payouts, and public marketplace listings will activate immediately once your verification is approved.
             </p>
           </div>
         </div>

@@ -58,7 +58,7 @@ export function MerchantHeader({ merchant }: MerchantHeaderProps) {
             ) : null}
             <ShareMenu
               title={merchant.name}
-              text={`Check out ${merchant.name} on BuyNaija`}
+              text={`Check out ${merchant.name} on Naijahands`}
               url={`/merchants/${merchant.id}`}
             />
           </div>

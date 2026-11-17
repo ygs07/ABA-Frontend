@@ -1,4 +1,4 @@
-# BuyNaija ERP — Document 5: Cross-Module Workflows, Event Map & Implementation Guidance
+# Naijahands ERP — Document 5: Cross-Module Workflows, Event Map & Implementation Guidance
 
 **Purpose:** Ties Docs 1–4 together. Defines the end-to-end workflows, the **domain event map** that connects modules, the **status-transition rules** each module must enforce, the UI touchpoints (links, badges, toasts, invalidations) that make ABA one interconnected system, and the recommended build order for the existing Next.js app.
 **Reading guide:** Each workflow has (a) a flow, (b) step table: _actor → screen → action → system effects → modules touched_, (c) exceptions, (d) UI/frontend requirements, (e) mock-mode behaviour.
@@ -397,4 +397,4 @@ Each workflow in §3–§13 becomes an **end-to-end test script** (mock mode fir
 
 ---
 
-_End of the BuyNaija ERP Design & Product Specification (Documents 1–5). Section 17 depends on the codebase audit described in §17.1; once the route/component inventory is provided, Doc 1 §17 can be completed as a concrete Retain/Modify/Complete/New table._
+_End of the Naijahands ERP Design & Product Specification (Documents 1–5). Section 17 depends on the codebase audit described in §17.1; once the route/component inventory is provided, Doc 1 §17 can be completed as a concrete Retain/Modify/Complete/New table._
