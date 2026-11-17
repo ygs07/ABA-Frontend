@@ -1,7 +1,8 @@
 import React from 'react';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import Link from 'next/link';
-import { getShopProducts, getShopCategories } from '@/features/shop/api';
+import { getShopProducts } from '@/features/shop/api';
+import { getCategoryMenu } from '@/features/category/api';
 import { CategoryFilter } from '@/components/patterns/CategoryFilter';
 import { EntityCard } from '@/components/patterns/EntityCard';
 import { ChevronRight } from 'lucide-react';
@@ -12,16 +13,30 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
   // Find the leaf category slug (the last element of the array)
   const categorySlug = categoryPath[categoryPath.length - 1];
 
-  // In a real app we'd fetch the exact category by slug
-  const { data: categories } = await getShopCategories();
-  const currentCategory = categories.find(c => c.slug === categorySlug);
+  const { data: categories } = await getCategoryMenu();
+  const currentCategory = categories.find((category) => category.slug === categorySlug);
 
   if (!currentCategory) {
     notFound();
   }
 
+  const parentCategory = currentCategory.parentId
+    ? categories.find((category) => category.id === currentCategory.parentId)
+    : undefined;
+  const canonicalPath = parentCategory
+    ? `${parentCategory.slug}/${currentCategory.slug}`
+    : currentCategory.slug;
+  if (categoryPath.join('/') !== canonicalPath) {
+    redirect(`/c/${canonicalPath}`);
+  }
+
   // Fetch products
-  const { data: products } = await getShopProducts({ categorySlug });
+  const { data: products } = await getShopProducts({
+    categorySlug,
+    ...(currentCategory.parentId
+      ? { subcategoryId: Number(currentCategory.id) }
+      : { categoryId: Number(currentCategory.id) }),
+  });
 
   return (
     <div className="pt-32 pb-20 max-w-7xl mx-auto px-4 md:px-6">
@@ -29,9 +44,9 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
       <nav className="flex items-center gap-2 text-sm text-text-muted mb-6">
         <Link href="/" className="hover:text-brand-600">Home</Link>
         <ChevronRight className="w-4 h-4" />
-        {categoryPath.map((pathItem, index) => {
-          const isLast = index === categoryPath.length - 1;
-          const href = `/c/${categoryPath.slice(0, index + 1).join('/')}`;
+          {canonicalPath.split('/').map((pathItem, index, pathItems) => {
+          const isLast = index === pathItems.length - 1;
+          const href = `/c/${pathItems.slice(0, index + 1).join('/')}`;
           // Display the slug directly (or map back to name in a real app)
           const displayName = categories.find(c => c.slug === pathItem)?.name || pathItem;
           
@@ -75,10 +90,10 @@ export default async function CategoryPage({ params }: { params: Promise<{ categ
           
           {/* Subcategory Chips (Mocked) */}
           <div className="flex gap-2 mb-8 overflow-x-auto pb-2">
-            {categories.filter(c => c.parentId === currentCategory.id).map(sub => (
+            {!currentCategory.parentId && categories.filter(c => c.parentId === currentCategory.id).map(sub => (
               <Link 
                 key={sub.id} 
-                href={`/c/${categoryPath.join('/')}/${sub.slug}`}
+                href={`/c/${currentCategory.slug}/${sub.slug}`}
                 className="px-4 py-2 border border-border rounded-full bg-white text-sm font-medium hover:border-store-accent hover:bg-store-accent-tint hover:text-store-accent-text transition-colors whitespace-nowrap"
               >
                 {sub.name}

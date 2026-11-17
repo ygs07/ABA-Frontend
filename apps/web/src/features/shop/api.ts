@@ -210,18 +210,24 @@ export async function getMeetBusinesses(): Promise<{ data: DirectoryMerchant[] }
   return { data: res.data };
 }
 
-export async function getShopProducts(params?: { 
+export type ShopProductFilters = {
   categorySlug?: string; 
+  categoryId?: number;
+  subcategoryId?: number;
   merchantId?: string;
   q?: string;
   minRating?: number;
   inStockOnly?: boolean;
   onSaleOnly?: boolean;
   sort?: 'recommended' | 'newest' | 'price-asc' | 'price-desc' | 'rating';
-}): Promise<{ data: Product[] }> {
+};
+
+export async function getShopProducts(params?: ShopProductFilters): Promise<{ data: Product[] }> {
   if (API_MODE !== 'mock') {
     const search = new URLSearchParams({ limit: '100', includeVariants: 'true' });
     if (params?.merchantId) search.set('merchantId', params.merchantId);
+    if (params?.categoryId) search.set('categoryId', String(params.categoryId));
+    if (params?.subcategoryId) search.set('subcategoryId', String(params.subcategoryId));
     if (params?.q) search.set('search', params.q);
     if (params?.sort === 'rating') search.set('orderBy', 'ratings:DESC');
     if (params?.sort === 'newest') search.set('orderBy', 'createdAt:DESC');
@@ -266,6 +272,26 @@ export async function getShopProducts(params?: {
   }
 
   return { data: products };
+}
+
+export async function getMerchantShopProducts(
+  merchantId: string,
+  params?: Omit<ShopProductFilters, 'merchantId'>,
+): Promise<{ data: Product[] }> {
+  if (API_MODE === 'mock') {
+    return getShopProducts({ ...params, merchantId });
+  }
+
+  const search = new URLSearchParams({ limit: '100', includeVariants: 'true' });
+  if (params?.q) search.set('search', params.q);
+  if (params?.categoryId) search.set('categoryId', String(params.categoryId));
+  if (params?.subcategoryId) search.set('subcategoryId', String(params.subcategoryId));
+  if (params?.sort === 'rating') search.set('orderBy', 'ratings:DESC');
+  if (params?.sort === 'newest') search.set('orderBy', 'createdAt:DESC');
+  const response = await fetchApi<{ data: Parameters<typeof toProduct>[0][] }>(
+    `/api/v1/storefront/merchants/${encodeURIComponent(merchantId)}/products?${search.toString()}`,
+  );
+  return { data: response.data.map(toProduct) };
 }
 
 export async function getShopProductBySlug(slug: string): Promise<{ data: Product }> {

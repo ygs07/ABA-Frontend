@@ -6,7 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { MapPin, Phone, Mail, Loader2, Globe } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { getStorefrontMerchantById } from '@/features/merchant/api';
-import { getShopProducts } from '@/features/shop/api';
+import { getMerchantShopProducts } from '@/features/shop/api';
 import { ProductCard } from '@/components/storefront/ProductCard';
 import { ErrorState } from '@/components/patterns/ErrorState';
 import { Product } from '@/features/products/types';
@@ -49,7 +49,7 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
   const { data: allProducts = [] } = useQuery({
     queryKey: ['merchant_products_all', merchantId],
     queryFn: async () => {
-      const res = await getShopProducts({ merchantId: merchant?.id || merchantId });
+      const res = await getMerchantShopProducts(merchant?.id || merchantId);
       return res.data;
     },
     enabled: !!merchant
@@ -58,8 +58,7 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
   const { data: products, isLoading: isProductsLoading } = useQuery({
     queryKey: ['merchant_products_filtered', merchantId, q, sort, minRating, inStockOnly, onSaleOnly, categorySlug],
     queryFn: async () => {
-      const res = await getShopProducts({
-        merchantId: merchant?.id || merchantId,
+      const res = await getMerchantShopProducts(merchant?.id || merchantId, {
         q,
         sort,
         minRating,

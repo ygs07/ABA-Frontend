@@ -2,7 +2,11 @@
 
 import { cookies } from 'next/headers';
 
-export async function setAuthCookie(token: string, role: string = 'Customer') {
+export async function setAuthCookie(
+  token: string,
+  role: string = 'Customer',
+  rememberMe = false,
+) {
   const cookieStore = await cookies();
   cookieStore.set({
     name: 'aba_auth_token',
@@ -11,7 +15,7 @@ export async function setAuthCookie(token: string, role: string = 'Customer') {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7, // 1 week
+    ...(rememberMe ? { maxAge: 60 * 60 * 24 * 7 } : {}),
   });
   
   // Storing role in a non-httpOnly cookie allows middleware to route correctly
@@ -23,7 +27,7 @@ export async function setAuthCookie(token: string, role: string = 'Customer') {
     secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
     path: '/',
-    maxAge: 60 * 60 * 24 * 7,
+    ...(rememberMe ? { maxAge: 60 * 60 * 24 * 7 } : {}),
   });
 }
 
