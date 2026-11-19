@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Control, Controller, FieldErrors, UseFormRegister, UseFormWatch } from 'react-hook-form';
-import { Trash2, Percent, Calendar, ShieldCheck, Clock, Building2, Users } from 'lucide-react';
+import { Trash2, Percent, Calendar, ShieldCheck, Clock, Building2, Landmark, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -34,11 +34,13 @@ export function NetworkLevelConfigCard({
   canRemove,
 }: NetworkLevelConfigCardProps) {
   const levelErrors = errors.networkLevels?.[index];
-  const systemRateVal = watch(`networkLevels.${index}.systemRate`);
-  const merchantRateVal = watch(`networkLevels.${index}.rate`);
-  const safeSystemRate = Number.isFinite(systemRateVal) ? systemRateVal : 0;
-  const safeMerchantRate = Number.isFinite(merchantRateVal) ? merchantRateVal : 0;
-  const combinedRate = Number((safeSystemRate + safeMerchantRate).toFixed(2));
+  const companyRateVal = watch(`networkLevels.${index}.systemRate`);
+  const shareholdersRateVal = watch(`networkLevels.${index}.shareholdersRate`);
+  const usersRateVal = watch(`networkLevels.${index}.rate`);
+  const safeCompanyRate = Number.isFinite(companyRateVal) ? companyRateVal : 0;
+  const safeShareholdersRate = Number.isFinite(shareholdersRateVal) ? shareholdersRateVal : 0;
+  const safeUsersRate = Number.isFinite(usersRateVal) ? usersRateVal : 0;
+  const combinedRate = Number((safeCompanyRate + safeShareholdersRate + safeUsersRate).toFixed(2));
 
   return (
     <div className="rounded-xl border border-border bg-surface-1 p-5 space-y-5 shadow-xs transition-all hover:border-brand-300">
@@ -72,62 +74,86 @@ export function NetworkLevelConfigCard({
         )}
       </div>
 
-      {/* Commission Allocation Split: System (Platform) vs Merchant (Marketer) */}
+      {/* Three-Way Commission Allocation Split: Company, Shareholders, Users on Line */}
       <div className="rounded-lg border border-border bg-surface p-4 space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <p className="text-xs font-semibold text-text uppercase tracking-wider flex items-center gap-1.5">
             <Percent className="w-3.5 h-3.5 text-brand-600" />
-            Level {levelNumber} Commission Split (System Always Earns)
+            Level {levelNumber} Three-Way Allocation (Must Equal 100%)
           </p>
           <span className="text-xs font-medium text-text-muted">
-            System: <strong className="text-text">{safeSystemRate}%</strong> · Merchant:{' '}
-            <strong className="text-text">{safeMerchantRate}%</strong> · Combined:{' '}
-            <strong className={combinedRate > 100 ? 'text-error' : 'text-brand-700'}>
+            Company: <strong className="text-text">{safeCompanyRate}%</strong> · Shareholders:{' '}
+            <strong className="text-text">{safeShareholdersRate}%</strong> · Users:{' '}
+            <strong className="text-text">{safeUsersRate}%</strong> · Total:{' '}
+            <strong className={combinedRate !== 100 ? 'text-error' : 'text-brand-700'}>
               {combinedRate}%
             </strong>
           </span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="space-y-1.5">
             <label className="text-sm font-medium text-text flex items-center gap-1.5">
               <Building2 className="w-3.5 h-3.5 text-brand-600" />
-              System Retained (%) *
-            </label>
-            <Input
-              type="number"
-              step="0.1"
-              min="0.1"
-              max="100"
-              placeholder="e.g. 2"
-              {...register(`networkLevels.${index}.systemRate`, { valueAsNumber: true })}
-            />
-            {levelErrors?.systemRate && (
-              <p className="text-[11px] text-error font-medium">{levelErrors.systemRate.message}</p>
-            )}
-            <p className="text-[11px] text-text-muted">
-              Mandatory platform share retained at Level {levelNumber}.
-            </p>
-          </div>
-
-          <div className="space-y-1.5">
-            <label className="text-sm font-medium text-text flex items-center gap-1.5">
-              <Users className="w-3.5 h-3.5 text-brand-600" />
-              Merchant / Marketer (%) *
+              Company (%) *
             </label>
             <Input
               type="number"
               step="0.1"
               min="0"
               max="100"
-              placeholder="e.g. 5"
+              placeholder="e.g. 10"
+              {...register(`networkLevels.${index}.systemRate`, { valueAsNumber: true })}
+            />
+            {levelErrors?.systemRate && (
+              <p className="text-[11px] text-error font-medium">{levelErrors.systemRate.message}</p>
+            )}
+            <p className="text-[11px] text-text-muted">
+              Portion allocated to the Company at Level {levelNumber}.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text flex items-center gap-1.5">
+              <Landmark className="w-3.5 h-3.5 text-brand-600" />
+              Shareholders (%) *
+            </label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              placeholder="e.g. 20"
+              {...register(`networkLevels.${index}.shareholdersRate`, { valueAsNumber: true })}
+            />
+            {levelErrors?.shareholdersRate && (
+              <p className="text-[11px] text-error font-medium">
+                {levelErrors.shareholdersRate.message}
+              </p>
+            )}
+            <p className="text-[11px] text-text-muted">
+              Portion allocated to Shareholders at Level {levelNumber}.
+            </p>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium text-text flex items-center gap-1.5">
+              <Users className="w-3.5 h-3.5 text-brand-600" />
+              Users on Line (%) *
+            </label>
+            <Input
+              type="number"
+              step="0.1"
+              min="0"
+              max="100"
+              placeholder="e.g. 70"
               {...register(`networkLevels.${index}.rate`, { valueAsNumber: true })}
             />
             {levelErrors?.rate && (
               <p className="text-[11px] text-error font-medium">{levelErrors.rate.message}</p>
             )}
             <p className="text-[11px] text-text-muted">
-              Percentage allocated to the merchant/marketer at Level {levelNumber}.
+              Portion allocated to marketers on Level {levelNumber}.
             </p>
           </div>
         </div>
@@ -185,20 +211,8 @@ export function NetworkLevelConfigCard({
         </div>
       </div>
 
-      {/* Operational constraints: Min order value, approval mode, payout delay */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
-        <div className="space-y-1.5">
-          <label className="text-sm font-medium text-text">Minimum Order Value (Optional)</label>
-          <Input
-            type="number"
-            min="0"
-            placeholder="₦ 0"
-            {...register(`networkLevels.${index}.minOrderValue`, {
-              setValueAs: (v) => (v === '' || v === null ? null : Number(v)),
-            })}
-          />
-          <p className="text-[11px] text-text-muted">Orders below this do not qualify.</p>
-        </div>
+      {/* Operational constraints: approval mode, payout delay */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
 
         <div className="space-y-1.5">
           <label className="text-sm font-medium text-text">Approval Mode (Optional)</label>

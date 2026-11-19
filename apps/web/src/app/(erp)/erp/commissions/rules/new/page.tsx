@@ -41,8 +41,9 @@ export default function CreateCommissionPlanPage() {
       networkLevels: [
         {
           level: 1,
-          systemRate: 2,
-          rate: 5,
+          systemRate: 10,
+          shareholdersRate: 20,
+          rate: 70,
           effectiveFrom: '',
           effectiveTo: '',
           qualificationTrigger: 'order_paid',
@@ -63,8 +64,9 @@ export default function CreateCommissionPlanPage() {
     const nextLevel = fields.length + 1;
     append({
       level: nextLevel,
-      systemRate: 2,
-      rate: Math.max(1, 5 - fields.length),
+      systemRate: 10,
+      shareholdersRate: 20,
+      rate: 70,
       effectiveFrom: '',
       effectiveTo: '',
       qualificationTrigger: 'order_paid',
@@ -94,6 +96,9 @@ export default function CreateCommissionPlanPage() {
           percentageAmount: values.networkLevels[0]?.rate ?? 0,
           levelRates: values.networkLevels.map((lvl) => ({
             level: lvl.level,
+            companyPercentageAmount: lvl.systemRate,
+            shareholdersPercentageAmount: lvl.shareholdersRate,
+            usersPercentageAmount: lvl.rate,
             systemPercentageAmount: lvl.systemRate,
             merchantPercentageAmount: lvl.rate,
             percentageAmount: lvl.rate,
