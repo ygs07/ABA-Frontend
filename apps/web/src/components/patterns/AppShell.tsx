@@ -33,7 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     } finally {
       await removeAuthCookie();
       logout();
-      router.push('/login');
+      router.push('/auth/login');
     }
   };
 

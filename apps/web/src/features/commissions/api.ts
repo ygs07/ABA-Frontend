@@ -138,6 +138,9 @@ export type CommissionRuleInput = {
     percentageAmount?: number;
     systemPercentageAmount?: number;
     merchantPercentageAmount?: number;
+    companyPercentageAmount?: number;
+    shareholdersPercentageAmount?: number;
+    usersPercentageAmount?: number;
   }>;
   baseAmountNet?: boolean;
   approvalMode?: 'automatic' | 'manual';
@@ -209,6 +212,9 @@ export type BackendCommissionRule = {
     percentageAmount: number;
     systemPercentageAmount?: number;
     merchantPercentageAmount?: number;
+    companyPercentageAmount?: number;
+    shareholdersPercentageAmount?: number;
+    usersPercentageAmount?: number;
   }>;
   percentage_amount?: string | number | null;
   is_active: boolean;

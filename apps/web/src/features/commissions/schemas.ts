@@ -15,13 +15,17 @@ export const networkLevelSchema = z
   .object({
     level: z.number().min(1),
     systemRate: z
-      .number({ message: 'System commission rate is required' })
-      .min(0.1, 'System commission rate must be greater than 0%')
-      .max(100, 'System rate cannot exceed 100%'),
+      .number({ message: 'Company commission percentage is required' })
+      .min(0, 'Company percentage must be 0 or higher')
+      .max(100, 'Company percentage cannot exceed 100%'),
+    shareholdersRate: z
+      .number({ message: 'Shareholders commission percentage is required' })
+      .min(0, 'Shareholders percentage must be 0 or higher')
+      .max(100, 'Shareholders percentage cannot exceed 100%'),
     rate: z
-      .number({ message: 'Merchant/marketer rate is required' })
-      .min(0, 'Merchant/marketer rate must be 0 or higher')
-      .max(100, 'Rate cannot exceed 100%'),
+      .number({ message: 'Users commission percentage is required' })
+      .min(0, 'Users percentage must be 0 or higher')
+      .max(100, 'Users percentage cannot exceed 100%'),
     effectiveFrom: z.string().optional(),
     effectiveTo: z.string().optional(),
     qualificationTrigger: z.enum(['order_paid', 'order_delivered', 'first_order_only']),
@@ -37,10 +41,13 @@ export const networkLevelSchema = z
       .optional()
       .nullable(),
   })
-  .refine((lvl) => lvl.systemRate + lvl.rate <= 100, {
-    message: 'System % + Merchant % cannot exceed 100%',
-    path: ['rate'],
-  });
+  .refine(
+    (lvl) => Math.round((lvl.systemRate + lvl.shareholdersRate + lvl.rate) * 100) / 100 === 100,
+    {
+      message: 'Company % + Shareholders % + Users % must add up to 100%',
+      path: ['rate'],
+    },
+  );
 
 export type NetworkLevelConfig = z.infer<typeof networkLevelSchema>;
 
