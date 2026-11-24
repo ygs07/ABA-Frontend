@@ -1,8 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import Link from "next/link";
-import { FileText, Loader2, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { fetchApi } from "@/lib/api";
@@ -46,13 +45,6 @@ const statusLabels: Record<number, string> = {
   2: "Under review",
   3: "Approved",
   4: "Rejected",
-};
-const documentLabels: Record<number, string> = {
-  1: "National ID",
-  2: "International passport",
-  3: "Driver's license",
-  4: "Proof of address",
-  5: "Business registration",
 };
 
 function profileToForm(profile?: KycProfile | null): KycForm {
@@ -162,12 +154,9 @@ export default function PortalKycPage() {
     );
 
   const isEditable = !profile || profile.status === 1 || profile.status === 4;
+  const isRejected = profile?.status === 4;
   const allDetailsPresent = Object.values(form).slice(0, 5).every(Boolean);
-  const canSubmit =
-    Boolean(profile) &&
-    isEditable &&
-    allDetailsPresent &&
-    (profile?.documents.length ?? 0) > 0;
+  const canSubmit = Boolean(profile) && isEditable && allDetailsPresent;
 
   return (
     <div className="space-y-6">
@@ -191,10 +180,24 @@ export default function PortalKycPage() {
             </p>
           </div>
         </div>
-        {profile?.rejection_reason && (
-          <p className="mt-4 rounded-lg bg-error-50 p-3 text-sm text-error">
-            Rejection reason: {profile.rejection_reason}
-          </p>
+        {isRejected && (
+          <div
+            role="alert"
+            className="mt-4 rounded-xl border border-error/30 bg-error/10 p-4 text-sm text-error space-y-2"
+          >
+            <div className="flex items-center gap-2 font-semibold">
+              <AlertTriangle className="h-4 w-4 shrink-0" />
+              Your KYC application was rejected
+            </div>
+            {profile?.rejection_reason && (
+              <p className="text-xs leading-relaxed">
+                <strong>Reason:</strong> {profile.rejection_reason}
+              </p>
+            )}
+            <p className="text-xs text-text-muted">
+              Update your personal and address details below, click <strong>Save profile</strong>, and then click <strong>Resubmit for review</strong>.
+            </p>
+          </div>
         )}
       </section>
       <form
@@ -282,51 +285,15 @@ export default function PortalKycPage() {
               disabled={!canSubmit || isSubmitting}
               onClick={() => void submitProfile()}
             >
-              {isSubmitting ? "Submitting…" : "Submit for review"}
+              {isSubmitting
+                ? "Submitting…"
+                : isRejected
+                  ? "Resubmit for review"
+                  : "Submit for review"}
             </Button>
           </div>
         )}
       </form>
-      <section className="rounded-xl border border-border bg-white p-5">
-        <div className="mb-4 flex items-center justify-between gap-3">
-          <div>
-            <h2 className="font-bold">KYC documents</h2>
-            <p className="text-sm text-text-muted">
-              Documents are added through referral activation.
-            </p>
-          </div>
-          {isEditable && (
-            <Link href="/portal/referrals">
-              <Button variant="outline">Add documents</Button>
-            </Link>
-          )}
-        </div>
-        {profile?.documents.length ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {profile.documents.map((document) => (
-              <a
-                key={document.id}
-                href={document.media.url}
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center gap-3 rounded-lg border border-border p-3 hover:bg-surface-1"
-              >
-                <FileText className="h-5 w-5 text-brand-600" />
-                <span>
-                  <span className="block font-medium">
-                    {documentLabels[document.document_type] ?? "Document"}
-                  </span>
-                  <span className="block text-xs text-text-muted">
-                    {document.media.original_name}
-                  </span>
-                </span>
-              </a>
-            ))}
-          </div>
-        ) : (
-          <p className="text-sm text-text-muted">No documents uploaded yet.</p>
-        )}
-      </section>
     </div>
   );
 }

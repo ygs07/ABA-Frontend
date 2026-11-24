@@ -185,7 +185,7 @@ function toOrderStatus(status: string): Order['status'] {
 
 export const getOrders = async (filters: { search?: string; status?: number; startDate?: string; endDate?: string } = {}): Promise<Order[]> => {
   if (API_MODE !== 'mock') {
-    const query = new URLSearchParams({ limit: '100' });
+    const query = new URLSearchParams({ limit: '100', orderBy: 'createdAt:DESC' });
     if (filters.search) query.set('search', filters.search);
     if (filters.status) query.set('status', String(filters.status));
     if (filters.startDate) query.set('startDate', filters.startDate);

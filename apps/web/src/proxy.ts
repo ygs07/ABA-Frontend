@@ -22,7 +22,10 @@ export function proxy(request: NextRequest) {
     (request.nextUrl.pathname.startsWith('/erp') ||
       request.nextUrl.pathname.startsWith('/pos'))
   ) {
-    return NextResponse.redirect(new URL('/portal/dashboard', request.url));
+    const dashboardUrl = new URL('/portal/dashboard', request.url);
+    dashboardUrl.searchParams.set('denied', '1');
+    dashboardUrl.searchParams.set('from', request.nextUrl.pathname);
+    return NextResponse.redirect(dashboardUrl);
   }
 
   return NextResponse.next();

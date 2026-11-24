@@ -3,7 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { User, Mail, Phone, Lock, MapPin } from 'lucide-react';
+import { PasswordInput } from '@/components/ui/password-input';
+import { User, Mail, Phone, Lock, MapPin, ChevronDown, ChevronUp } from 'lucide-react';
+import { changePasswordSchema } from '@/features/auth/schemas';
 import { useAuthStore } from '@/features/auth/store';
 import { fetchApi } from '@/lib/api';
 import { DeliveryAddress, getDeliveryAddresses } from '@/features/checkout/api';
@@ -28,6 +30,7 @@ export default function PortalProfile() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [isSavingPassword, setIsSavingPassword] = useState(false);
+  const [isSecurityOpen, setIsSecurityOpen] = useState(false);
   const isCustomer = Boolean(
     isAuthenticated && user && (user.userType === 'Customer' || user.roles.includes('Customer')),
   );
@@ -69,13 +72,17 @@ export default function PortalProfile() {
   };
 
   const savePassword = async () => {
-    if (newPassword !== confirmPassword) return toast.error('New password and confirmation do not match.');
+    const parsed = changePasswordSchema.safeParse({ currentPassword, newPassword, confirmPassword });
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0]?.message ?? 'Please check your password details.');
+    }
     setIsSavingPassword(true);
     try {
-      await changePassword({ currentPassword, newPassword, confirmPassword });
+      await changePassword(parsed.data);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
+      setIsSecurityOpen(false);
       toast.success('Password updated.');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to update password.');
@@ -201,31 +208,82 @@ export default function PortalProfile() {
         </div>
 
         <div className="p-6">
-          <h2 className="text-lg font-bold text-text mb-4">Security</h2>
-          <div className="max-w-md space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">Current Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} placeholder="••••••••" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
+                <Lock className="w-5 h-5" />
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-text">Security</h2>
+                <p className="text-sm text-text-muted">
+                  Change your account password. Your new password must be different from your current password.
+                </p>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">New Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} placeholder="••••••••" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              </div>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-text mb-1">Confirm New Password</label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-                <input type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} placeholder="••••••••" className="w-full h-10 pl-9 pr-3 rounded-md border border-border text-sm focus:outline-none focus:ring-2 focus:ring-brand-500" />
-              </div>
-            </div>
-            <Button onClick={savePassword} disabled={isSavingPassword || !currentPassword || !newPassword || !confirmPassword}>{isSavingPassword ? 'Updating…' : 'Update Password'}</Button>
+            <Button
+              type="button"
+              variant="outline"
+              aria-expanded={isSecurityOpen}
+              onClick={() => setIsSecurityOpen((open) => !open)}
+            >
+              {isSecurityOpen ? (
+                <>
+                  Hide <ChevronUp className="ml-1.5 w-4 h-4" />
+                </>
+              ) : (
+                <>
+                  Change Password <ChevronDown className="ml-1.5 w-4 h-4" />
+                </>
+              )}
+            </Button>
           </div>
+
+          {isSecurityOpen && (
+            <div className="mt-6 max-w-md space-y-4 border-t border-border pt-6">
+              <div>
+                <label className="block text-sm font-medium text-text mb-1">Current Password</label>
+                <PasswordInput
+                  value={currentPassword}
+                  onChange={(event) => setCurrentPassword(event.target.value)}
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-1">New Password</label>
+                <PasswordInput
+                  value={newPassword}
+                  onChange={(event) => setNewPassword(event.target.value)}
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-text mb-1">Confirm New Password</label>
+                <PasswordInput
+                  value={confirmPassword}
+                  onChange={(event) => setConfirmPassword(event.target.value)}
+                  autoComplete="new-password"
+                  placeholder="••••••••"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  onClick={savePassword}
+                  disabled={isSavingPassword || !currentPassword || !newPassword || !confirmPassword}
+                >
+                  {isSavingPassword ? 'Updating…' : 'Update Password'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => setIsSecurityOpen(false)}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

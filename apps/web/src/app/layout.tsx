@@ -34,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={cn("h-full", "antialiased", inter.variable, jetbrainsMono.variable, "font-sans", geist.variable)}
+      className={cn("h-full scroll-smooth", "antialiased", inter.variable, jetbrainsMono.variable, "font-sans", geist.variable)}
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-bg text-text">
         <QueryProvider>

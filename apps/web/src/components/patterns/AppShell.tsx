@@ -6,6 +6,7 @@ import { Search, Bell, Plus, HelpCircle, Menu, ChevronRight } from 'lucide-react
 import { brand } from '@/config/brand';
 import { Sidebar } from './Sidebar';
 import { MerchantKycRestrictedView } from './MerchantKycRestrictedView';
+import { NoPermission } from './NoPermission';
 import { useAuthStore } from '@/features/auth/store';
 import { removeAuthCookie } from '@/features/auth/actions';
 import { logout as logoutRequest } from '@/features/auth/api/auth.api';
@@ -21,6 +22,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const user = useAuthStore(state => state.user);
   const activeRole = useAuthStore(state => state.activeRole);
   const logout = useAuthStore(state => state.logout);
+  const isCustomerAccount = Boolean(
+    user && (user.userType === 'Customer' || activeRole === 'Customer'),
+  );
   const isRestrictedMerchantRoute = isMerchantUnderReview(user) && !isAllowedPathForMerchantUnderReview(pathname);
 
   const getInitials = (name: string) => {
@@ -47,6 +51,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  if (isCustomerAccount) {
+    return (
+      <div className="min-h-screen bg-bg flex items-center justify-center p-6">
+        <NoPermission module="the ERP back-office" backHref="/portal/dashboard" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-full bg-bg">

@@ -68,9 +68,7 @@ export const changePassword = async (data: ChangePasswordInput): Promise<void> =
 export const getLoginHistory = async () => {
   await delay(500);
   return [
-    { id: '1', time: new Date().toISOString(), device: 'MacBook Pro', ip: '192.168.1.1', location: 'Lagos, NG', result: 'Success' },
-    { id: '2', time: new Date(Date.now() - 86400000).toISOString(), device: 'iPhone 13', ip: '10.0.0.1', location: 'Abuja, NG', result: 'Success' },
-    { id: '3', time: new Date(Date.now() - 172800000).toISOString(), device: 'Unknown Device', ip: '8.8.8.8', location: 'London, UK', result: 'Failed' },
+
   ];
 };
 

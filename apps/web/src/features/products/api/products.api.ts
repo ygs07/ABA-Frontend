@@ -272,9 +272,19 @@ export const createProduct = async (data: CreateProductInput): Promise<Product> 
       throw new Error('Add at least one PNG or JPEG product image.');
     }
 
+    const numericCategoryId = Number(String(data.categoryId).replace(/^sub-/, ''));
+    if (!Number.isInteger(numericCategoryId) || numericCategoryId < 1) {
+      throw new Error('Please select a valid category.');
+    }
+
     const formData = new FormData();
-    formData.append('categoryId', data.categoryId);
-    if (data.subcategoryId) formData.append('subcategoryId', data.subcategoryId);
+    formData.append('categoryId', String(numericCategoryId));
+    if (data.subcategoryId) {
+      const numericSubcategoryId = Number(String(data.subcategoryId).replace(/^sub-/, ''));
+      if (Number.isInteger(numericSubcategoryId) && numericSubcategoryId >= 1) {
+        formData.append('subcategoryId', String(numericSubcategoryId));
+      }
+    }
     if (data.vendorId) formData.append('merchantId', data.vendorId);
     formData.append('name', data.name);
     if (data.description) formData.append('description', data.description);

@@ -1,13 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { ShoppingBag, Wallet, Users, ChevronRight, Package, ArrowUpRight, ArrowDownRight, Loader2, Gift } from 'lucide-react';
+import { ShoppingBag, Wallet, Users, ChevronRight, Package, ArrowUpRight, ArrowDownRight, Loader2, Gift, ShieldAlert } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getCustomerOrders, getCustomerWalletBalance, getShoppingCreditBalance, getWalletTransactions, getReferralStats, initializeWalletFunding, verifyWalletFunding } from '@/features/portal/api';
 import { AmountText } from '@/components/patterns/AmountText';
 import { Alert } from '@/components/ui/alert';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/features/auth/store';
 import { getAmountFontSize } from '@/lib/format';
@@ -17,6 +17,21 @@ export default function PortalDashboard() {
   const queryClient = useQueryClient();
   const [isFundModalOpen, setIsFundModalOpen] = useState(false);
   const [fundingAmount, setFundingAmount] = useState('');
+  const [deniedRoute, setDeniedRoute] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('denied') === '1') {
+      const from = params.get('from');
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setDeniedRoute(from || 'that restricted area');
+      toast.error('Access denied: You do not have permission to access ERP or Admin pages.');
+      params.delete('denied');
+      params.delete('from');
+      const nextQuery = params.toString();
+      window.history.replaceState(null, '', nextQuery ? `/portal/dashboard?${nextQuery}` : '/portal/dashboard');
+    }
+  }, []);
   const fundWalletMutation = useMutation({
     mutationFn: async () => {
       const amount = Number(fundingAmount);
@@ -71,6 +86,26 @@ export default function PortalDashboard() {
   return (
     <div className="space-y-6">
       <h1 className="text-2xl font-bold text-text">Welcome back, {user?.firstName ?? 'there'}!</h1>
+
+      {deniedRoute && (
+        <div
+          role="alert"
+          className="rounded-xl border border-error/30 bg-error/10 p-4 text-sm text-error flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+        >
+          <div className="flex items-start gap-2.5">
+            <ShieldAlert className="h-5 w-5 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold">Access Denied (403)</p>
+              <p className="text-xs text-error/90 mt-0.5">
+                You do not have permission to access <span className="font-mono">{deniedRoute}</span>. ERP, POS, and Admin routes are restricted to authorized merchant and staff accounts.
+              </p>
+            </div>
+          </div>
+          <Button type="button" variant="outline" size="sm" onClick={() => setDeniedRoute(null)}>
+            Dismiss
+          </Button>
+        </div>
+      )}
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-2 xl:grid-cols-4 gap-4">

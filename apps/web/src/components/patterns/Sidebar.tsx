@@ -22,7 +22,8 @@ import {
   Settings,
   ChevronRight,
   FileBarChart2,
-  Clock
+  Clock,
+  Shield
 } from 'lucide-react';
 
 import { useAuthStore } from '@/features/auth/store';
@@ -236,6 +237,7 @@ const NAV_STRUCTURE: NavGroup[] = [
       { name: 'Merchant Onboarding', href: '/erp/merchants/onboarding-applications', icon: Store, allowedRoles: ['Super Admin', 'Admin'] },
       { name: 'Roles & Permissions', href: '/erp/settings/roles', icon: Lock, allowedRoles: ['Super Admin'] },
       { name: 'Audit Logs', href: '/erp/settings/audit', icon: ScrollText, allowedRoles: ['Super Admin', 'Auditor'] },
+      { name: 'Security', href: '/erp/security', icon: Shield, allowedRoles: ['Super Admin', 'Admin'] },
       { name: 'Settings', href: '/erp/settings', icon: Settings, allowedRoles: ['Super Admin', 'Admin'] }
     ]
   },

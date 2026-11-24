@@ -16,6 +16,7 @@ interface CartState {
   removeFromCart: (itemId: string) => Promise<void>;
   updateQuantity: (itemId: string, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
+  resetLocalCart: () => void;
   syncWithServer: () => Promise<void>;
   getTotalItems: () => number;
 }
@@ -193,6 +194,22 @@ export const useCartStore = create<CartState>()(
           await get().syncWithServer();
         } finally {
           set({ isSyncing: false });
+        }
+      },
+
+      resetLocalCart: () => {
+        pendingQuantityUpdates.forEach((pending) => {
+          clearTimeout(pending.timeoutId);
+          pending.resolvers.forEach((r) => r());
+        });
+        pendingQuantityUpdates.clear();
+        set({ items: [], subtotal: 0, deliveryFee: 0, total: 0, isSyncing: false });
+        if (typeof window !== 'undefined') {
+          try {
+            window.localStorage.removeItem('aba-cart-storage');
+          } catch {
+            // Ignore storage access errors
+          }
         }
       },
 
