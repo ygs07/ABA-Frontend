@@ -18,7 +18,7 @@ interface ReferralKycStepProps {
 
 export function ReferralKycStep({ onContinue, onCancel }: ReferralKycStepProps) {
   const [idType, setIdType] = useState('National Identity Number (NIN)');
-  const [ninNumber, setNinNumber] = useState('12345678901');
+  const [ninNumber, setNinNumber] = useState('');
   const [idUploaded, setIdUploaded] = useState(false);
   const [addressUploaded, setAddressUploaded] = useState(false);
   const [idFileName, setIdFileName] = useState<string | null>(null);

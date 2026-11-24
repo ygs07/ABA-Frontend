@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { useCartStore } from '@/features/cart/store';
 import { useAuthStore } from '@/features/auth/store';
 import { getUserHome, logout as logoutRequest } from '@/features/auth/api/auth.api';
+import { buildAuthHref } from '@/features/auth/redirect';
 import { removeAuthCookie } from '@/features/auth/actions';
 import { MegaMenu } from './MegaMenu';
 import { CategorySearchSelect } from './CategorySearchSelect';
@@ -246,10 +247,10 @@ export function StorefrontHeader() {
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-2 pl-2">
-                <Link href="/auth/login" className="px-3 text-[13px] font-bold text-text-muted hover:text-brand-600 uppercase tracking-wide">
+                <Link href={buildAuthHref('/auth/login', pathname)} className="px-3 text-[13px] font-bold text-text-muted hover:text-brand-600 uppercase tracking-wide">
                   Log in
                 </Link>
-                <Link href="/auth/register">
+                <Link href={buildAuthHref('/auth/register', pathname)}>
                   <Button className="h-11 px-6 text-white shadow-md font-bold uppercase tracking-wide text-[13px] flex items-center gap-2">
                     <User className="w-4 h-4" /> Register
                   </Button>

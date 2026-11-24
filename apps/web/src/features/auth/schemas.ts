@@ -19,7 +19,11 @@ export const signupSchema = z.object({
       message: 'Enter a valid Nigerian phone number (e.g. 08031234567 or +2348031234567)',
     }),
   email: z.string().email('Enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
+  password: z
+    .string()
+    .min(8, 'Password must be at least 8 characters')
+    .regex(/[A-Za-z]/, 'Password must contain at least one letter')
+    .regex(/[0-9]/, 'Password must contain at least one number'),
   confirm_password: z.string().min(1, 'Please confirm your password'),
 }).refine((data) => data.password === data.confirm_password, {
   message: "Passwords don't match",
@@ -69,8 +73,13 @@ export const changePasswordSchema = z.object({
     .regex(/[0-9]/, 'Must contain at least one number')
     .regex(/[^A-Za-z0-9]/, 'Must contain at least one special character'),
   confirmPassword: z.string().min(1, 'Please confirm your new password'),
-}).refine((data) => data.newPassword === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ['confirmPassword'],
-});
+})
+  .refine((data) => data.newPassword !== data.currentPassword, {
+    message: 'New password must be different from your current password',
+    path: ['newPassword'],
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ['confirmPassword'],
+  });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;

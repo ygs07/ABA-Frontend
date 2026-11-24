@@ -24,8 +24,23 @@ export default function OrderDetailPage() {
 
   const [order, setOrder] = useState<Order | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
   const [activeTab, setActiveTab] = useState('Overview');
   const [selectedStatus, setSelectedStatus] = useState<number | null>(null);
+
+  const changeOrderStatus = async (nextStatus: number, successMessage: string) => {
+    if (!order || isUpdatingStatus) return;
+    setIsUpdatingStatus(true);
+    try {
+      const updatedOrder = await updateOrderStatus(order.id, nextStatus);
+      setOrder(updatedOrder);
+      toast.success(successMessage);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to update the order status');
+    } finally {
+      setIsUpdatingStatus(false);
+    }
+  };
 
   const fulfilOrder = async () => {
     if (!order) return;
@@ -37,13 +52,7 @@ export default function OrderDetailPage() {
           ? 4
           : null;
     if (!nextStatus) return;
-    try {
-      const updatedOrder = await updateOrderStatus(order.id, nextStatus);
-      setOrder(updatedOrder);
-      toast.success('Order moved to its next fulfilment stage');
-    } catch {
-      toast.error('Failed to update the order status');
-    }
+    await changeOrderStatus(nextStatus, 'Order moved to its next fulfilment stage');
   };
   const printInvoice = async () => {
     if (!order) return;
@@ -112,7 +121,11 @@ export default function OrderDetailPage() {
         <div className="flex flex-wrap gap-2">
           <Button variant="outline" onClick={() => void printInvoice()}>Print Invoice</Button>
           <Button variant="outline">Record Payment</Button>
-          {!['Completed', 'Cancelled', 'Refunded'].includes(order.status) && <Button onClick={fulfilOrder}>Advance Order</Button>}
+          {!['Completed', 'Cancelled', 'Refunded'].includes(order.status) && (
+            <Button onClick={fulfilOrder} disabled={isUpdatingStatus}>
+              {isUpdatingStatus ? 'Updating...' : 'Advance Order'}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -196,7 +209,14 @@ export default function OrderDetailPage() {
         {activeTab === 'Items' && <OrderItemsTab order={order} onUpdateItem={updateItem} />}
         {activeTab === 'Payments' && <OrderPaymentsTab order={order} />}
         {activeTab === 'Commissions' && <OrderCommissionsTab orderId={order.id} />}
-        {activeTab === 'Fulfilment' && <OrderFulfilmentTab order={order} />}
+        {activeTab === 'Fulfilment' && (
+          <OrderFulfilmentTab
+            order={order}
+            isUpdating={isUpdatingStatus}
+            onPackItems={() => void changeOrderStatus(3, 'Order marked as packed / ready for pickup')}
+            onMarkDelivered={() => void changeOrderStatus(4, 'Order marked as delivered')}
+          />
+        )}
         {activeTab === 'Returns' && <OrderReturnsTab order={order} />}
         {activeTab === 'Timeline' && <OrderTimelineTab order={order} />}
       </div>
