@@ -3,12 +3,13 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2, Search } from 'lucide-react';
+import { Search } from 'lucide-react';
 import { getDirectoryMerchants } from '@/features/shop/api';
 import type { MerchantSort } from '@/features/merchants/types';
 import { EmptyState } from '@/components/patterns/EmptyState';
 import { ErrorState } from '@/components/patterns/ErrorState';
 import { MerchantCard } from '@/components/patterns/MerchantCard';
+import { FadeIn, StaggerGrid, StaggerItem } from '@/components/ui/MotionPrimitives';
 import { Pagination } from '@/components/ui/pagination';
 import { TakeBusinessOnline } from '../../_components/TakeBusinessOnline';
 
@@ -67,7 +68,7 @@ export function MerchantDirectory() {
     <div className="bg-surface-1 min-h-screen mt-20">
       {/* Header */}
       <div className="bg-brand-600 text-white py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <FadeIn className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h1 className="text-3xl md:text-5xl font-bold mb-4">Discover Top Merchants</h1>
           <p className="text-lg text-brand-100 max-w-2xl mx-auto mb-8">
             Shop directly from verified Naijahands merchants. Quality products, trusted sellers.
@@ -81,10 +82,10 @@ export function MerchantDirectory() {
               value={term}
               onChange={e => setTerm(e.target.value)}
               placeholder="Search by store name"
-              className="w-full h-12 pl-12 pr-4 rounded-full border-2 border-white/30 focus:ring-2 focus:ring-brand-300 shadow-lg"
+              className="w-full h-12 pl-12 pr-4 rounded-full border-2 border-white/30 focus:ring-2 focus:ring-brand-300 shadow-lg transition-all"
             />
           </div>
-        </div>
+        </FadeIn>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -109,8 +110,29 @@ export function MerchantDirectory() {
         <div className="min-w-0">
           <div className="flex-1 min-w-0">
             {isLoading ? (
-              <div className="flex justify-center items-center min-h-[60vh]">
-                <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
+              <div
+                className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5"
+                aria-busy="true"
+                aria-label="Loading businesses"
+              >
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="rounded-2xl border border-border bg-white overflow-hidden p-4 space-y-3"
+                    aria-hidden="true"
+                  >
+                    <div className="h-32 w-full rounded-xl animate-shimmer" />
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-full animate-shimmer shrink-0" />
+                      <div className="space-y-1.5 flex-1">
+                        <div className="h-4 w-2/3 rounded animate-shimmer" />
+                        <div className="h-3 w-1/2 rounded animate-shimmer" />
+                      </div>
+                    </div>
+                    <div className="h-3 w-full rounded animate-shimmer" />
+                    <div className="h-9 w-full rounded-full animate-shimmer mt-2" />
+                  </div>
+                ))}
               </div>
             ) : isError ? (
               <ErrorState
@@ -130,9 +152,16 @@ export function MerchantDirectory() {
                 <EmptyState title="No businesses yet" description="Check back soon as new sellers join." />
               )
             ) : (
-              <div className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 transition-opacity ${isFetching ? 'opacity-60' : ''}`}>
-                {data?.data.map(m => <MerchantCard key={m.id} merchant={m} />)}
-              </div>
+              <StaggerGrid
+                key={`${q}-${sort}-${page}`}
+                className={`grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 transition-opacity ${isFetching ? 'opacity-60' : ''}`}
+              >
+                {data?.data.map((m) => (
+                  <StaggerItem key={m.id} className="hover:-translate-y-0.5 transition-transform duration-300">
+                    <MerchantCard merchant={m} />
+                  </StaggerItem>
+                ))}
+              </StaggerGrid>
             )}
 
             {meta && (

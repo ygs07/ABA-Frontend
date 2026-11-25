@@ -2,15 +2,13 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
-import { SlidersHorizontal, Loader2 } from 'lucide-react';
+import { SlidersHorizontal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getShopProducts, getShopMerchants } from '@/features/shop/api';
-import { ProductCard } from '@/components/storefront/ProductCard';
-import { EmptyState } from '@/components/patterns/EmptyState';
-import { Pagination } from '@/components/ui/pagination';
+import { getCategoryMenu } from '@/features/category/api';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
 
 import { AdsBanner } from './_components/AdsBanner';
@@ -18,11 +16,13 @@ import { ProductCarouselSection } from './_components/ProductCarouselSection';
 import { PopularBrands } from './_components/PopularBrands';
 import { RelatedSearches } from './_components/RelatedSearches';
 import { ShopFilters } from './_components/ShopFilters';
+import { InfiniteProductGrid } from './_components/InfiniteProductGrid';
+import { ActiveFilterChips, type FilterChip } from './_components/ActiveFilterChips';
+import { BackToTopButton } from './_components/BackToTopButton';
 import { Product } from '@/features/products/types';
 import { ProductQuickViewModal } from '../merchants/_components/ProductQuickViewModal';
 
 type ShopSort = 'recommended' | 'newest' | 'price-asc' | 'price-desc' | 'rating';
-const PAGE_SIZE = 12;
 
 export default function ShopPage() {
   return (
@@ -51,8 +51,6 @@ function ShopContent() {
   const rawRating = searchParams.get('rating');
   const minRating = rawRating ? Number(rawRating) : null;
   const sortBy = (searchParams.get('sort') as ShopSort | null) ?? 'recommended';
-  const rawPage = Number(searchParams.get('page') ?? '1');
-  const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
 
   const [minPriceInput, setMinPriceInput] = useState(urlMinPrice);
   const [maxPriceInput, setMaxPriceInput] = useState(urlMaxPrice);
@@ -87,11 +85,59 @@ function ShopContent() {
     });
   }, [debouncedMinPrice, debouncedMaxPrice, urlMinPrice, urlMaxPrice, updateUrlParams]);
 
+  const { data: categoriesData } = useQuery({
+    queryKey: ['category_menu'],
+    queryFn: async () => (await getCategoryMenu()).data,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  const resolvedCategoryFilter = useMemo(() => {
+    if (!selectedCategory) return {};
+    const segments = selectedCategory.split('/').filter(Boolean);
+    const leafSlug = segments.at(-1);
+    if (!leafSlug) return {};
+    const list = categoriesData ?? [];
+    const matched =
+      segments.length > 1
+        ? list.find((cat) => {
+            if (cat.slug !== leafSlug) return false;
+            const parent = list.find((p) => p.id === cat.parentId);
+            return parent?.slug === segments[segments.length - 2];
+          }) ?? list.find((cat) => cat.slug === leafSlug)
+        : list.find((cat) => cat.slug === leafSlug && !cat.parentId) ??
+          list.find((cat) => cat.slug === leafSlug);
+
+    if (!matched) {
+      return { categorySlug: leafSlug };
+    }
+    if (matched.parentId) {
+      const subId = Number(String(matched.id).replace(/^sub-/, ''));
+      return {
+        subcategoryId: Number.isFinite(subId) ? subId : undefined,
+        categorySlug: matched.slug,
+      };
+    }
+    const catId = Number(matched.id);
+    return {
+      categoryId: Number.isFinite(catId) ? catId : undefined,
+      categorySlug: matched.slug,
+    };
+  }, [selectedCategory, categoriesData]);
+
   const { data: productsData, isLoading: isLoadingProducts } = useQuery({
-    queryKey: ['shop_products', selectedCategory, selectedMerchant, searchTerm, sortBy],
+    queryKey: [
+      'shop_products',
+      selectedCategory,
+      resolvedCategoryFilter.categoryId,
+      resolvedCategoryFilter.subcategoryId,
+      selectedMerchant,
+      searchTerm,
+      sortBy,
+    ],
     queryFn: async () => {
       const res = await getShopProducts({
-        categorySlug: selectedCategory || undefined,
+        ...resolvedCategoryFilter,
         merchantId: selectedMerchant || undefined,
         q: searchTerm || undefined,
         sort: sortBy,
@@ -138,12 +184,34 @@ function ShopContent() {
     return filtered;
   }, [productsData, selectedMerchant, urlMinPrice, urlMaxPrice, inStockOnly, minRating, sortBy]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredProducts.length / PAGE_SIZE));
-  const safePage = Math.min(page, totalPages);
-  const paginatedProducts = filteredProducts.slice(
-    (safePage - 1) * PAGE_SIZE,
-    safePage * PAGE_SIZE,
-  );
+  const filterChips = useMemo<FilterChip[]>(() => {
+    const chips: FilterChip[] = [];
+    if (selectedCategory) {
+      chips.push({ key: 'category', label: `Category: ${selectedCategory}`, onRemove: () => updateUrlParams({ category: null }) });
+    }
+    if (searchTerm) {
+      chips.push({ key: 'search', label: `Search: "${searchTerm}"`, onRemove: () => updateUrlParams({ search: null }) });
+    }
+    if (selectedMerchant) {
+      const mName = merchantsData?.find((m) => m.id === selectedMerchant)?.name ?? 'Merchant';
+      chips.push({ key: 'merchant', label: `Merchant: ${mName}`, onRemove: () => updateUrlParams({ merchant: null }) });
+    }
+    if (urlMinPrice) {
+      chips.push({ key: 'minPrice', label: `Min: ₦${urlMinPrice}`, onRemove: () => { setMinPriceInput(''); updateUrlParams({ minPrice: null }); } });
+    }
+    if (urlMaxPrice) {
+      chips.push({ key: 'maxPrice', label: `Max: ₦${urlMaxPrice}`, onRemove: () => { setMaxPriceInput(''); updateUrlParams({ maxPrice: null }); } });
+    }
+    if (inStockOnly) {
+      chips.push({ key: 'inStock', label: 'In Stock Only', onRemove: () => updateUrlParams({ inStock: null }) });
+    }
+    if (minRating !== null) {
+      chips.push({ key: 'rating', label: `${minRating}+ Stars`, onRemove: () => updateUrlParams({ rating: null }) });
+    }
+    return chips;
+  }, [selectedCategory, searchTerm, selectedMerchant, merchantsData, urlMinPrice, urlMaxPrice, inStockOnly, minRating, updateUrlParams]);
+
+  const filterKey = searchParams.toString() || 'all';
 
   const filterProps = {
     merchants: merchantsData || [],
@@ -234,46 +302,25 @@ function ShopContent() {
             <ProductCarouselSection title="Best Selling" sliceStart={0} sliceEnd={10} />
             <ProductCarouselSection title="Limited Time Deals" sliceStart={4} sliceEnd={12} />
 
-            {/* Grid */}
-            {isLoadingProducts ? (
-              <div className="flex justify-center py-20">
-                <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
-              </div>
-            ) : filteredProducts.length === 0 ? (
-              <EmptyState
-                title="No products found matching your filters."
-                description="Try adjusting your search or clearing your active filters."
-                actionLabel="Clear Filters"
-                onAction={handleClearAll}
-              />
-            ) : (
-              <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {paginatedProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} onQuickView={setQuickViewProduct} />
-                ))}
-              </div>
-            )}
+            <ActiveFilterChips chips={filterChips} onClearAll={handleClearAll} />
 
-            {/* Pagination */}
-            {filteredProducts.length > PAGE_SIZE && (
-              <Pagination
-                meta={{
-                  page: safePage,
-                  totalPages,
-                  total: filteredProducts.length,
-                }}
-                variant="numbered"
-                onPageChange={(nextPage) =>
-                  updateUrlParams({ page: nextPage > 1 ? String(nextPage) : null }, false)
-                }
-              />
-            )}
+            {/* Hybrid Infinite Scroll + Load More Grid */}
+            <InfiniteProductGrid
+              key={filterKey}
+              products={filteredProducts}
+              isLoading={isLoadingProducts}
+              filterKey={filterKey}
+              onQuickView={setQuickViewProduct}
+              onClearAll={handleClearAll}
+            />
           </div>
         </div>
 
         <PopularBrands />
         <RelatedSearches />
       </div>
+
+      <BackToTopButton />
 
       <ProductQuickViewModal
         product={quickViewProduct}

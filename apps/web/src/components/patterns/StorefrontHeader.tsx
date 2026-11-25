@@ -5,6 +5,8 @@ import { brand } from '@/config/brand';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Search, ShoppingCart, Menu, X, User, Store, FolderTree, Tag, Loader2 } from 'lucide-react';
+import { AnimatePresence, motion } from 'motion/react';
+import { dropdownMenuVariants, SPRING_SNAPPY } from '@/lib/motion';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { useCartStore } from '@/features/cart/store';
@@ -16,6 +18,7 @@ import { MegaMenu } from './MegaMenu';
 import { CategorySearchSelect } from './CategorySearchSelect';
 import { MobileMenu } from './MobileMenu';
 import { SellEarnCtas } from './SellEarnCtas';
+import { CartDrawer } from '@/components/storefront/CartDrawer';
 import { searchStorefront, StorefrontSearchResult } from '@/features/shop/api';
 import { SearchResultGroup } from './SearchResultGroup';
 
@@ -23,6 +26,7 @@ export function StorefrontHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const isAuthenticated = useAuthStore(state => state.isAuthenticated);
   const user = useAuthStore(state => state.user);
   const logout = useAuthStore(state => state.logout);
@@ -137,7 +141,7 @@ export function StorefrontHeader() {
 
   const hasSearchResults = Boolean(
     searchResults &&
-      (searchResults.products.length || searchResults.merchants.length || searchResults.categories.length || searchResults.brands.length),
+    (searchResults.products.length || searchResults.merchants.length || searchResults.categories.length || searchResults.brands.length),
   );
 
   return (
@@ -161,15 +165,23 @@ export function StorefrontHeader() {
               className="w-full h-9 pl-[120px] pr-10 rounded-full border border-border bg-white text-sm focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500 transition-all placeholder:text-text-muted/70"
             />
             {isSearching ? <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 animate-spin text-text-muted" /> : <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-text-muted" />}
-            {(hasSearchResults || (searchQuery.trim().length >= 2 && !isSearching && searchResults)) && (
-              <div className="absolute left-0 right-0 top-11 z-[60] max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-white p-2 shadow-xl">
-                {searchResults?.products.length ? <SearchResultGroup title="Products">{searchResults.products.map((product) => <Link key={`product-${product.id}`} href={`/products/${product.slug}`} onClick={closeSearch} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-1"><span className="min-w-0 flex-1 truncate text-sm font-medium text-text">{product.name}</span><span className="text-xs text-text-muted">Product</span></Link>)}</SearchResultGroup> : null}
-                {searchResults?.merchants.length ? <SearchResultGroup title="Merchants">{searchResults.merchants.map((merchant) => <Link key={`merchant-${merchant.id}`} href={`/merchants/${merchant.id}`} onClick={closeSearch} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-1"><Store className="h-4 w-4 text-brand-600" /><span className="min-w-0 flex-1 truncate text-sm font-medium text-text">{merchant.businessName}</span><span className="text-xs text-text-muted">Merchant</span></Link>)}</SearchResultGroup> : null}
-                {searchResults?.categories.length ? <SearchResultGroup title="Categories">{searchResults.categories.map((category) => <Link key={`${category.type}-${category.id}`} href={`/shop?search=${encodeURIComponent(category.name)}`} onClick={closeSearch} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-1"><FolderTree className="h-4 w-4 text-brand-600" /><span className="min-w-0 flex-1 truncate text-sm font-medium text-text">{category.name}</span><span className="text-xs text-text-muted">{category.type}</span></Link>)}</SearchResultGroup> : null}
-                {searchResults?.brands.length ? <SearchResultGroup title="Brands">{searchResults.brands.map((brandResult) => <Link key={`brand-${brandResult.id}`} href={`/shop?search=${encodeURIComponent(brandResult.name)}`} onClick={closeSearch} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-1"><Tag className="h-4 w-4 text-brand-600" /><span className="min-w-0 flex-1 truncate text-sm font-medium text-text">{brandResult.name}</span><span className="text-xs text-text-muted">Brand</span></Link>)}</SearchResultGroup> : null}
-                {!hasSearchResults ? <p className="px-3 py-4 text-center text-sm text-text-muted">No results found for &quot;{searchQuery.trim()}&quot;.</p> : null}
-              </div>
-            )}
+            <AnimatePresence>
+              {(hasSearchResults || (searchQuery.trim().length >= 2 && !isSearching && searchResults)) && (
+                <motion.div
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  variants={dropdownMenuVariants}
+                  className="absolute left-0 right-0 top-11 z-[60] max-h-[70vh] overflow-y-auto rounded-xl border border-border bg-white p-2 shadow-xl origin-top"
+                >
+                  {searchResults?.products.length ? <SearchResultGroup title="Products">{searchResults.products.map((product) => <Link key={`product-${product.id}`} href={`/products/${product.slug}`} onClick={closeSearch} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-1"><span className="min-w-0 flex-1 truncate text-sm font-medium text-text">{product.name}</span><span className="text-xs text-text-muted">Product</span></Link>)}</SearchResultGroup> : null}
+                  {searchResults?.merchants.length ? <SearchResultGroup title="Merchants">{searchResults.merchants.map((merchant) => <Link key={`merchant-${merchant.id}`} href={`/merchants/${merchant.id}`} onClick={closeSearch} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-1"><Store className="h-4 w-4 text-brand-600" /><span className="min-w-0 flex-1 truncate text-sm font-medium text-text">{merchant.businessName}</span><span className="text-xs text-text-muted">Merchant</span></Link>)}</SearchResultGroup> : null}
+                  {searchResults?.categories.length ? <SearchResultGroup title="Categories">{searchResults.categories.map((category) => <Link key={`${category.type}-${category.id}`} href={`/shop?search=${encodeURIComponent(category.name)}`} onClick={closeSearch} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-1"><FolderTree className="h-4 w-4 text-brand-600" /><span className="min-w-0 flex-1 truncate text-sm font-medium text-text">{category.name}</span><span className="text-xs text-text-muted">{category.type}</span></Link>)}</SearchResultGroup> : null}
+                  {searchResults?.brands.length ? <SearchResultGroup title="Brands">{searchResults.brands.map((brandResult) => <Link key={`brand-${brandResult.id}`} href={`/shop?search=${encodeURIComponent(brandResult.name)}`} onClick={closeSearch} className="flex items-center gap-3 rounded-lg px-3 py-2 hover:bg-surface-1"><Tag className="h-4 w-4 text-brand-600" /><span className="min-w-0 flex-1 truncate text-sm font-medium text-text">{brandResult.name}</span><span className="text-xs text-text-muted">Brand</span></Link>)}</SearchResultGroup> : null}
+                  {!hasSearchResults ? <p className="px-3 py-4 text-center text-sm text-text-muted">No results found for &quot;{searchQuery.trim()}&quot;.</p> : null}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </form>
 
           {/* Block 2: Sell & Earn */}
@@ -183,8 +195,8 @@ export function StorefrontHeader() {
           <div className="flex items-center gap-8 pl-4 lg:pl-6">
             {/* Logo */}
             <Link href="/" className="shrink-0 flex items-center">
-            {/* Using text for now */}
-            <h2 className='text-primary font-extrabold text-2xl'>Naijahands</h2>
+              {/* Using text for now */}
+              <h2 className='text-primary font-extrabold text-2xl'>Naijahands</h2>
               {/* <Image
                 src={brand.logo.full}
                 alt={brand.name}
@@ -215,14 +227,28 @@ export function StorefrontHeader() {
             {/* Search, Cart, Account (Desktop) */}
             <div className="hidden md:flex items-center space-x-2">
 
-              <Link href="/cart" className="relative p-3 text-text-muted hover:text-brand-600 transition-colors bg-surface-1 hover:bg-brand-50 rounded-full">
+              <button
+                type="button"
+                aria-label="Open shopping bag"
+                onClick={() => setCartDrawerOpen(true)}
+                className="relative p-3 text-text-muted hover:text-brand-600 transition-colors bg-surface-1 hover:bg-brand-50 rounded-full"
+              >
                 <ShoppingCart className="w-5 h-5" />
-                {mounted && totalItems > 0 && (
-                  <span className="absolute top-1.5 right-1.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-brand-600 rounded-full shadow-sm">
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
+                <AnimatePresence mode="popLayout">
+                  {mounted && totalItems > 0 && (
+                    <motion.span
+                      key={totalItems}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.5, opacity: 0 }}
+                      transition={SPRING_SNAPPY}
+                      className="absolute top-1.5 right-1.5 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-brand-600 rounded-full shadow-sm"
+                    >
+                      {totalItems}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
             </div>
 
             <div className="hidden md:block h-6 w-px bg-border mx-1"></div>
@@ -235,15 +261,15 @@ export function StorefrontHeader() {
 
             {isLoggedIn ? (
               <div className="hidden md:flex items-center gap-1">
-              <Link href={accountHref} className="flex items-center gap-2 p-1.5 pr-4 border border-border hover:border-brand-500 transition-colors hover:shadow-sm">
-                <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-xs font-bold">
-                  {user?.name?.[0] || 'J'}{user?.name?.[1] || 'D'}
-                </div>
-                <span className="text-sm font-bold text-text uppercase tracking-wide">{user?.name || 'User'}</span>
-              </Link>
-              <button onClick={handleSignOut} className="px-3 text-xs font-bold uppercase tracking-wide text-text-muted hover:text-error">
-                Log out
-              </button>
+                <Link href={accountHref} className="flex items-center gap-2 p-1.5 pr-4 border border-border hover:border-brand-500 transition-colors hover:shadow-sm">
+                  <div className="w-8 h-8 rounded-full bg-brand-100 flex items-center justify-center text-brand-700 text-xs font-bold">
+                    {user?.name?.[0] || 'J'}{user?.name?.[1] || 'D'}
+                  </div>
+                  <span className="text-sm font-bold text-text uppercase tracking-wide">{user?.name || 'User'}</span>
+                </Link>
+                <button onClick={handleSignOut} className="px-3 text-xs font-bold uppercase tracking-wide text-text-muted hover:text-error">
+                  Log out
+                </button>
               </div>
             ) : (
               <div className="hidden md:flex items-center gap-2 pl-2">
@@ -260,25 +286,39 @@ export function StorefrontHeader() {
 
             {/* Mobile Menu Button */}
             <div className="flex items-center gap-2 lg:hidden pl-2">
-              <Link href="/cart" className="relative p-2 text-text-muted bg-surface-1 rounded-full md:hidden">
+              <button
+                type="button"
+                aria-label="Open shopping bag"
+                onClick={() => setCartDrawerOpen(true)}
+                className="relative p-2 text-text-muted bg-surface-1 rounded-full md:hidden"
+              >
                 <ShoppingCart className="w-5 h-5" />
-                {mounted && totalItems > 0 && (
-                  <span className="absolute top-0 right-0 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-brand-600 rounded-full shadow-sm">
-                    {totalItems}
-                  </span>
-                )}
-              </Link>
+                <AnimatePresence mode="popLayout">
+                  {mounted && totalItems > 0 && (
+                    <motion.span
+                      key={totalItems}
+                      initial={{ scale: 0.5, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      exit={{ scale: 0.5, opacity: 0 }}
+                      transition={SPRING_SNAPPY}
+                      className="absolute top-0 right-0 flex items-center justify-center w-4 h-4 text-[10px] font-bold text-white bg-brand-600 rounded-full shadow-sm"
+                    >
+                      {totalItems}
+                    </motion.span>
+                  )}
+                </AnimatePresence>
+              </button>
               <button onClick={toggleMobileMenu} className="text-text p-3 bg-surface-2 hover:bg-surface-3 rounded-full transition-colors">
                 {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
+
         </div>
 
-        <div className={` max-w-7xl hidden lg:block transition-all duration-500 ${scrolled ? '  pointer-events-none' : '  '}`}>
+        <div className={` w-full max-w-7xl hidden lg:block transition-all duration-500 ${scrolled ? '  pointer-events-none' : '  '}`}>
           <MegaMenu />
         </div>
-
       </header>
 
 
@@ -291,6 +331,8 @@ export function StorefrontHeader() {
           navLinks={navLinks}
         />
       )}
+
+      <CartDrawer open={cartDrawerOpen} onOpenChange={setCartDrawerOpen} />
     </>
   );
 }

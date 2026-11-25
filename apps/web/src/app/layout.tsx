@@ -4,6 +4,7 @@ import { brand } from "@/config/brand";
 import "./globals.css";
 import { cn } from "@/lib/utils";
 import { QueryProvider } from "@/providers/QueryProvider";
+import { MotionProvider } from "@/components/ui/MotionPrimitives";
 import { Toaster } from 'sonner';
 
 const geist = Geist({subsets:['latin'],variable:'--font-sans'});
@@ -38,8 +39,10 @@ export default function RootLayout({
     >
       <body suppressHydrationWarning className="min-h-full flex flex-col bg-bg text-text">
         <QueryProvider>
-          {children}
-          <Toaster richColors position="top-right" />
+          <MotionProvider>
+            {children}
+            <Toaster richColors position="top-right" />
+          </MotionProvider>
         </QueryProvider>
       </body>
     </html>
