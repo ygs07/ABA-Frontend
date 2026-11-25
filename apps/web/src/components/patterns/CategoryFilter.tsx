@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { getCategoryMenu } from '@/features/category/api';
 import { Category } from '@/features/category/types';
 import { ChevronRight } from 'lucide-react';
@@ -28,43 +29,30 @@ export function CategoryFilter() {
   const searchParams = useSearchParams();
   const pathname = usePathname();
   
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [expanded, setExpanded] = useState<Record<string, boolean>>({});
   
   const isCategoryRoute = pathname.startsWith('/c/');
   const currentCategoryPath = isCategoryRoute
     ? pathname.slice(3).split('/').filter(Boolean).join('/')
     : searchParams.get('category') || '';
-  
-  useEffect(() => {
-    let cancelled = false;
-    const fetchMenu = async () => {
-      try {
-        const res = await getCategoryMenu();
-        if (!cancelled) {
-          setCategories(buildTree(res.data));
-        }
-      } catch (err) {
-        console.error('Failed to load category menu', err);
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false);
-        }
-      }
-    };
-    void fetchMenu();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
+  const { data: rawCategories, isLoading } = useQuery({
+    queryKey: ['category_menu'],
+    queryFn: async () => (await getCategoryMenu()).data,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
+
+  const categories = useMemo(
+    () => (rawCategories ? buildTree(rawCategories) : []),
+    [rawCategories],
+  );
 
   const handleSelect = (fullPath: string) => {
     const newParams = new URLSearchParams(searchParams.toString());
     newParams.delete('page');
     if (isCategoryRoute) {
-      router.push(`/c/${fullPath}`);
+      router.push(`/c/${fullPath}`, { scroll: false });
       return;
     }
     if (currentCategoryPath === fullPath) {
@@ -72,7 +60,8 @@ export function CategoryFilter() {
     } else {
       newParams.set('category', fullPath);
     }
-    router.push(`${pathname}?${newParams.toString()}`);
+    const qs = newParams.toString();
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
   };
 
   const renderTree = (nodes: Category[], currentPathPrefix = '') => {
@@ -105,7 +94,8 @@ export function CategoryFilter() {
                   onClick={() => handleSelect(path)}
                   className={cn(
                     "flex-1 text-left font-medium",
-                    isExact ? "text-brand-600" : "text-text"
+                    isExact ? "text-brand-600" : "text-text",
+                   isExpanded && "underline"
                   )}
                 >
                   {node.name}

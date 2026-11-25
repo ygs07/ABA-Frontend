@@ -7,7 +7,7 @@ import { getMeetBusinesses } from '@/features/shop/api';
 import { storefrontConfig } from '@/config/storefront';
 import { ItemCarousel } from '@/components/patterns/ItemCarousel';
 import { MerchantCard } from '@/components/patterns/MerchantCard';
-import { Skeleton } from '@/components/ui/skeleton';
+import { FadeIn } from '@/components/ui/MotionPrimitives';
 
 /** "Meet Businesses" carousel on the shop landing (Doc 06 §6.1). */
 export function MeetBusinesses() {
@@ -45,17 +45,39 @@ export function MeetBusinesses() {
         </div>
 
         {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4" aria-busy="true">
-            {[0, 1, 2, 3].map(i => <Skeleton key={i} className="h-64 rounded-2xl" />)}
+          <div
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4"
+            aria-busy="true"
+            aria-label="Loading businesses"
+          >
+            {[0, 1, 2, 3].map((i) => (
+              <div
+                key={i}
+                className="rounded-2xl border border-border bg-white overflow-hidden p-4 space-y-3"
+                aria-hidden="true"
+              >
+                <div className="h-28 w-full rounded-xl animate-shimmer" />
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full animate-shimmer shrink-0" />
+                  <div className="space-y-1.5 flex-1">
+                    <div className="h-4 w-2/3 rounded animate-shimmer" />
+                    <div className="h-3 w-1/2 rounded animate-shimmer" />
+                  </div>
+                </div>
+                <div className="h-8 w-full rounded-full animate-shimmer mt-2" />
+              </div>
+            ))}
           </div>
         ) : (
-          <ItemCarousel
-            label="Featured businesses"
-            autoplay={storefrontConfig.meetBusinesses.autoplay}
-            autoplayIntervalMs={storefrontConfig.meetBusinesses.autoplayIntervalMs}
-          >
-            {data!.map(m => <MerchantCard key={m.id} merchant={m} />)}
-          </ItemCarousel>
+          <FadeIn>
+            <ItemCarousel
+              label="Featured businesses"
+              autoplay={storefrontConfig.meetBusinesses.autoplay}
+              autoplayIntervalMs={storefrontConfig.meetBusinesses.autoplayIntervalMs}
+            >
+              {data!.map(m => <MerchantCard key={m.id} merchant={m} />)}
+            </ItemCarousel>
+          </FadeIn>
         )}
       </div>
     </section>

@@ -237,9 +237,13 @@ export type ShopProductFilters = {
 };
 
 export async function getShopProducts(params?: ShopProductFilters): Promise<{ data: Product[] }> {
+  const leafSlug = params?.categorySlug?.split('/').filter(Boolean).pop();
+
   if (API_MODE !== 'mock') {
     const search = new URLSearchParams({ limit: '100', includeVariants: 'true' });
-    if (params?.categorySlug) search.set('categorySlug', params.categorySlug);
+    if (leafSlug && !params?.categoryId && !params?.subcategoryId) {
+      search.set('categorySlug', leafSlug);
+    }
     if (params?.merchantId) search.set('merchantId', params.merchantId);
     if (params?.categoryId) search.set('categoryId', String(params.categoryId));
     if (params?.subcategoryId) search.set('subcategoryId', String(params.subcategoryId));
@@ -250,21 +254,34 @@ export async function getShopProducts(params?: ShopProductFilters): Promise<{ da
       `/api/v1/storefront/products?${search.toString()}`,
     );
     let products = response.data.map(toProduct);
-    if (params?.categoryId && products.some((p) => p.category?.id !== undefined)) {
-        products = products.filter((p) => p.category?.id === params.categoryId);
-    } else if (params?.categorySlug) {
-      const leafSlug = params.categorySlug.split('/').filter(Boolean).pop();
-      if (leafSlug && products.some((p) => Boolean(p.category?.slug))) {
-        products = products.filter((p) => p.category?.slug === leafSlug);
-      }
+    if (params?.subcategoryId && products.some((p) => p.subcategoryId !== undefined)) {
+      products = products.filter((p) => Number(p.subcategoryId) === params.subcategoryId);
+    } else if (params?.categoryId && products.some((p) => p.category?.id !== undefined)) {
+      products = products.filter((p) => Number(p.category?.id) === params.categoryId);
+    } else if (leafSlug && products.some((p) => Boolean(p.category?.slug))) {
+      products = products.filter((p) => p.category?.slug === leafSlug);
     }
     return { data: products };
   }
   await delay(600);
   let products = [...mockShopProducts];
 
-  if (params?.categorySlug) {
-    products = products.filter(p => p.category?.slug === params.categorySlug);
+  if (params?.subcategoryId) {
+    products = products.filter((p) => Number(p.subcategoryId?.replace(/^sub-/, '')) === params.subcategoryId);
+  } else if (params?.categoryId) {
+    products = products.filter((p) => Number(p.category?.id) === params.categoryId);
+  } else if (leafSlug) {
+    const matchedCat = mockShopCategories.find((c) => c.slug === leafSlug);
+    const childIds = matchedCat
+      ? mockShopCategories.filter((c) => c.parentId === matchedCat.id).map((c) => c.id)
+      : [];
+    products = products.filter((p) => {
+      if (p.category?.slug === leafSlug) return true;
+      if (matchedCat && p.category?.id === matchedCat.id) return true;
+      if (matchedCat && p.subcategoryId === matchedCat.id) return true;
+      if (p.subcategoryId && childIds.includes(p.subcategoryId)) return true;
+      return false;
+    });
   }
   if (params?.merchantId) {
     products = products.filter(p => p.merchant?.id === params.merchantId);

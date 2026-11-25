@@ -8,7 +8,7 @@ import Link from 'next/link';
 
 import { useRouter } from 'next/navigation';
 
-import { Check, ShieldCheck, MapPin, Truck, CreditCard, Wallet, AlertCircle, Loader2, Search, ExternalLink } from 'lucide-react';
+import { Check, MapPin, Truck, CreditCard, Wallet, AlertCircle, Loader2, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
@@ -28,6 +28,8 @@ import { AmountText } from '@/components/patterns/AmountText';
 import { ErrorState } from '@/components/patterns/ErrorState';
 
 import { getCustomerWalletBalance, getShoppingCreditBalance } from '@/features/portal/api';
+import { CheckoutSection } from '@/features/checkout/components/CheckoutSection';
+import { CheckoutSummarySidebar } from '@/features/checkout/components/CheckoutSummarySidebar';
 import { useAuthStore } from '@/features/auth/store';
 import { NIGERIAN_STATES } from '@/lib/constants/nigeria';
 import { useDebouncedValue } from '@/lib/useDebouncedValue';
@@ -552,16 +554,16 @@ function CheckoutContent() {
 
           )}
 
-          <div className="bg-white rounded-xl border border-border shadow-sm overflow-hidden min-h-[400px]">
+          <div className="space-y-4">
 
             {/* STEP 1: Info */}
-
-            {step === 1 && (
-
-              <div className="p-6 md:p-8 animate-in fade-in slide-in-from-right-4">
-
-                <h2 className="text-xl font-bold text-text mb-6">Contact Information</h2>
-
+            <CheckoutSection
+              stepNumber={1}
+              currentStep={step}
+              title="Contact Information"
+              summary={`${user?.firstName ?? ''} ${user?.lastName ?? ''} · ${addressForm.phone || user?.email || ''}`}
+              onEdit={() => goToStep(1)}
+            >
                 <div className="space-y-4">
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -607,18 +609,16 @@ function CheckoutContent() {
                   <Button onClick={nextStep} size="lg">Continue to Address</Button>
 
                 </div>
-
-              </div>
-
-            )}
+            </CheckoutSection>
 
             {/* STEP 2: Address */}
-
-            {step === 2 && (
-
-              <div className="p-6 md:p-8 animate-in fade-in slide-in-from-right-4">
-
-                <h2 className="text-xl font-bold text-text mb-6">Delivery Address</h2>
+            <CheckoutSection
+              stepNumber={2}
+              currentStep={step}
+              title="Delivery Address"
+              summary={addressForm.street ? `${addressForm.fullName} · ${addressForm.street}, ${addressForm.city}` : undefined}
+              onEdit={() => goToStep(2)}
+            >
 
                 {addressesError && <p className="mb-4 text-sm text-error">Unable to load your saved addresses.</p>}
                 <div className="space-y-3 mb-5">
@@ -679,18 +679,16 @@ function CheckoutContent() {
                   <Button onClick={nextStep} size="lg" disabled={!selectedDeliveryAddressId && (!addressForm.fullName || !addressForm.street || !addressForm.city || !addressForm.state)}>Continue to Delivery</Button>
 
                 </div>
-
-              </div>
-
-            )}
+            </CheckoutSection>
 
             {/* STEP 3: Delivery */}
-
-            {step === 3 && (
-
-              <div className="p-6 md:p-8 animate-in fade-in slide-in-from-right-4">
-
-                <h2 className="text-xl font-bold text-text mb-6">Delivery Method</h2>
+            <CheckoutSection
+              stepNumber={3}
+              currentStep={step}
+              title="Delivery Method"
+              summary={deliveryMethod === 2 ? 'Express Delivery (1-2 Business Days)' : 'Standard Delivery (3-5 Business Days)'}
+              onEdit={() => goToStep(3)}
+            >
 
                 <div className="space-y-4">
 
@@ -743,18 +741,16 @@ function CheckoutContent() {
                   <Button onClick={nextStep} size="lg">Continue to Payment</Button>
 
                 </div>
-
-              </div>
-
-            )}
+            </CheckoutSection>
 
             {/* STEP 4: Payment */}
-
-            {step === 4 && (
-
-              <div className="p-6 md:p-8 animate-in fade-in slide-in-from-right-4">
-
-                <h2 className="text-xl font-bold text-text mb-6">Payment Method</h2>
+            <CheckoutSection
+              stepNumber={4}
+              currentStep={step}
+              title="Payment Method"
+              summary={paymentMethod === 'card' ? 'Pay with Paystack' : `${brand.shortName} Wallet`}
+              onEdit={() => goToStep(4)}
+            >
 
                 <div className="space-y-4">
 
@@ -858,18 +854,14 @@ function CheckoutContent() {
                   <Button onClick={handlePaymentNextStep} size="lg">Review Order</Button>
 
                 </div>
-
-              </div>
-
-            )}
+            </CheckoutSection>
 
             {/* STEP 5: Review */}
-
-            {step === 5 && (
-
-              <div className="p-6 md:p-8 animate-in fade-in slide-in-from-right-4">
-
-                <h2 className="text-xl font-bold text-text mb-6">Review Your Order</h2>
+            <CheckoutSection
+              stepNumber={5}
+              currentStep={step}
+              title="Review Your Order"
+            >
 
                 <div className="bg-warning-light/30 border border-warning-main/30 rounded-lg p-4 flex items-start gap-3 mb-6">
 
@@ -946,225 +938,33 @@ function CheckoutContent() {
                   </Button>
 
                 </div>
-
-              </div>
-
-            )}
+            </CheckoutSection>
 
           </div>
 
         </div>
 
-        {/* Order Summary Sidebar */}
-
-        <div className="w-full lg:w-[380px] shrink-0">
-
-          <div className="bg-white rounded-xl border border-border shadow-sm p-6 sticky top-24">
-
-            <h2 className="text-lg font-bold text-text mb-4">Summary</h2>
-
-            <div className="max-h-60 overflow-y-auto mb-4 divide-y divide-border pr-2">
-
-              {cartData.items.map(item => (
-
-                <div key={item.id} className="py-3 flex gap-3">
-
-                  <div className="w-12 h-12 rounded border border-border shrink-0 overflow-hidden bg-surface-1">
-
-                    {item.productImage && <img src={item.productImage} alt={item.productName} className="w-full h-full object-cover" />}
-
-                  </div>
-
-                  <div className="flex-1">
-
-                    <p className="text-sm font-medium text-text line-clamp-1">{item.productName}</p>
-
-                    <div className="flex justify-between items-center mt-1">
-
-                      <span className="text-xs text-text-muted">Qty: {item.quantity}</span>
-
-                      <span className="text-sm font-bold text-text"><AmountText amountInKobo={item.price * item.quantity} /></span>
-
-                    </div>
-
-                  </div>
-
-                </div>
-
-              ))}
-
-            </div>
-
-            {/* Referral Section */}
-
-            <div className="mb-6 border-t border-border pt-4">
-
-              <h3 className="text-sm font-semibold mb-2">Referred by someone?</h3>
-
-              {appliedReferral ? (
-
-                <div className="flex items-center justify-between bg-success-light/30 border border-success-main/30 rounded p-3 text-sm">
-
-                  <div>
-
-                    <span className="block text-success-dark font-medium flex items-center gap-1">
-
-                      <Check className="w-4 h-4" /> Referral applied
-
-                    </span>
-
-                    <span className="text-success-dark/80 text-xs">Supporting {appliedReferral.name}</span>
-
-                  </div>
-
-                  <button onClick={() => setAppliedReferral(null)} className="text-success-dark hover:text-success-dark/70 font-medium text-xs">
-
-                    Remove
-
-                  </button>
-
-                </div>
-
-              ) : (
-
-                <div className="flex flex-col gap-2 relative">
-
-                  <div className="relative">
-
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
-
-                    <input
-
-                      type="text"
-
-                      // placeholder="Search name or referral code..."
-
-                      placeholder='enter Aba, Emeka, Sarah'
-
-                      value={referralInput}
-
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        setReferralInput(value);
-                        setSelectedReferral(null);
-                        if (value.trim().length < 2) {
-                          setSearchResults([]);
-                        }
-                      }}
-
-                      className="w-full h-10 pl-9 pr-3 rounded-md border border-border bg-white text-sm focus:ring-2 focus:ring-brand-500 outline-none"
-
-                    />
-
-                  </div>
-
-                  {searchResults.length > 0 && (
-
-                    <div className="absolute top-11 left-0 w-full bg-white border border-border rounded-md shadow-lg z-20 max-h-60 overflow-y-auto">
-
-                      {searchResults.map(user => (
-
-                        <button
-                          type="button"
-                          key={user.customerId}
-
-                          className="flex items-center gap-3 p-3 border-b border-border last:border-0 hover:bg-surface-1 cursor-pointer transition-colors"
-
-                          onClick={() => {
-                            setSelectedReferral(user);
-                            setSearchResults([]);
-                          }}
-
-                        >
-
-                          <div className="flex-1 overflow-hidden">
-
-                            <p className="font-medium text-sm text-text truncate">{user.name}</p>
-
-                            <div className="flex items-center gap-2 text-xs text-text-muted mt-0.5">
-
-                              <span>{user.username ? `@${user.username}` : 'Customer'}</span>
-
-                              <span>•</span>
-
-                              <span className="font-mono">{user.referralCode}</span>
-
-                            </div>
-
-                          </div>
-
-                        </button>
-
-                      ))}
-
-                    </div>
-
-                  )}
-
-                  {selectedReferral && (
-                    <div className="flex items-center justify-between rounded border border-brand-200 bg-brand-50 p-3 text-sm">
-                      <span>Use <strong>{selectedReferral.name}</strong>&apos;s referral code?</span>
-                      <div className="flex gap-2"><Button type="button" size="sm" variant="outline" onClick={() => setSelectedReferral(null)}>Cancel</Button><Button type="button" size="sm" onClick={() => { setAppliedReferral({ code: selectedReferral.referralCode, name: selectedReferral.name }); setSelectedReferral(null); setReferralInput(''); setSearchResults([]); }}>Confirm</Button></div>
-                    </div>
-                  )}
-                  <p className="text-xs text-text-muted">Search by referral code or username, then confirm the customer who referred you.</p>
-
-                </div>
-
-              )}
-
-            </div>
-
-            <div className="space-y-3 text-sm mb-6 border-t border-border pt-4">
-
-              <div className="flex justify-between">
-
-                <span className="text-text-muted">Subtotal</span>
-
-                <span className="font-medium text-text"><AmountText amountInKobo={cartData.subtotal} /></span>
-
-              </div>
-
-              {shoppingCreditApplied > 0 && (
-                <div className="flex justify-between text-success-dark">
-                  <span>Shopping credits</span>
-                  <span className="font-medium">−<AmountText amountInKobo={shoppingCreditApplied} /></span>
-                </div>
-              )}
-
-              <div className="flex justify-between">
-
-                <span className="text-text-muted">Delivery</span>
-
-                <span className="font-medium text-text"><AmountText amountInKobo={deliveryFee} /></span>
-
-              </div>
-
-              <div className="border-t border-border pt-3 mt-2">
-
-                <div className="flex justify-between items-center">
-
-                  <span className="font-bold text-text text-base">Total</span>
-
-                  <span className="font-bold text-brand-600 text-xl"><AmountText amountInKobo={checkoutTotal} /></span>
-
-                </div>
-
-              </div>
-
-            </div>
-
-            <div className="flex items-center gap-2 text-xs text-text-muted justify-center bg-surface-1 p-2 rounded">
-
-              <ShieldCheck className="w-4 h-4 text-success-main" />
-
-              <span>SSL Secured Payment</span>
-
-            </div>
-
-          </div>
-
-        </div>
+        <CheckoutSummarySidebar
+          items={cartData.items}
+          subtotal={cartData.subtotal}
+          deliveryFee={deliveryFee}
+          shoppingCreditApplied={shoppingCreditApplied}
+          checkoutTotal={checkoutTotal}
+          referralInput={referralInput}
+          onReferralInputChange={(value) => {
+            setReferralInput(value);
+            setSelectedReferral(null);
+            if (value.trim().length < 2) {
+              setSearchResults([]);
+            }
+          }}
+          searchResults={searchResults}
+          selectedReferral={selectedReferral}
+          onSelectReferral={setSelectedReferral}
+          appliedReferral={appliedReferral}
+          onApplyReferral={setAppliedReferral}
+          onClearSearchResults={() => setSearchResults([])}
+        />
 
       </div>
 

@@ -1,14 +1,44 @@
 'use client';
 
-import { useState, useRef, useEffect, KeyboardEvent } from 'react';
+import { useState, useRef, useEffect, useMemo, KeyboardEvent } from 'react';
 import Link from 'next/link';
+import { useQuery } from '@tanstack/react-query';
 import { Category } from '@/features/category/types';
 import { cn } from 'cn';
 import { getCategoryMenu } from '@/features/category/api';
 import { CategorySpotlightPanel } from '@/features/spotlight/components/CategorySpotlightPanel';
 
+// Build a 3-level tree from a flat list
+const buildMegaMenuTree = (cats: Category[]) => {
+  const map = new Map<string, Category>();
+  const roots: Category[] = [];
+
+  cats.forEach((c) => {
+    map.set(c.id, { ...c, children: [] });
+  });
+
+  cats.forEach((c) => {
+    if (c.parentId) {
+      const parent = map.get(c.parentId);
+      if (parent) {
+        parent.children?.push(map.get(c.id)!);
+      }
+    } else {
+      roots.push(map.get(c.id)!);
+    }
+  });
+
+  const sortFn = (a: Category, b: Category) => a.sortOrder - b.sortOrder;
+  roots.sort(sortFn);
+  roots.forEach((r) => {
+    r.children?.sort(sortFn);
+    r.children?.forEach((c) => c.children?.sort(sortFn));
+  });
+
+  return roots;
+};
+
 export function MegaMenu() {
-  const [categories, setCategories] = useState<Category[]>([]);
   const [activeItem, setActiveItem] = useState<string | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
@@ -17,52 +47,17 @@ export function MegaMenu() {
   const leaveTimeout = useRef<NodeJS.Timeout | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    const fetchMenu = async () => {
-      try {
-        const res = await getCategoryMenu();
-        // Just mock processing the tree structure:
-        const tree = buildTree(res.data);
-        setCategories(tree);
-      } catch (err) {
-        console.error('Failed to load category menu', err);
-      }
-    };
-    fetchMenu();
-  }, []);
+  const { data: rawCategories } = useQuery({
+    queryKey: ['category_menu'],
+    queryFn: async () => (await getCategoryMenu()).data,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+  });
 
-  // Build a 3-level tree from a flat list
-  const buildTree = (cats: Category[]) => {
-    const map = new Map<string, Category>();
-    const roots: Category[] = [];
-
-    // First pass
-    cats.forEach(c => {
-      map.set(c.id, { ...c, children: [] });
-    });
-
-    // Second pass
-    cats.forEach(c => {
-      if (c.parentId) {
-        const parent = map.get(c.parentId);
-        if (parent) {
-          parent.children?.push(map.get(c.id)!);
-        }
-      } else {
-        roots.push(map.get(c.id)!);
-      }
-    });
-
-    // Sort
-    const sortFn = (a: Category, b: Category) => a.sortOrder - b.sortOrder;
-    roots.sort(sortFn);
-    roots.forEach(r => {
-      r.children?.sort(sortFn);
-      r.children?.forEach(c => c.children?.sort(sortFn));
-    });
-
-    return roots;
-  };
+  const categories = useMemo(
+    () => (rawCategories ? buildMegaMenuTree(rawCategories) : []),
+    [rawCategories],
+  );
 
   const handleMouseEnter = (id: string) => {
     if (leaveTimeout.current) clearTimeout(leaveTimeout.current);

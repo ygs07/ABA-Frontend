@@ -9,6 +9,7 @@ import { ProductSpotlight } from '@/features/promotions/components/ProductSpotli
 import { CategoryMarquee } from './_components/CategoryMarquee';
 import { MadeInAbaPromo } from './_components/MadeInAbaPromo';
 import { TakeBusinessOnline } from './_components/TakeBusinessOnline';
+import { ScrollReveal } from '@/components/ui/MotionPrimitives';
 
 export default function HomePage() {
   return (
@@ -20,22 +21,36 @@ export default function HomePage() {
 
 function Landing() {
   return (
-    <div className="flex mx-auto flex-col w-full font-sans animate-in fade-in duration-1000 bg-[#fdfaf1]">
+    <div className="flex mx-auto flex-col w-full font-sans bg-[#fdfaf1]">
       <HeroBanner />
 
-      <ProductSpotlight />
+      <ScrollReveal>
+        <ProductSpotlight />
+      </ScrollReveal>
 
-      <TrendingProducts />
+      <ScrollReveal>
+        <TrendingProducts />
+      </ScrollReveal>
 
-      <MeetBusinesses />
+      <ScrollReveal>
+        <MeetBusinesses />
+      </ScrollReveal>
 
-      <CategoryMarquee />
+      <ScrollReveal>
+        <CategoryMarquee />
+      </ScrollReveal>
 
-      <SpotlightSection />
+      <ScrollReveal>
+        <SpotlightSection />
+      </ScrollReveal>
 
-      <MadeInAbaPromo />
+      <ScrollReveal>
+        <MadeInAbaPromo />
+      </ScrollReveal>
 
-      <TakeBusinessOnline />
+      <ScrollReveal>
+        <TakeBusinessOnline />
+      </ScrollReveal>
     </div>
   );
 }

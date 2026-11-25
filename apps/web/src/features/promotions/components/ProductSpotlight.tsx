@@ -3,12 +3,13 @@
 import React from 'react';
 import Link from 'next/link';
 import { ProductCard } from '@/components/storefront/ProductCard';
+import { ProductGridSkeleton } from '@/components/storefront/ProductCardSkeleton';
+import { StaggerGrid, StaggerItem } from '@/components/ui/MotionPrimitives';
 import { Button } from '@/components/ui/button';
 import { mockShopProducts } from '@/features/shop/mocks';
 import { API_MODE, fetchApi } from '@/lib/api';
 import { toProduct } from '@/features/products/api/products.api';
 import { useQuery } from '@tanstack/react-query';
-import { Loader2 } from 'lucide-react';
 
 export function ProductSpotlight() {
   const { data: featuredProducts = [], isLoading } = useQuery({
@@ -40,15 +41,18 @@ export function ProductSpotlight() {
         </div>
 
         {isLoading ? (
-          <div className="flex justify-center py-10">
-            <Loader2 className="w-8 h-8 animate-spin text-brand-600" />
-          </div>
+          <ProductGridSkeleton
+            count={4}
+            className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6"
+          />
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
+          <StaggerGrid className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {featuredProducts.slice(0, 4).map((product) => (
-              <ProductCard key={product.id} product={product} />
+              <StaggerItem key={product.id}>
+                <ProductCard product={product} />
+              </StaggerItem>
             ))}
-          </div>
+          </StaggerGrid>
         )}
         
         <div className="mt-8 text-center md:hidden">

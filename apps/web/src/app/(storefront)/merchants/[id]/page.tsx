@@ -165,18 +165,18 @@ function MerchantProfileContent({ params }: { params: Promise<{ id: string }> })
                 <div className="bg-white rounded-xl border border-border p-6 shadow-sm">
                   <h3 className="font-semibold text-text mb-4">Contact Information</h3>
                   <div className="space-y-4 text-sm text-text-muted">
-                    <div className="flex items-start gap-3">
+                    {merchant.address && (<div className="flex items-start gap-3">
                       <MapPin className="w-5 h-5 text-brand-600 shrink-0 mt-0.5" />
                       <span>{merchant.address}<br />{merchant.city}, {merchant.state}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
+                    </div>)}
+                    {merchant.phone && (<div className="flex items-center gap-3">
                       <Phone className="w-5 h-5 text-brand-600 shrink-0" />
                       <span>{merchant.phone}</span>
-                    </div>
-                    <div className="flex items-center gap-3">
+                    </div>)}
+                    {merchant.email && (<div className="flex items-center gap-3">
                       <Mail className="w-5 h-5 text-brand-600 shrink-0" />
                       <span>{merchant.email}</span>
-                    </div>
+                    </div>)}
                     {merchant.website && (
                       <div className="flex items-center gap-3">
                         <Globe className="w-5 h-5 text-brand-600 shrink-0" />

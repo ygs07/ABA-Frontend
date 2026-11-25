@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useStorefrontSpotlight } from '../queries';
 import { SpotlightCard } from './SpotlightCard';
 import { trackSpotlightEvent } from '../api';
-import { Loader2 } from 'lucide-react';
+import { StaggerGrid, StaggerItem } from '@/components/ui/MotionPrimitives';
 
 export function SpotlightSection() {
   const { data: merchants, isLoading, error } = useStorefrontSpotlight();
@@ -18,11 +18,18 @@ export function SpotlightSection() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="h-6 w-48 bg-surface-2 animate-pulse rounded mb-8"></div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[1, 2, 3, 4].map(i => (
-            <div key={i} className="h-72 bg-surface-2 animate-pulse rounded-xl"></div>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16" aria-busy="true" aria-label="Loading merchant spotlight">
+        <div className="h-8 w-56 rounded animate-shimmer mb-3" />
+        <div className="h-4 w-96 max-w-full rounded animate-shimmer mb-10" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="rounded-xl border border-border bg-white overflow-hidden p-4 space-y-3" aria-hidden="true">
+              <div className="h-32 w-full rounded-lg animate-shimmer" />
+              <div className="h-4 w-2/3 rounded animate-shimmer" />
+              <div className="h-3 w-full rounded animate-shimmer" />
+              <div className="h-3 w-4/5 rounded animate-shimmer" />
+              <div className="h-9 w-full rounded-lg animate-shimmer mt-2" />
+            </div>
           ))}
         </div>
       </div>
@@ -45,17 +52,18 @@ export function SpotlightSection() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-4">
-          {merchants.map(merchant => (
-            <SpotlightCard 
-              key={merchant.id} 
-              merchant={merchant} 
-              onHover={() => {
-                trackSpotlightEvent({ event: 'open', merchantId: merchant.id, timestamp: new Date().toISOString() });
-              }}
-            />
+        <StaggerGrid className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 pb-4">
+          {merchants.map((merchant) => (
+            <StaggerItem key={merchant.id} className="hover:-translate-y-0.5 transition-transform duration-300">
+              <SpotlightCard
+                merchant={merchant}
+                onHover={() => {
+                  trackSpotlightEvent({ event: 'open', merchantId: merchant.id, timestamp: new Date().toISOString() });
+                }}
+              />
+            </StaggerItem>
           ))}
-        </div>
+        </StaggerGrid>
       </div>
     </section>
   );

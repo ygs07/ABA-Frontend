@@ -1,33 +1,42 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import { ChevronRight, Loader2 } from 'lucide-react';
-import { getShopCategories, getShopProducts } from '@/features/shop/api';
+import { getCategoryMenu } from '@/features/category/api';
+import { getShopProducts } from '@/features/shop/api';
 import { CategoryFilter } from '@/components/patterns/CategoryFilter';
-import { ProductCard } from '@/components/storefront/ProductCard';
-import { StorefrontEmptyState } from '@/components/patterns/StorefrontEmptyState';
+import { InfiniteProductGrid } from '@/app/(storefront)/shop/_components/InfiniteProductGrid';
+import { BackToTopButton } from '@/app/(storefront)/shop/_components/BackToTopButton';
+import { ProductQuickViewModal } from '@/app/(storefront)/merchants/_components/ProductQuickViewModal';
+import { Product } from '@/features/products/types';
 
-function formatSlugLabel(slug: string): string {
-  return slug
-    .split('-')
-    .filter(Boolean)
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
-}
+type CategorySort = 'recommended' | 'newest' | 'price-asc' | 'price-desc' | 'rating';
 
 export default function CategoryPage() {
+  const router = useRouter();
   const params = useParams<{ categoryPath: string[] }>();
   const categoryPath = Array.isArray(params.categoryPath) ? params.categoryPath : [];
   const categorySlug = categoryPath.at(-1);
-  const { data: categoriesData, isLoading: categoriesLoading, isError: categoriesError } = useQuery({
-    queryKey: ['shop-categories'],
-    queryFn: getShopCategories,
+  const [sortBy, setSortBy] = useState<CategorySort>('recommended');
+  const [quickViewProduct, setQuickViewProduct] = useState<Product | null>(null);
+  const { data: categories = [], isLoading: categoriesLoading, isError: categoriesError } = useQuery({
+    queryKey: ['category_menu'],
+    queryFn: async () => (await getCategoryMenu()).data,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
   });
-  const categories = categoriesData?.data ?? [];
-  const currentCategory = categories.find((category) => category.slug === categorySlug);
+  const currentCategory =
+    categoryPath.length > 1
+      ? categories.find((category) => {
+          if (category.slug !== categorySlug) return false;
+          const parent = categories.find((p) => p.id === category.parentId);
+          return parent?.slug === categoryPath[categoryPath.length - 2];
+        }) ?? categories.find((category) => category.slug === categorySlug)
+      : categories.find((category) => category.slug === categorySlug && !category.parentId) ??
+        categories.find((category) => category.slug === categorySlug);
   const { data: productsData, isLoading: productsLoading } = useQuery({
     queryKey: ['category-products', currentCategory?.id, categorySlug],
     queryFn: () => getShopProducts({
@@ -38,14 +47,26 @@ export default function CategoryPage() {
     enabled: Boolean(currentCategory),
   });
 
+  const sortedProducts = useMemo(() => {
+    const items = [...(productsData?.data ?? [])];
+    if (sortBy === 'price-asc') {
+      items.sort((a, b) => a.price - b.price);
+    } else if (sortBy === 'price-desc') {
+      items.sort((a, b) => b.price - a.price);
+    } else if (sortBy === 'rating') {
+      items.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    } else if (sortBy === 'newest') {
+      items.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+    }
+    return items;
+  }, [productsData?.data, sortBy]);
+
   if (categoriesLoading) {
     return <div className="flex min-h-[50vh] items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-brand-600" /></div>;
   }
   if (categoriesError || !currentCategory) {
     return <div className="mx-auto max-w-7xl px-4 py-32 text-center"><h1 className="text-2xl font-bold text-text">Category not found</h1><Link className="mt-4 inline-block text-brand-600 hover:underline" href="/shop">Browse all products</Link></div>;
   }
-
-  const products = productsData?.data ?? [];
 
   return (
     <div className="pt-32 pb-20 max-w-7xl mx-auto px-4 md:px-6">
@@ -86,14 +107,20 @@ export default function CategoryPage() {
           <div className="flex justify-between items-end mb-6">
             <div>
               <h1 className="text-3xl font-bold text-text">{currentCategory.name}</h1>
-              <p className="text-text-muted mt-2">{productsLoading ? 'Loading products…' : `${products.length} products found`}</p>
+              <p className="text-text-muted mt-2">{productsLoading ? 'Loading products…' : `${sortedProducts.length} products found`}</p>
             </div>
             
-            <select className="border border-border rounded-lg px-3 py-2 text-sm bg-white focus:outline-brand-500">
-              <option>Recommended</option>
-              <option>Newest Arrivals</option>
-              <option>Price: Low to High</option>
-              <option>Price: High to Low</option>
+            <select
+              aria-label="Sort products"
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value as CategorySort)}
+              className="border border-border rounded-lg px-3 py-2 text-sm bg-white focus:outline-brand-500"
+            >
+              <option value="recommended">Recommended</option>
+              <option value="newest">Newest Arrivals</option>
+              <option value="price-asc">Price: Low to High</option>
+              <option value="price-desc">Price: High to Low</option>
+              <option value="rating">Highest Rated</option>
             </select>
           </div>
           
@@ -110,20 +137,25 @@ export default function CategoryPage() {
             ))}
           </div>
 
-          {/* Product Grid */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
-            {products.length > 0 ? (
-              products.map((product) => (
-                <ProductCard key={product.id} product={product} />
-              ))
-            ) : (
-              <div className="col-span-full py-12 text-center bg-surface-1 rounded-xl border border-border border-dashed">
-                <p className="text-text-muted font-medium">No products found in this category.</p>
-              </div>
-            )}
-          </div>
+          {/* Product Grid with Infinite Scroll & Skeletons */}
+          <InfiniteProductGrid
+            key={`cat-${categoryPath.join('/')}-${sortBy}`}
+            products={sortedProducts}
+            isLoading={productsLoading}
+            filterKey={`cat:${categoryPath.join('/')}:${sortBy}`}
+            onQuickView={setQuickViewProduct}
+            onClearAll={() => router.push('/shop')}
+          />
         </main>
       </div>
+
+      <BackToTopButton />
+
+      <ProductQuickViewModal
+        product={quickViewProduct}
+        isOpen={!!quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+      />
     </div>
   );
 }

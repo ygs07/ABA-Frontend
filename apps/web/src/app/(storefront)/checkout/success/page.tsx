@@ -3,9 +3,12 @@
 import React, { Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { AlertCircle, CheckCircle2, ChevronRight, Loader2, Package, Search } from 'lucide-react';
+import { AlertCircle, ChevronRight, Loader2, Package, Search } from 'lucide-react';
+import { motion } from 'motion/react';
 import { useQuery } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
+import { FadeIn } from '@/components/ui/MotionPrimitives';
+import { SPRING_GENTLE } from '@/lib/motion';
 import { API_MODE, fetchApi } from '@/lib/api';
 import { getOrderDetail } from '@/features/checkout/api';
 import { OrderSuccessDetails } from '@/features/checkout/components/OrderSuccessDetails';
@@ -122,20 +125,45 @@ function OrderSuccessContent() {
     <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16 mt-20">
       {/* Success Banner */}
       <div className="text-center mb-10">
-        <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-success-bg border-4 border-success-main/20 mb-6">
-          <CheckCircle2 className="w-10 h-10 text-success-dark" />
-        </div>
-        <h1 className="text-3xl font-extrabold text-text tracking-tight mb-2">Order Confirmed!</h1>
-        <p className="text-lg text-text-muted">
-          Thank you for your purchase. Your order has been successfully placed.
-        </p>
+        <motion.div
+          initial={{ scale: 0.6, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={SPRING_GENTLE}
+          className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-success-bg border-4 border-success-main/20 mb-6"
+        >
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            className="w-10 h-10 text-success-dark"
+            aria-hidden="true"
+          >
+            <motion.path
+              d="M5 13l4 4L19 7"
+              stroke="currentColor"
+              strokeWidth={2.5}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              initial={{ pathLength: 0 }}
+              animate={{ pathLength: 1 }}
+              transition={{ duration: 0.45, delay: 0.15, ease: 'easeOut' }}
+            />
+          </svg>
+        </motion.div>
+        <FadeIn delay={0.1}>
+          <h1 className="text-3xl font-extrabold text-text tracking-tight mb-2">Order Confirmed!</h1>
+          <p className="text-lg text-text-muted">
+            Thank you for your purchase. Your order has been successfully placed.
+          </p>
+        </FadeIn>
       </div>
 
       {/* Main Order Details Card */}
-      <OrderSuccessDetails order={order} />
+      <FadeIn delay={0.2}>
+        <OrderSuccessDetails order={order} />
+      </FadeIn>
 
       {/* Action Navigation */}
-      <div className="flex flex-col sm:flex-row gap-4 justify-center">
+      <FadeIn delay={0.3} className="flex flex-col sm:flex-row gap-4 justify-center">
         <Link href={portalOrderUrl} className="flex-1">
           <Button variant="outline" size="lg" className="w-full h-12">
             View Order in Portal
@@ -152,7 +180,7 @@ function OrderSuccessContent() {
             Continue Shopping <ChevronRight className="w-4 h-4 ml-1" />
           </Button>
         </Link>
-      </div>
+      </FadeIn>
     </div>
   );
 }
